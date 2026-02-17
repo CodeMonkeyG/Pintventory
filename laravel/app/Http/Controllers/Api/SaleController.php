@@ -21,10 +21,6 @@ class SaleController extends Controller
             $query->where('inventory_item_id', $request->inventory_item_id);
         }
 
-        if ($request->has('customer_id')) {
-            $query->where('customer_id', $request->customer_id);
-        }
-
         return $query->latest()->paginate(25);
     }
 
@@ -107,7 +103,7 @@ class SaleController extends Controller
                     ], 422);
                 }
                 
-                $item->decrement('quantity_on_hand', $diff); // If diff is negative (reducing sale), this increments stock (minus minus = plus)
+                $item->decrement('quantity_on_hand', $diff);
             }
 
             $sale->update($validated);

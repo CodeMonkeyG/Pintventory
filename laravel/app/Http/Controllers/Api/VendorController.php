@@ -11,9 +11,28 @@ class VendorController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Vendor::latest()->paginate(25);
+        $query = Vendor::query();
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('contact_name', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->boolean('is_preferred')) {
+            $query->where('is_preferred', true);
+        }
+
+        $sortField = $request->input('sort_by', 'updated_at');
+        $sortDirection = $request->input('sort_dir', 'desc');
+        $query->orderBy($sortField, $sortDirection);
+
+        return $query->paginate($request->input('per_page', 25));
     }
 
     /**
@@ -74,6 +93,6 @@ class VendorController extends Controller
         $vendor = Vendor::findOrFail($id);
         $vendor->delete();
 
-        return response()->json(null, 204);
+        return response()->json(['message' => 'Vendor deleted']);
     }
 }

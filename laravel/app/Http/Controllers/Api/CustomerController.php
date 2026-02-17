@@ -11,9 +11,24 @@ class CustomerController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Customer::latest()->paginate(25);
+        $query = Customer::query();
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('contact_name', 'like', "%{$search}%");
+            });
+        }
+
+        $sortField = $request->input('sort_by', 'updated_at');
+        $sortDirection = $request->input('sort_dir', 'desc');
+        $query->orderBy($sortField, $sortDirection);
+
+        return $query->paginate($request->input('per_page', 25));
     }
 
     /**
@@ -72,6 +87,6 @@ class CustomerController extends Controller
         $customer = Customer::findOrFail($id);
         $customer->delete();
 
-        return response()->json(null, 204);
+        return response()->json(['message' => 'Customer deleted']);
     }
 }

@@ -1,62 +1,109 @@
 <script setup>
-import { ref, watch, computed, inject } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
+import api from '../axios';
 
 const props = defineProps({
   show: Boolean,
   item: Object // If null, we are in Create mode
 });
 
-const emit = defineEmits(['close', 'save']);
-const api = inject('$api') || (window.axios ? window.axios : null); // Fallback or injection
+const emit = defineEmits(['close', 'save', 'delete-photo']);
 
 const activeTab = ref('details');
 const fileInput = ref(null);
-const uploading = ref(false);
+const pendingPhotos = ref([]);
 const localPhotos = ref([]);
 
+// Lists for dropdowns
+const vendors = ref([]);
+const customers = ref([]);
+
+// Form state
 const formData = ref({
-  title: '',
-  sku: '',
-  description: '',
-  status: 'in_stock',
-  quantity_on_hand: 0,
-  reorder_point: 0,
-  unit: 'each',
-  location: '',
-  tags: '' // Will parse to array on save
+    title: '',
+    sku: '',
+    status: 'in_stock',
+    quantity_on_hand: 0,
+    reorder_point: 0,
+    unit: '',
+    location: '',
+    tags: '',
+    description: ''
 });
 
 const isEdit = computed(() => !!props.item);
 
-// Watch for item changes to populate form
-watch(() => props.item, (newItem) => {
-  if (newItem) {
-    formData.value = {
-      ...newItem,
-      tags: newItem.tags ? (Array.isArray(newItem.tags) ? newItem.tags.join(', ') : newItem.tags) : ''
-    };
-    localPhotos.value = newItem.photos || [];
-    activeTab.value = 'details';
-  } else {
-    // Reset for create
-    formData.value = {
-      title: '',
-      sku: '',
-      description: '',
-      status: 'in_stock',
-      quantity_on_hand: 0,
-      reorder_point: 0,
-      unit: 'each',
-      location: '',
-      tags: ''
-    };
-    localPhotos.value = [];
-    activeTab.value = 'details';
-  }
+// Purchase / Sale form state
+const showPurchaseForm = ref(false);
+const showSaleForm = ref(false);
+
+const newPurchase = ref({
+    vendor_id: '',
+    quantity_purchased: 1,
+    unit_cost: 0,
+    purchased_at: new Date().toISOString().split('T')[0],
+    notes: ''
+});
+
+const newSale = ref({
+    customer_id: '',
+    quantity_sold: 1,
+    unit_price: 0,
+    sold_at: new Date().toISOString().split('T')[0],
+    notes: ''
+});
+
+// Initialize form when item changes or on create
+watch(() => props.item, (it) => {
+    if (it) {
+        formData.value = {
+            title: it.title || '',
+            sku: it.sku || '',
+            status: it.status || 'in_stock',
+            quantity_on_hand: it.quantity_on_hand ?? 0,
+            reorder_point: it.reorder_point ?? 0,
+            unit: it.unit || '',
+            location: it.location || '',
+            tags: Array.isArray(it.tags) ? it.tags.join(', ') : (it.tags || ''),
+            description: it.description || ''
+        };
+        localPhotos.value = (it.photos || []).map(p => ({ id: p.id, url: p.url, caption: p.caption || '' }));
+    } else {
+        formData.value = {
+            title: '',
+            sku: '',
+            status: 'in_stock',
+            quantity_on_hand: 0,
+            reorder_point: 0,
+            unit: '',
+            location: '',
+            tags: '',
+            description: ''
+        };
+        localPhotos.value = [];
+        pendingPhotos.value = [];
+        showPurchaseForm.value = false;
+        showSaleForm.value = false;
+    }
 }, { immediate: true });
 
+// Load vendors/customers when needed
+watch(activeTab, async (tab) => {
+    if (tab === 'purchases') {
+        try {
+            const res = await api.get('/vendors?per_page=100');
+            vendors.value = res.data.data;
+        } catch (e) { console.error('Failed to load vendors', e); }
+    }
+    if (tab === 'sales') {
+        try {
+            const res = await api.get('/customers?per_page=100');
+            customers.value = res.data.data;
+        } catch (e) { console.error('Failed to load customers', e); }
+    }
+});
+
 const save = () => {
-  // Simple validation
   if (!formData.value.title) return alert('Title is required');
 
   const payload = {
@@ -64,69 +111,75 @@ const save = () => {
     tags: formData.value.tags ? formData.value.tags.split(',').map(t => t.trim()).filter(t => t) : []
   };
   
-  emit('save', payload);
+  emit('save', payload, pendingPhotos.value.map(p => p.file));
 };
 
-const triggerUpload = () => {
-    fileInput.value.click();
-};
+const triggerUpload = () => fileInput.value.click();
 
-const handleFileUpload = async (event) => {
+const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
+    const previewUrl = URL.createObjectURL(file);
+    pendingPhotos.value.push({ file, url: previewUrl });
+    event.target.value = null;
+};
 
-    if (!isEdit.value) return alert('Please save the item before adding photos.');
+const deletePhoto = (photo) => {
+    if (photo.id) {
+        emit('delete-photo', photo.id);
+        localPhotos.value = localPhotos.value.filter(p => p.id !== photo.id);
+    } else {
+        pendingPhotos.value = pendingPhotos.value.filter(p => p.url !== photo.url);
+    }
+};
 
-    const uploadData = new FormData();
-    uploadData.append('photo', file);
-
-    uploading.value = true;
+// Transaction Logic
+const savePurchase = async () => {
+    if (!newPurchase.value.vendor_id) return alert('Vendor is required');
     try {
-        // Use the injected API or global axios
-        // Note: In setup script, we might need to import api directly if inject doesn't work as expected in all contexts
-        // But let's assume api is available via props or global
-        // For now, let's use the one from main.js if possible, or we need to import it here.
-        // Better to import it directly to be safe.
-        const { default: api } = await import('../axios');
-        
-        const response = await api.post(`/inventory-items/${props.item.id}/photos`, uploadData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
+        await api.post('/purchases', {
+            inventory_item_id: props.item.id,
+            ...newPurchase.value
         });
-        
-        localPhotos.value.push(response.data);
-    } catch (error) {
-        alert('Failed to upload photo: ' + (error.response?.data?.message || error.message));
-    } finally {
-        uploading.value = false;
-        event.target.value = null; // Reset input
+        alert('Purchase recorded. Item quantity updated.');
+        showPurchaseForm.value = false;
+        // Reset form
+        newPurchase.value = {
+            vendor_id: '',
+            quantity_purchased: 1,
+            unit_cost: 0,
+            purchased_at: new Date().toISOString().split('T')[0],
+            notes: ''
+        };
+        emit('save', null, []); 
+    } catch (e) {
+        alert('Failed to save purchase: ' + (e.response?.data?.message || e.message));
     }
 };
 
-const deletePhoto = async (photoId) => {
-    if (!confirm('Are you sure you want to delete this photo?')) return;
-    
+const saveSale = async () => {
+    if (!newSale.value.customer_id) return alert('Customer is required');
     try {
-        const { default: api } = await import('../axios');
-        await api.delete(`/photos/${photoId}`);
-        localPhotos.value = localPhotos.value.filter(p => p.id !== photoId);
-    } catch (error) {
-        alert('Failed to delete photo');
+        await api.post('/sales', {
+            inventory_item_id: props.item.id,
+            ...newSale.value
+        });
+        alert('Sale recorded. Item quantity updated.');
+        showSaleForm.value = false;
+        newSale.value = {
+            customer_id: '',
+            quantity_sold: 1,
+            unit_price: 0,
+            sold_at: new Date().toISOString().split('T')[0],
+            notes: ''
+        };
+        emit('save', null, []); // Trigger refresh
+    } catch (e) {
+        alert('Failed to save sale: ' + (e.response?.data?.message || e.message));
     }
 };
 
-const getPhotoUrl = (path) => {
-    // If path starts with http, return it
-    if (path.startsWith('http')) return path;
-    // Otherwise assume it's relative to backend root/storage
-    // In Laravel, Storage::url() returns /storage/path
-    // We need to prepend the backend URL if it's not on the same domain/port, 
-    // but here NGINX proxies /storage to backend?
-    // Wait, NGINX config doesn't have /storage location!
-    // We need to add /storage location to NGINX config.
-    return path;
-};
+const formatDate = (d) => new Date(d).toLocaleDateString();
 </script>
 
 <template>
@@ -137,20 +190,34 @@ const getPhotoUrl = (path) => {
         <button class="close-btn" @click="$emit('close')">&times;</button>
       </div>
 
-      <div class="tabs">
-          <button 
-            :class="['tab-btn', { active: activeTab === 'details' }]" 
-            @click="activeTab = 'details'"
-          >Details</button>
-          <button 
-            :class="['tab-btn', { active: activeTab === 'photos' }]" 
-            @click="activeTab = 'photos'"
-            :disabled="!isEdit"
-            title="Save item first to add photos"
-          >Photos</button>
+      <!-- Navigation Tabs -->
+      <div class="tabs" v-if="isEdit">
+          <button :class="['tab-btn', { active: activeTab === 'details' }]" @click="activeTab = 'details'">Details & Photos</button>
+          <button :class="['tab-btn', { active: activeTab === 'purchases' }]" @click="activeTab = 'purchases'">Purchases</button>
+          <button :class="['tab-btn', { active: activeTab === 'sales' }]" @click="activeTab = 'sales'">Sales</button>
       </div>
-      
+
+      <!-- Details & Photos Tab -->
       <div class="modal-body" v-if="activeTab === 'details'">
+        <div class="photos-section">
+            <label>Photos</label>
+            <div class="photos-toolbar">
+                <input type="file" ref="fileInput" @change="handleFileUpload" accept="image/*" hidden />
+                <button class="btn-primary" @click="triggerUpload">+ Add Photo</button>
+            </div>
+            <div class="photos-grid">
+                <div v-if="localPhotos.length === 0 && pendingPhotos.length === 0" class="no-photos">No photos yet.</div>
+                <div v-for="photo in localPhotos" :key="photo.id" class="photo-card">
+                    <img :src="photo.url" :alt="photo.caption" />
+                    <button class="delete-photo-btn" @click="deletePhoto(photo)">&times;</button>
+                </div>
+                <div v-for="photo in pendingPhotos" :key="photo.url" class="photo-card pending">
+                    <img :src="photo.url" />
+                    <button class="delete-photo-btn" @click="deletePhoto(photo)">&times;</button>
+                </div>
+            </div>
+        </div>
+
         <div class="form-group">
           <label>Title *</label>
           <input v-model="formData.title" type="text" placeholder="Item Name" />
@@ -158,10 +225,9 @@ const getPhotoUrl = (path) => {
         
         <div class="form-row">
             <div class="form-group">
-            <label>SKU (Auto-generated if empty)</label>
+            <label>SKU</label>
             <input v-model="formData.sku" type="text" placeholder="INV-..." />
             </div>
-            
             <div class="form-group">
             <label>Status</label>
             <select v-model="formData.status">
@@ -176,7 +242,8 @@ const getPhotoUrl = (path) => {
         <div class="form-row">
              <div class="form-group">
                 <label>Quantity On Hand</label>
-                <input v-model.number="formData.quantity_on_hand" type="number" min="0" />
+                <input v-model.number="formData.quantity_on_hand" type="number" disabled title="Adjust via Purchases/Sales" />
+                <small v-if="isEdit">Auto-calculated from ledger</small>
             </div>
              <div class="form-group">
                 <label>Reorder Point</label>
@@ -184,41 +251,139 @@ const getPhotoUrl = (path) => {
             </div>
              <div class="form-group">
                 <label>Unit</label>
-                <input v-model="formData.unit" type="text" placeholder="each, lbs, kg" />
+                <input v-model="formData.unit" type="text" />
             </div>
         </div>
 
         <div class="form-group">
           <label>Location</label>
-          <input v-model="formData.location" type="text" placeholder="e.g. Aisle 3, Shelf B" />
+          <input v-model="formData.location" type="text" />
         </div>
 
         <div class="form-group">
-          <label>Tags (comma separated)</label>
-          <input v-model="formData.tags" type="text" placeholder="electronics, sale, fragile" />
+          <label>Tags</label>
+          <input v-model="formData.tags" type="text" />
         </div>
 
         <div class="form-group">
           <label>Description</label>
           <textarea v-model="formData.description" rows="3"></textarea>
         </div>
+
       </div>
 
-      <div class="modal-body" v-else-if="activeTab === 'photos'">
-          <div class="photos-toolbar">
-              <input type="file" ref="fileInput" @change="handleFileUpload" accept="image/*" hidden />
-              <button class="btn-primary" @click="triggerUpload" :disabled="uploading">
-                  {{ uploading ? 'Uploading...' : '+ Add Photo' }}
+      <!-- Purchases Tab -->
+      <div class="modal-body" v-else-if="activeTab === 'purchases'">
+          <div class="ledger-header">
+              <h3>Purchase History</h3>
+              <button class="btn-primary" @click="showPurchaseForm = !showPurchaseForm">
+                  {{ showPurchaseForm ? 'Cancel' : '+ Record Purchase' }}
               </button>
           </div>
-          
-          <div class="photos-grid">
-              <div v-if="localPhotos.length === 0" class="no-photos">No photos yet.</div>
-              <div v-for="photo in localPhotos" :key="photo.id" class="photo-card">
-                  <img :src="photo.url" :alt="photo.caption" />
-                  <button class="delete-photo-btn" @click="deletePhoto(photo.id)">&times;</button>
+
+          <div v-if="showPurchaseForm" class="ledger-form">
+              <div class="form-group">
+                  <label>Vendor</label>
+                  <select v-model="newPurchase.vendor_id">
+                      <option disabled value="">Select Vendor</option>
+                      <option v-for="v in vendors" :key="v.id" :value="v.id">{{ v.name }}</option>
+                  </select>
               </div>
+              <div class="form-row">
+                  <div class="form-group">
+                      <label>Date</label>
+                      <input v-model="newPurchase.purchased_at" type="date" />
+                  </div>
+                  <div class="form-group">
+                      <label>Qty</label>
+                      <input v-model.number="newPurchase.quantity_purchased" type="number" min="1" />
+                  </div>
+                  <div class="form-group">
+                      <label>Unit Cost</label>
+                      <input v-model.number="newPurchase.unit_cost" type="number" min="0" step="0.01" />
+                  </div>
+              </div>
+              <button class="btn-save" @click="savePurchase">Save Purchase</button>
           </div>
+
+          <table class="ledger-table">
+              <thead>
+                  <tr>
+                      <th>Date</th>
+                      <th>Vendor</th>
+                      <th>Qty</th>
+                      <th>Cost</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  <tr v-for="p in item.purchases" :key="p.id">
+                      <td>{{ formatDate(p.purchased_at) }}</td>
+                      <td>{{ p.vendor ? p.vendor.name : 'Unknown' }}</td>
+                      <td>{{ p.quantity_purchased }}</td>
+                      <td>{{ p.unit_cost }}</td>
+                  </tr>
+                  <tr v-if="!item.purchases || item.purchases.length === 0">
+                      <td colspan="4" class="text-center">No purchases recorded.</td>
+                  </tr>
+              </tbody>
+          </table>
+      </div>
+
+      <!-- Sales Tab -->
+      <div class="modal-body" v-else-if="activeTab === 'sales'">
+          <div class="ledger-header">
+              <h3>Sales History</h3>
+              <button class="btn-primary" @click="showSaleForm = !showSaleForm">
+                  {{ showSaleForm ? 'Cancel' : '+ Record Sale' }}
+              </button>
+          </div>
+
+          <div v-if="showSaleForm" class="ledger-form">
+              <div class="form-group">
+                  <label>Customer</label>
+                  <select v-model="newSale.customer_id">
+                      <option disabled value="">Select Customer</option>
+                      <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
+                  </select>
+              </div>
+              <div class="form-row">
+                  <div class="form-group">
+                      <label>Date</label>
+                      <input v-model="newSale.sold_at" type="date" />
+                  </div>
+                  <div class="form-group">
+                      <label>Qty</label>
+                      <input v-model.number="newSale.quantity_sold" type="number" min="1" />
+                  </div>
+                  <div class="form-group">
+                      <label>Price</label>
+                      <input v-model.number="newSale.unit_price" type="number" min="0" step="0.01" />
+                  </div>
+              </div>
+              <button class="btn-save" @click="saveSale">Save Sale</button>
+          </div>
+
+          <table class="ledger-table">
+              <thead>
+                  <tr>
+                      <th>Date</th>
+                      <th>Customer</th>
+                      <th>Qty</th>
+                      <th>Price</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  <tr v-for="s in item.sales" :key="s.id">
+                      <td>{{ formatDate(s.sold_at) }}</td>
+                      <td>{{ s.customer ? s.customer.name : 'Unknown' }}</td>
+                      <td>{{ s.quantity_sold }}</td>
+                      <td>{{ s.unit_price }}</td>
+                  </tr>
+                  <tr v-if="!item.sales || item.sales.length === 0">
+                      <td colspan="4" class="text-center">No sales recorded.</td>
+                  </tr>
+              </tbody>
+          </table>
       </div>
       
       <div class="modal-footer">
@@ -230,20 +395,13 @@ const getPhotoUrl = (path) => {
 </template>
 
 <style scoped>
-/* Previous styles remain... */
+/* Main Structure */
 .modal-backdrop {
-  background-color:rgba(0, 0, 0, 0.5); /* No color, fully transparent but still blocks interaction */
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  /* background: rgba(0, 0, 0, 0.5); removed for no color */
-  border: 1px solid black; /* To show it exists? or just let it be transparent but blocking? */
-  /* If transparent, users won't see it covering. Let's add a border or outline if needed, but strictly "no color" means transparent bg. 
-     However, modal needs some visibility. I'll leave background blank (transparent) or maybe a simple border. 
-     Actually, let's keep it transparent but blocking. 
-  */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -252,20 +410,26 @@ const getPhotoUrl = (path) => {
 
 .modal-content {
   border: 1px solid black;
-  background-color:white;
+  background: white;
   padding: 20px;
   border-radius: 8px;
-  width: 600px;
-  max-width: 90%;
+  width: 700px; /* Wider for tables */
+  max-width: 95%;
   max-height: 90vh;
   overflow-y: auto;
 }
 
-.modal-header {
+/* Headers */
+.modal-header, .ledger-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+}
+
+.ledger-header {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
 }
 
 .close-btn {
@@ -275,6 +439,28 @@ const getPhotoUrl = (path) => {
   cursor: pointer;
 }
 
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid black;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.tab-btn.active {
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+/* Forms */
 .modal-body {
     display: flex;
     flex-direction: column;
@@ -299,9 +485,31 @@ const getPhotoUrl = (path) => {
 
 input, select, textarea {
     padding: 8px;
+    border: 1px solid black;
     border-radius: 4px;
 }
 
+/* Ledger Tables */
+.ledger-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.ledger-table th, .ledger-table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.ledger-form {
+    padding: 15px;
+    border: 1px solid black;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+/* Buttons */
 .modal-footer {
   margin-top: 20px;
   display: flex;
@@ -309,57 +517,20 @@ input, select, textarea {
   gap: 10px;
 }
 
-.btn-cancel {
+.btn-cancel, .btn-save, .btn-primary {
   border: 1px solid black;
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
 }
 
 .btn-save {
-  border: 1px solid black;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-/* New Tabs Styles */
-.tabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-}
-
-.tab-btn {
-    background: none;
-    border: 1px solid black;
-    padding: 8px 16px;
-    cursor: pointer;
-    font-weight: 600;
-    border-radius: 4px;
-}
-
-.tab-btn.active {
     font-weight: bold;
-    text-decoration: underline;
 }
 
-.tab-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Photos Styles */
+/* Photos */
 .photos-toolbar {
     margin-bottom: 15px;
-}
-
-.btn-primary {
-    border: 1px solid black;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
 }
 
 .photos-grid {
@@ -394,6 +565,7 @@ input, select, textarea {
     display: flex;
     align-items: center;
     justify-content: center;
+    background: white; /* Ensure visibility */
 }
 
 .no-photos {

@@ -10,5 +10,8 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Configure PHP for file uploads
+COPY docker/laravel/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+
 CMD ["php-fpm"]
 

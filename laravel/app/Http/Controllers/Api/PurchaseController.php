@@ -21,10 +21,6 @@ class PurchaseController extends Controller
             $query->where('inventory_item_id', $request->inventory_item_id);
         }
 
-        if ($request->has('vendor_id')) {
-            $query->where('vendor_id', $request->vendor_id);
-        }
-
         return $query->latest()->paginate(25);
     }
 
@@ -71,10 +67,6 @@ class PurchaseController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        // For V1, complex quantity adjustments on update are tricky. 
-        // We will allow updating non-quantity fields freely.
-        // If quantity changes, we need to adjust inventory difference.
-
         $purchase = Purchase::findOrFail($id);
 
         $validated = $request->validate([

@@ -13,14 +13,16 @@ const logout = async () => {
 
 <template>
   <div class="layout">
-    <aside class="sidebar">
+    <header class="navbar">
       <div class="logo">Thriftly</div>
-      <nav>
+      
+      <nav class="nav-links">
         <router-link to="/inventory" class="nav-item">Inventory</router-link>
         <router-link to="/customers" class="nav-item">Customers</router-link>
         <router-link to="/vendors" class="nav-item">Vendors</router-link>
         <router-link to="/profile" class="nav-item">Profile</router-link>
       </nav>
+
       <div class="user-info">
         <div v-if="authStore.user" class="user-details">
             <img :src="authStore.user.avatar" alt="Avatar" class="avatar" v-if="authStore.user.avatar">
@@ -28,7 +30,8 @@ const logout = async () => {
         </div>
         <button @click="logout" class="logout-btn">Logout</button>
       </div>
-    </aside>
+    </header>
+    
     <main class="content">
       <slot></slot>
     </main>
@@ -38,63 +41,63 @@ const logout = async () => {
 <style scoped>
 .layout {
   display: flex;
+  flex-direction: column;
   height: 100vh;
 }
 
-.sidebar {
-  width: 250px;
+.navbar {
   display: flex;
-  flex-direction: column;
-  padding: 20px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #ddd; /* Light separator */
 }
 
 .logo {
   font-size: 24px;
   font-weight: bold;
-  margin-bottom: 40px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
 }
 
 .nav-item {
   text-decoration: none;
-  padding: 10px;
-  margin-bottom: 5px;
+  padding: 5px 10px;
   border-radius: 4px;
-  transition: background 0.2s;
 }
 
-.nav-item:hover, .nav-item.router-link-active {
-  /* No color on hover */
+.nav-item.router-link-active {
+  font-weight: bold;
+  text-decoration: underline;
 }
 
 .user-info {
-  margin-top: auto;
-  padding-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .user-details {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  gap: 10px;
 }
 
 .avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  margin-right: 10px;
 }
 
 .logout-btn {
   background: none;
-  border: 1px solid black; /* Keep a border structure but default color */
+  border: 1px solid black;
   padding: 5px 10px;
   border-radius: 4px;
   cursor: pointer;
-  width: 100%;
-}
-
-.logout-btn:hover {
-  /* No hover color */
 }
 
 .content {

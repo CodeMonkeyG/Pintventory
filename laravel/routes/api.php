@@ -7,12 +7,13 @@ use App\Http\Controllers\Api\VendorController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\PurchaseController;
 use App\Http\Controllers\Api\SaleController;
+use App\Http\Controllers\Api\UserController; // Import UserController
 use App\Http\Controllers\Auth\GoogleController; // Import GoogleController
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
+    Route::get('/user', [UserController::class, 'show']);
+    Route::put('/user', [UserController::class, 'update']);
+    Route::apiResource('users', UserController::class)->only(['index', 'show']); // Admin routes, limited for now
 
     Route::apiResource('inventory-items', InventoryItemController::class);
     Route::post('inventory-items/{inventory_item}/photos', [App\Http\Controllers\Api\PhotoController::class, 'store']);

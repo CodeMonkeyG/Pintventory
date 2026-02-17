@@ -3,8 +3,9 @@ import { onMounted, ref, computed } from 'vue';
 import { useInventoryStore } from '../stores/inventory';
 import MainLayout from '../layouts/MainLayout.vue';
 import InventoryModal from '../components/InventoryModal.vue';
+import api from '../axios';
 
-const store = useInventoryStore();
+const store = useInventoryStore(); // Using the inventory store
 const showModal = ref(false);
 const selectedItem = ref(null);
 
@@ -37,22 +38,70 @@ const openCreateModal = () => {
   showModal.value = true;
 };
 
-const openEditModal = (item) => {
-  selectedItem.value = { ...item }; // Copy to avoid direct mutation
-  showModal.value = true;
+const openEditModal = async (item) => {
+  // Fetch full item details including ledger
+  try {
+      // Direct API call to get full details including purchases/sales
+      const response = await api.get(`/inventory-items/${item.id}`);
+      selectedItem.value = response.data;
+      showModal.value = true;
+  } catch (error) {
+      console.error("Failed to fetch item details", error);
+      alert("Could not load item details.");
+  }
 };
 
-const handleSave = async (itemData) => {
+const handleSave = async (itemData, newPhotos = []) => {
+  // If itemData is null, it means a transaction was saved inside the modal, just refresh list
+  if (!itemData) {
+      // Refresh the currently selected item to show new quantity/ledger in the open modal?
+      // The modal emits 'save' with null when a purchase/sale is made.
+      // We should probably re-fetch the selected item to update the modal's view of quantity and ledger.
+      if (selectedItem.value) {
+          await openEditModal(selectedItem.value); // Re-fetch and update selectedItem
+      }
+      await store.fetchItems(store.pagination.current_page); // Refresh background list
+      return;
+  }
+
   try {
+    let itemId;
     if (selectedItem.value) {
-      await store.updateItem(selectedItem.value.id, itemData);
+      itemId = selectedItem.value.id;
+      await store.updateItem(itemId, itemData);
     } else {
-      await store.createItem(itemData);
+      const newItem = await store.createItem(itemData);
+      itemId = newItem.id;
     }
+
+    // Upload new photos if any
+    if (newPhotos.length > 0) {
+        for (const file of newPhotos) {
+            await store.uploadPhoto(itemId, file);
+        }
+        await store.fetchItems(store.pagination.current_page);
+    }
+
     showModal.value = false;
   } catch (error) {
     alert('Failed to save item: ' + (error.response?.data?.message || error.message));
   }
+};
+
+const handleDeletePhoto = async (photoId) => {
+    if (!confirm('Are you sure you want to delete this photo?')) return;
+    try {
+        await store.deletePhoto(photoId);
+        // Refresh items
+        await store.fetchItems(store.pagination.current_page);
+        
+        // Also update selectedItem photos if modal is open (so UI updates)
+        if (selectedItem.value && selectedItem.value.photos) {
+             selectedItem.value.photos = selectedItem.value.photos.filter(p => p.id !== photoId);
+        }
+    } catch (error) {
+        alert('Failed to delete photo: ' + (error.response?.data?.message || error.message));
+    }
 };
 </script>
 
@@ -145,7 +194,8 @@ const handleSave = async (itemData) => {
       :show="showModal" 
       :item="selectedItem" 
       @close="showModal = false" 
-      @save="handleSave" 
+      @save="handleSave"
+      @delete-photo="handleDeletePhoto"
     />
   </MainLayout>
 </template>

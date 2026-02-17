@@ -86,7 +86,7 @@ class InventoryItemController extends Controller
      */
     public function show(string $id)
     {
-        return InventoryItem::with(['photos', 'purchases', 'sales'])->findOrFail($id);
+        return InventoryItem::with(['photos', 'purchases.vendor', 'sales.customer'])->findOrFail($id);
     }
 
     /**

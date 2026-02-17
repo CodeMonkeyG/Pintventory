@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import api from '../axios';
 
-export const useInventoryStore = defineStore('inventory', {
+export const useVendorStore = defineStore('vendors', {
     state: () => ({
         items: [],
         pagination: {
@@ -13,9 +13,7 @@ export const useInventoryStore = defineStore('inventory', {
         loading: false,
         filters: {
             search: '',
-            status: '',
-            tag: '',
-            low_stock: false,
+            is_preferred: false,
             sort_by: 'updated_at',
             sort_dir: 'desc',
         }
@@ -28,10 +26,10 @@ export const useInventoryStore = defineStore('inventory', {
                     page,
                     per_page: this.pagination.per_page,
                     ...this.filters,
-                    low_stock: this.filters.low_stock ? 1 : 0
+                    is_preferred: this.filters.is_preferred ? 1 : 0
                 };
                 
-                const response = await api.get('/inventory-items', { params });
+                const response = await api.get('/vendors', { params });
                 
                 this.items = response.data.data;
                 this.pagination = {
@@ -41,14 +39,14 @@ export const useInventoryStore = defineStore('inventory', {
                     total: response.data.total,
                 };
             } catch (error) {
-                console.error('Failed to fetch inventory:', error);
+                console.error('Failed to fetch vendors:', error);
             } finally {
                 this.loading = false;
             }
         },
         async createItem(itemData) {
             try {
-                const response = await api.post('/inventory-items', itemData);
+                const response = await api.post('/vendors', itemData);
                 await this.fetchItems(this.pagination.current_page);
                 return response.data;
             } catch (error) {
@@ -57,7 +55,7 @@ export const useInventoryStore = defineStore('inventory', {
         },
         async updateItem(id, itemData) {
             try {
-                const response = await api.put(`/inventory-items/${id}`, itemData);
+                const response = await api.put(`/vendors/${id}`, itemData);
                 await this.fetchItems(this.pagination.current_page);
                 return response.data;
             } catch (error) {
@@ -66,34 +64,15 @@ export const useInventoryStore = defineStore('inventory', {
         },
         async deleteItem(id) {
             try {
-                await api.delete(`/inventory-items/${id}`);
+                await api.delete(`/vendors/${id}`);
                 await this.fetchItems(this.pagination.current_page);
-            } catch (error) {
-                throw error;
-            }
-        },
-        async uploadPhoto(itemId, file) {
-            try {
-                const formData = new FormData();
-                formData.append('photo', file);
-                const response = await api.post(`/inventory-items/${itemId}/photos`, formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
-                return response.data;
-            } catch (error) {
-                throw error;
-            }
-        },
-        async deletePhoto(photoId) {
-            try {
-                await api.delete(`/photos/${photoId}`);
             } catch (error) {
                 throw error;
             }
         },
         setFilter(key, value) {
             this.filters[key] = value;
-            this.fetchItems(1); // Reset to first page on filter change
+            this.fetchItems(1);
         }
     }
 });

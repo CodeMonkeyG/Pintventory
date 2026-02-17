@@ -20,6 +20,11 @@ const router = createRouter({
       name: 'inventory',
       component: InventoryView
     },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: () => import('../views/ProfileView.vue')
+    },
     // Placeholder routes for now
     {
       path: '/vendors',
