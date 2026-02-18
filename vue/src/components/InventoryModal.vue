@@ -31,7 +31,8 @@ const formData = ref({
     unit: '',
     location: '',
     tags: '',
-    description: ''
+    description: '',
+    evaluation: ''
 });
 
 // Gallery State
@@ -61,20 +62,21 @@ const newSale = ref({
 });
 
 // Initialize form when item changes or on create
-watch(() => props.item, (it) => {
-    if (it) {
+watch(() => props.item, (item) => {
+    if (item) {
         formData.value = {
-            title: it.title || '',
-            sku: it.sku || '',
-            status: it.status || 'in_stock',
-            quantity_on_hand: it.quantity_on_hand ?? 0,
-            reorder_point: it.reorder_point ?? 0,
-            unit: it.unit || '',
-            location: it.location || '',
-            tags: Array.isArray(it.tags) ? it.tags.join(', ') : (it.tags || ''),
-            description: it.description || ''
+            title: item.title || '',
+            sku: item.sku || '',
+            status: item.status || 'in_stock',
+            quantity_on_hand: item.quantity_on_hand ?? 0,
+            reorder_point: item.reorder_point ?? 0,
+            unit: item.unit || '',
+            location: item.location || '',
+            tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || ''),
+            description: item.description || '',
+            evaluation: item.evaluation || ''
         };
-        localPhotos.value = (it.photos || []).map(p => ({ id: p.id, url: p.url, caption: p.caption || '' }));
+        localPhotos.value = (item.photos || []).map(p => ({ id: p.id, url: p.url, caption: p.caption || '' }));
     } else {
         formData.value = {
             title: '',
@@ -85,7 +87,8 @@ watch(() => props.item, (it) => {
             unit: '',
             location: '',
             tags: '',
-            description: ''
+            description: '',
+            evaluation: ''
         };
         localPhotos.value = [];
         pendingPhotos.value = [];
@@ -128,6 +131,7 @@ const handleAutoFill = async (event) => {
         const data = response.data;
         if (data.title) formData.value.title = data.title;
         if (data.description) formData.value.description = data.description;
+        if (data.evaluation) formData.value.evaluation = data.evaluation;
         if (data.tags) {
             const newTags = Array.isArray(data.tags) ? data.tags.join(', ') : data.tags;
             formData.value.tags = newTags;
@@ -323,6 +327,11 @@ const formatDate = (d) => new Date(d).toLocaleDateString();
         <div class="form-group">
           <label>Tags</label>
           <input v-model="formData.tags" type="text" />
+        </div>
+
+        <div class="form-group">
+          <label>Evaluation</label>
+          <textarea v-model="formData.evaluation" rows="3"></textarea>
         </div>
 
         <div class="form-group">

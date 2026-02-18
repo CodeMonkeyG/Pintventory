@@ -32,7 +32,6 @@ class OpenAiDriver implements AiProvider
         if ($image instanceof UploadedFile) {
             $base64Image = base64_encode(file_get_contents($image->getRealPath()));
             $mimeType = $image->getMimeType();
-            $imageUrl = "data:{$mimeType};base64,{$base64Image}";
         } elseif (is_string($image)) {
             // $image is expected to be a public URL (e.g., Storage::url()).
             $imageUrl = $image;
