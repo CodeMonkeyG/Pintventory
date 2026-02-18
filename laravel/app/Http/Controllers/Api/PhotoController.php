@@ -46,6 +46,12 @@ class PhotoController extends Controller
     {
         $photo = Photo::findOrFail($id);
 
+        // Verify ownership via the parent inventory item
+        // The InventoryItem model has a UserScope, so retrieving it will fail/return null if not owned.
+        if (!$photo->inventoryItem) {
+             return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         // Delete file from storage
         if (Storage::disk('public')->exists($photo->storage_key)) {
             Storage::disk('public')->delete($photo->storage_key);

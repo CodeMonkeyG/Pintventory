@@ -51,7 +51,9 @@ class VendorController extends Controller
             'is_preferred' => 'boolean',
         ]);
 
-        $vendor = Vendor::create($validated);
+        $vendor = new Vendor($validated);
+        $vendor->created_by_user_id = $request->user()->id;
+        $vendor->save();
 
         return response()->json($vendor, 201);
     }

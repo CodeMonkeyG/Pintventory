@@ -20,7 +20,7 @@ return new class extends Migration
             $table->integer('quantity_on_hand')->default(0);
             $table->integer('reorder_point')->default(0);
             $table->string('unit')->default('each');
-            $table->json('tags')->nullable();
+            $table->jsonb('tags')->nullable();
             $table->string('location')->nullable();
             $table->foreignId('created_by_user_id')->constrained('users');
             $table->timestamp('archived_at')->nullable();

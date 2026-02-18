@@ -29,7 +29,7 @@ return new class extends Migration
             $table->index('updated_at');
             // For JSON tag search (if using PostgreSQL or MySQL 5.7+)
             if (DB::getDriverName() === 'pgsql') {
-                $table->rawIndex('(tags)', 'inventory_items_tags_idx');
+                DB::statement('CREATE INDEX inventory_items_tags_idx ON inventory_items USING GIN (tags);');
             }
         });
 
@@ -66,6 +66,9 @@ return new class extends Migration
             $table->dropIndex(['status']);
             $table->dropIndex(['created_at']);
             $table->dropIndex(['updated_at']);
+            if (DB::getDriverName() === 'pgsql') {
+                DB::statement('DROP INDEX inventory_items_tags_idx;');
+            }
         });
 
         Schema::table('customers', function (Blueprint $table) {

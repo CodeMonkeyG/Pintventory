@@ -46,7 +46,9 @@ class CustomerController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $customer = Customer::create($validated);
+        $customer = new Customer($validated);
+        $customer->created_by_user_id = $request->user()->id;
+        $customer->save();
 
         return response()->json($customer, 201);
     }
