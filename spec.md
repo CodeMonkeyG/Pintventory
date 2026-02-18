@@ -186,3 +186,42 @@ Security & Auth
 - Multi-user permissions: RBAC as above
 - Import / export: CSV export in v1; import later
 - Mobile-first: responsive UI; camera upload supported
+
+10. AI Function Endpoints
+
+- **Purpose:** expose a small set of server-side AI helper endpoints that behave like normal REST API routes but map to predetermined sequences of actions (including calls to external LLM/image services). These endpoints provide higher-level, repeatable automations (e.g., image identification, tagging, suggested title/description generation) while preserving auditability and RBAC.
+
+- **Design principles:**
+	- Routes are RESTful and protected by existing auth/CSRF/RBAC rules.
+	- Each route maps to a named server method that orchestrates one or more API calls (e.g., upload image to storage, call LLM with a prompt, persist results).
+	- Inputs and outputs are strictly typed JSON (or multipart for file uploads).
+	- Rate limiting and audit logging apply.
+
+- **Initial function: Image Identify (LLM-assisted)**
+	- **Route:** `POST /ai/image-identify`
+	- **Auth:** cookie session + CSRF; staff+ or admin only (configurable)
+	- **Payload:** multipart/form-data with `file` (image); optional JSON field `model` (string) and `options` (object)
+	- **Behavior:**
+		1. Server accepts the image and stores it temporarily (or uploads to configured storage).
+		2. Server sends the image (or a signed URL) to a configurable LLM/image-analysis pipeline (could be a multimodal LLM or an image-tagging service) with a deterministic prompt template.
+		3. The LLM returns structured output which the server normalizes to JSON: `{ title: string, description: string, tags?: string[], confidence?: number }`.
+		4. Server returns the normalized JSON to the client and optionally persists the suggested title/description as a `suggestion` record for review.
+	- **Response (200):**
+		{
+			"title": "Suggested title",
+			"description": "Suggested description",
+			"tags": ["tag1","tag2"],
+			"confidence": 0.87
+		}
+	- **Errors:** 4xx for bad input/auth; 5xx for external LLM failures with safe error messaging.
+
+- **Configuration & auditing:**
+	- Admins can configure which LLM provider/model to use and per-tenant limits.
+	- All AI function calls are logged (who invoked, timestamp, model used, input meta, and normalized output). Raw LLM responses may be stored separately with restricted access.
+
+- **Privacy & safety:**
+	- Uploaded images are retained only as required for processing and audit; retention policies configurable.
+	- Do not expose raw LLM system prompts to clients.
+
+- **Future expansions:**
+	- Additional endpoints for batch image tagging, suggested SKU generation, auto-categorization, or natural-language search enhancements.

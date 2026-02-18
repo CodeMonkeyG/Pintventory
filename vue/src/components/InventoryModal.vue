@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue';
 import api from '../axios';
+import PhotoGallery from './PhotoGallery.vue';
 
 const props = defineProps({
   show: Boolean,
@@ -11,6 +12,8 @@ const emit = defineEmits(['close', 'save', 'delete-photo']);
 
 const activeTab = ref('details');
 const fileInput = ref(null);
+const autoFillInput = ref(null);
+const isAnalyzing = ref(false);
 const pendingPhotos = ref([]);
 const localPhotos = ref([]);
 
@@ -30,6 +33,10 @@ const formData = ref({
     tags: '',
     description: ''
 });
+
+// Gallery State
+const showGallery = ref(false);
+const galleryIndex = ref(0);
 
 const isEdit = computed(() => !!props.item);
 
@@ -103,6 +110,43 @@ watch(activeTab, async (tab) => {
     }
 });
 
+const triggerAutoFill = () => autoFillInput.value.click();
+
+const handleAutoFill = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    isAnalyzing.value = true;
+    try {
+        const formDataPayload = new FormData();
+        formDataPayload.append('image', file);
+
+        const response = await api.post('/ai/image-identify', formDataPayload, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        const data = response.data;
+        if (data.title) formData.value.title = data.title;
+        if (data.description) formData.value.description = data.description;
+        if (data.tags) {
+            const newTags = Array.isArray(data.tags) ? data.tags.join(', ') : data.tags;
+            formData.value.tags = newTags;
+        }
+
+        // Also add to pending photos
+        const previewUrl = URL.createObjectURL(file);
+        pendingPhotos.value.push({ file, url: previewUrl });
+        
+        alert('Auto-fill complete!');
+    } catch (error) {
+        console.error(error);
+        alert('AI Analysis failed: ' + (error.response?.data?.message || error.message));
+    } finally {
+        isAnalyzing.value = false;
+        event.target.value = null;
+    }
+};
+
 const save = () => {
   if (!formData.value.title) return alert('Title is required');
 
@@ -131,6 +175,11 @@ const deletePhoto = (photo) => {
     } else {
         pendingPhotos.value = pendingPhotos.value.filter(p => p.url !== photo.url);
     }
+};
+
+const openGallery = (index) => {
+    galleryIndex.value = index;
+    showGallery.value = true;
 };
 
 // Transaction Logic
@@ -199,18 +248,29 @@ const formatDate = (d) => new Date(d).toLocaleDateString();
 
       <!-- Details & Photos Tab -->
       <div class="modal-body" v-if="activeTab === 'details'">
+        <div class="auto-fill-section">
+            <input type="file" ref="autoFillInput" @change="handleAutoFill" accept="image/*" capture="environment" hidden />
+            <button class="btn-ai" @click="triggerAutoFill" :disabled="isAnalyzing">
+                {{ isAnalyzing ? 'Analyzing Image...' : '✨ Auto-Fill from Image' }}
+            </button>
+        </div>
+
         <div class="photos-section">
             <label>Photos</label>
             <div class="photos-toolbar">
-                <input type="file" ref="fileInput" @change="handleFileUpload" accept="image/*" hidden />
+                <input type="file" ref="fileInput" @change="handleFileUpload" accept="image/*" capture="environment" hidden />
                 <button class="btn-primary" @click="triggerUpload">+ Add Photo</button>
             </div>
             <div class="photos-grid">
                 <div v-if="localPhotos.length === 0 && pendingPhotos.length === 0" class="no-photos">No photos yet.</div>
-                <div v-for="photo in localPhotos" :key="photo.id" class="photo-card">
-                    <img :src="photo.url" :alt="photo.caption" />
-                    <button class="delete-photo-btn" @click="deletePhoto(photo)">&times;</button>
+                
+                <!-- Existing Photos -->
+                <div v-for="(photo, index) in localPhotos" :key="photo.id" class="photo-card">
+                    <img :src="photo.url" :alt="photo.caption" @click="openGallery(index)" />
+                    <button class="delete-photo-btn" @click.stop="deletePhoto(photo)">&times;</button>
                 </div>
+                
+                <!-- Pending Photos -->
                 <div v-for="photo in pendingPhotos" :key="photo.url" class="photo-card pending">
                     <img :src="photo.url" />
                     <button class="delete-photo-btn" @click="deletePhoto(photo)">&times;</button>
@@ -391,6 +451,13 @@ const formatDate = (d) => new Date(d).toLocaleDateString();
         <button v-if="activeTab === 'details'" class="btn-save" @click="save">{{ isEdit ? 'Save Changes' : 'Create Item' }}</button>
       </div>
     </div>
+
+    <PhotoGallery
+      :show="showGallery"
+      :photos="localPhotos"
+      :startIndex="galleryIndex"
+      @close="showGallery = false"
+    />
   </div>
 </template>
 
@@ -551,6 +618,7 @@ input, select, textarea {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    cursor: pointer;
 }
 
 .delete-photo-btn {
@@ -573,5 +641,26 @@ input, select, textarea {
     grid-column: 1 / -1;
     text-align: center;
     padding: 20px;
+}
+
+/* AI Button */
+.btn-ai {
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #8e44ad;
+    color: #8e44ad;
+    font-weight: bold;
+    border-radius: 4px;
+    background: #fdf5ff;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-ai:disabled {
+    opacity: 0.7;
+    cursor: wait;
 }
 </style>

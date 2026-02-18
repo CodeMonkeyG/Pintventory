@@ -22,6 +22,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('customers', CustomerController::class);
     Route::apiResource('purchases', PurchaseController::class);
     Route::apiResource('sales', SaleController::class);
+    
+    // AI Routes
+    Route::post('/ai/image-identify', [App\Http\Controllers\Api\AiController::class, 'identify']);
 });
 
 // Google OAuth routes

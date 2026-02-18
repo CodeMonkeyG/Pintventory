@@ -21,12 +21,14 @@ class InventoryItem extends Model
         'unit',
         'tags',
         'location',
+        'evaluation',
         'created_by_user_id',
         'archived_at',
     ];
 
     protected $casts = [
         'tags' => 'array',
+        'evaluation' => 'array',
         'archived_at' => 'datetime',
         'quantity_on_hand' => 'integer',
         'reorder_point' => 'integer',
