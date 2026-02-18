@@ -53,4 +53,77 @@ class InventoryItem extends Model
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
     }
+
+    /**
+     * Scope: Search by title or SKU
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string|null  $search
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeSearch($query, $search)
+    {
+        if (!$search) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($search) {
+            $q->where('title', 'like', "%{$search}%")
+              ->orWhere('sku', 'like', "%{$search}%");
+        });
+    }
+
+    /**
+     * Scope: Filter by status
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string|null  $status
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeByStatus($query, $status)
+    {
+        if (!$status) {
+            return $query;
+        }
+
+        return $query->where('status', $status);
+    }
+
+    /**
+     * Scope: Filter by tag
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string|null  $tag
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeByTag($query, $tag)
+    {
+        if (!$tag) {
+            return $query;
+        }
+
+        return $query->whereJsonContains('tags', $tag);
+    }
+
+    /**
+     * Scope: Filter by low stock
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeLowStock($query)
+    {
+        return $query->whereColumn('quantity_on_hand', '<=', 'reorder_point');
+    }
+
+    /**
+     * Scope: Exclude archived items
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeNotArchived($query)
+    {
+        return $query->whereNull('archived_at');
+    }
 }

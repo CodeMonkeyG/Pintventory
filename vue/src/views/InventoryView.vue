@@ -1,10 +1,11 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { useInventoryStore } from '../stores/inventory';
 import MainLayout from '../layouts/MainLayout.vue';
 import InventoryModal from '../components/InventoryModal.vue';
 import PhotoGallery from '../components/PhotoGallery.vue';
 import api from '../axios';
+import { debounce } from '../utils/helpers';
 
 const store = useInventoryStore();
 const showModal = ref(false);
@@ -15,13 +16,20 @@ const showGallery = ref(false);
 const galleryPhotos = ref([]);
 const galleryIndex = ref(0);
 
+// Local search value for debouncing
+const searchInput = ref('');
+
 onMounted(() => {
   store.fetchItems();
 });
 
-const search = computed({
-  get: () => store.filters.search,
-  set: (val) => store.setFilter('search', val)
+// Debounced search handler
+const debouncedSearch = debounce((val) => {
+  store.setFilter('search', val);
+}, 300);
+
+watch(searchInput, (val) => {
+  debouncedSearch(val);
 });
 
 const statusFilter = computed({
@@ -46,8 +54,7 @@ const openCreateModal = () => {
 
 const openEditModal = async (item) => {
   try {
-      const response = await api.get(`/inventory-items/${item.id}`);
-      selectedItem.value = response.data;
+      selectedItem.value = await store.fetchItemDetail(item.id);
       showModal.value = true;
   } catch (error) {
       console.error("Failed to fetch item details", error);
@@ -119,7 +126,7 @@ const openGallery = (item, index = 0) => {
     </div>
 
     <div class="filters">
-      <input v-model="search" placeholder="Search by title or SKU..." class="search-input" />
+      <input v-model="searchInput" placeholder="Search by title or SKU..." class="search-input" />
       
       <select v-model="statusFilter" class="filter-select">
         <option value="">All Statuses</option>

@@ -10,37 +10,17 @@ class CustomerController extends Controller
 {
     /**
      * Display a listing of the resource.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Pagination\LengthAwarePaginator
      */
     public function index(Request $request)
     {
-        $query = Customer::query()->withCount('sales');
+        $query = Customer::query()->withRevenueMetrics();
 
         if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('contact_name', 'like', "%{$search}%");
-            });
+            $query->search($request->input('search'));
         }
-
-        // Add total revenue calculation (rough approximation for listing)
-        // ideally this should be a subquery for sorting
-        $query->withSum('sales as total_items_purchased', 'quantity_sold');
-        
-        // Use a subquery for total revenue
-        $query->withSum([
-            'sales as total_revenue' => function ($query) {
-                $query->select(\DB::raw('SUM(quantity_sold * unit_price)'));
-            }
-        ], 'sales_sum_total_revenue'); // Laravel weirdness with withSum on expression? 
-        // Actually simplest is withSum on a generated column or just get sales and sum in map.
-        // Let's use simple iteration for V1 or a subselect.
-        $query->selectSub(function ($q) {
-            $q->from('sales')
-              ->whereColumn('sales.customer_id', 'customers.id')
-              ->selectRaw('SUM(quantity_sold * unit_price)');
-        }, 'total_revenue');
 
         $sortField = $request->input('sort_by', 'updated_at');
         $sortDirection = $request->input('sort_dir', 'desc');
@@ -51,6 +31,9 @@ class CustomerController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
@@ -70,6 +53,9 @@ class CustomerController extends Controller
 
     /**
      * Display the specified resource.
+     *
+     * @param  string  $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function show(string $id)
     {
@@ -78,6 +64,10 @@ class CustomerController extends Controller
 
     /**
      * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string  $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, string $id)
     {
@@ -99,6 +89,9 @@ class CustomerController extends Controller
 
     /**
      * Remove the specified resource from storage.
+     *
+     * @param  string  $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(string $id)
     {

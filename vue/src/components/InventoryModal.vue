@@ -1,7 +1,13 @@
 <script setup>
-import { ref, watch, computed, onMounted } from 'vue';
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import api from '../axios';
 import PhotoGallery from './PhotoGallery.vue';
+import { revokeBlobUrls } from '../utils/helpers';
+import { useVendorStore } from '../stores/vendors';
+import { useCustomerStore } from '../stores/customers';
+
+const vendorStore = useVendorStore();
+const customerStore = useCustomerStore();
 
 const props = defineProps({
   show: Boolean,
@@ -100,16 +106,20 @@ watch(() => props.item, (item) => {
 // Load vendors/customers when needed
 watch(activeTab, async (tab) => {
     if (tab === 'purchases') {
-        try {
-            const res = await api.get('/vendors?per_page=100');
-            vendors.value = res.data.data;
-        } catch (e) { console.error('Failed to load vendors', e); }
+        vendors.value = await vendorStore.fetchAllVendors();
     }
     if (tab === 'sales') {
-        try {
-            const res = await api.get('/customers?per_page=100');
-            customers.value = res.data.data;
-        } catch (e) { console.error('Failed to load customers', e); }
+        customers.value = await customerStore.fetchAllCustomers();
+    }
+});
+
+// Cleanup blob URLs on modal close
+watch(() => props.show, (val) => {
+    if (!val) {
+        // Revoke pending photo blob URLs
+        const urls = pendingPhotos.value.map(p => p.url);
+        revokeBlobUrls(urls);
+        pendingPhotos.value = [];
     }
 });
 

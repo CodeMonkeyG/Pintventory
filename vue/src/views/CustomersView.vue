@@ -1,21 +1,29 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { useCustomerStore } from '../stores/customers';
 import MainLayout from '../layouts/MainLayout.vue';
 import CustomerModal from '../components/CustomerModal.vue';
 import api from '../axios';
+import { debounce } from '../utils/helpers';
 
 const store = useCustomerStore();
 const showModal = ref(false);
 const selectedItem = ref(null);
 
+// Local search value for debouncing
+const searchInput = ref('');
+
 onMounted(() => {
   store.fetchItems();
 });
 
-const search = computed({
-  get: () => store.filters.search,
-  set: (val) => store.setFilter('search', val)
+// Debounced search handler
+const debouncedSearch = debounce((val) => {
+  store.setFilter('search', val);
+}, 300);
+
+watch(searchInput, (val) => {
+  debouncedSearch(val);
 });
 
 const formatDate = (dateString) => {
@@ -73,7 +81,7 @@ const handleDelete = async (id) => {
     </div>
 
     <div class="filters">
-      <input v-model="search" placeholder="Search customers..." class="search-input" />
+      <input v-model="searchInput" placeholder="Search customers..." class="search-input" />
     </div>
 
     <div class="table-container">

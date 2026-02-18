@@ -10,32 +10,21 @@ class VendorController extends Controller
 {
     /**
      * Display a listing of the resource.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Pagination\LengthAwarePaginator
      */
     public function index(Request $request)
     {
-        $query = Vendor::query()->withCount('purchases');
+        $query = Vendor::query()->withSpendMetrics();
 
         if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('contact_name', 'like', "%{$search}%");
-            });
+            $query->search($request->input('search'));
         }
 
         if ($request->boolean('is_preferred')) {
             $query->where('is_preferred', true);
         }
-
-        $query->withSum('purchases as total_items_purchased', 'quantity_purchased');
-        
-        // Calculate total spend
-        $query->selectSub(function ($q) {
-            $q->from('purchases')
-              ->whereColumn('purchases.vendor_id', 'vendors.id')
-              ->selectRaw('SUM(quantity_purchased * unit_cost)');
-        }, 'total_spend');
 
         $sortField = $request->input('sort_by', 'updated_at');
         $sortDirection = $request->input('sort_dir', 'desc');
@@ -46,6 +35,9 @@ class VendorController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
@@ -66,6 +58,9 @@ class VendorController extends Controller
 
     /**
      * Display the specified resource.
+     *
+     * @param  string  $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function show(string $id)
     {
@@ -74,6 +69,10 @@ class VendorController extends Controller
 
     /**
      * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string  $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, string $id)
     {
@@ -96,6 +95,9 @@ class VendorController extends Controller
 
     /**
      * Remove the specified resource from storage.
+     *
+     * @param  string  $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(string $id)
     {

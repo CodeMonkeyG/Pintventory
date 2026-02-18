@@ -1,21 +1,29 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { useVendorStore } from '../stores/vendors';
 import MainLayout from '../layouts/MainLayout.vue';
 import VendorModal from '../components/VendorModal.vue';
 import api from '../axios';
+import { debounce } from '../utils/helpers';
 
 const store = useVendorStore();
 const showModal = ref(false);
 const selectedItem = ref(null);
 
+// Local search value for debouncing
+const searchInput = ref('');
+
 onMounted(() => {
   store.fetchItems();
 });
 
-const search = computed({
-  get: () => store.filters.search,
-  set: (val) => store.setFilter('search', val)
+// Debounced search handler
+const debouncedSearch = debounce((val) => {
+  store.setFilter('search', val);
+}, 300);
+
+watch(searchInput, (val) => {
+  debouncedSearch(val);
 });
 
 const isPreferredFilter = computed({
@@ -79,7 +87,7 @@ const handleDelete = async (id) => {
 
     <div class="filters">
       <div class="filter-row">
-          <input v-model="search" placeholder="Search vendors..." class="search-input" />
+          <input v-model="searchInput" placeholder="Search vendors..." class="search-input" />
           <div class="checkbox-group">
               <input type="checkbox" id="prefFilter" v-model="isPreferredFilter" />
               <label for="prefFilter">Preferred Only</label>

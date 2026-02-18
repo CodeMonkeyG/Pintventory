@@ -11,40 +11,22 @@ class InventoryItemController extends Controller
 {
     /**
      * Display a listing of the resource.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Pagination\LengthAwarePaginator
      */
     public function index(Request $request)
     {
-        $query = InventoryItem::query()->with(['photos']);
+        $query = InventoryItem::query()
+            ->with(['photos'])
+            ->search($request->input('search'))
+            ->byStatus($request->input('status'))
+            ->byTag($request->input('tag'));
 
-        // Search (title or SKU)
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%");
-            });
-        }
-
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        // Filter by tag (JSON array search)
-        if ($request->filled('tag')) {
-            // Postgres JSONB containment operator usually works best with raw query or specialized method
-            // For simple JSON array: whereJsonContains
-            $query->whereJsonContains('tags', $request->input('tag'));
-        }
-        
-        // Filter by Low Stock
         if ($request->boolean('low_stock')) {
-            $query->whereColumn('quantity_on_hand', '<=', 'reorder_point');
+            $query->lowStock();
         }
 
-        // Vendors/Customers filters would require joining purchases/sales, skip for now or implement if needed
-
-        // Sort
         $sortField = $request->input('sort_by', 'updated_at');
         $sortDirection = $request->input('sort_dir', 'desc');
         $query->orderBy($sortField, $sortDirection);
@@ -54,6 +36,9 @@ class InventoryItemController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
@@ -84,6 +69,9 @@ class InventoryItemController extends Controller
 
     /**
      * Display the specified resource.
+     *
+     * @param  string  $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function show(string $id)
     {
@@ -92,6 +80,10 @@ class InventoryItemController extends Controller
 
     /**
      * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string  $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, string $id)
     {
