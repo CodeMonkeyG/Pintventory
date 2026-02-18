@@ -13,7 +13,7 @@ class VendorController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Vendor::query();
+        $query = Vendor::query()->withCount('purchases');
 
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -27,6 +27,15 @@ class VendorController extends Controller
         if ($request->boolean('is_preferred')) {
             $query->where('is_preferred', true);
         }
+
+        $query->withSum('purchases as total_items_purchased', 'quantity_purchased');
+        
+        // Calculate total spend
+        $query->selectSub(function ($q) {
+            $q->from('purchases')
+              ->whereColumn('purchases.vendor_id', 'vendors.id')
+              ->selectRaw('SUM(quantity_purchased * unit_cost)');
+        }, 'total_spend');
 
         $sortField = $request->input('sort_by', 'updated_at');
         $sortDirection = $request->input('sort_dir', 'desc');
@@ -60,7 +69,7 @@ class VendorController extends Controller
      */
     public function show(string $id)
     {
-        return Vendor::findOrFail($id);
+        return Vendor::with(['purchases.inventoryItem'])->findOrFail($id);
     }
 
     /**

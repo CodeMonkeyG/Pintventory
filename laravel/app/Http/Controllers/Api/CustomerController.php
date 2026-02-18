@@ -13,7 +13,7 @@ class CustomerController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Customer::query();
+        $query = Customer::query()->withCount('sales');
 
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -23,6 +23,24 @@ class CustomerController extends Controller
                   ->orWhere('contact_name', 'like', "%{$search}%");
             });
         }
+
+        // Add total revenue calculation (rough approximation for listing)
+        // ideally this should be a subquery for sorting
+        $query->withSum('sales as total_items_purchased', 'quantity_sold');
+        
+        // Use a subquery for total revenue
+        $query->withSum([
+            'sales as total_revenue' => function ($query) {
+                $query->select(\DB::raw('SUM(quantity_sold * unit_price)'));
+            }
+        ], 'sales_sum_total_revenue'); // Laravel weirdness with withSum on expression? 
+        // Actually simplest is withSum on a generated column or just get sales and sum in map.
+        // Let's use simple iteration for V1 or a subselect.
+        $query->selectSub(function ($q) {
+            $q->from('sales')
+              ->whereColumn('sales.customer_id', 'customers.id')
+              ->selectRaw('SUM(quantity_sold * unit_price)');
+        }, 'total_revenue');
 
         $sortField = $request->input('sort_by', 'updated_at');
         $sortDirection = $request->input('sort_dir', 'desc');
@@ -55,7 +73,7 @@ class CustomerController extends Controller
      */
     public function show(string $id)
     {
-        return Customer::findOrFail($id);
+        return Customer::with(['sales.inventoryItem'])->findOrFail($id);
     }
 
     /**

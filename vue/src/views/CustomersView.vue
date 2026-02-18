@@ -3,6 +3,7 @@ import { onMounted, ref, computed } from 'vue';
 import { useCustomerStore } from '../stores/customers';
 import MainLayout from '../layouts/MainLayout.vue';
 import CustomerModal from '../components/CustomerModal.vue';
+import api from '../axios';
 
 const store = useCustomerStore();
 const showModal = ref(false);
@@ -22,14 +23,23 @@ const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString();
 };
 
+const formatCurrency = (val) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val || 0);
+};
+
 const openCreateModal = () => {
   selectedItem.value = null;
   showModal.value = true;
 };
 
-const openEditModal = (item) => {
-  selectedItem.value = { ...item };
-  showModal.value = true;
+const openEditModal = async (item) => {
+  try {
+      const response = await api.get(`/customers/${item.id}`);
+      selectedItem.value = response.data;
+      showModal.value = true;
+  } catch (error) {
+      alert("Failed to load customer details");
+  }
 };
 
 const handleSave = async (itemData) => {
@@ -72,8 +82,8 @@ const handleDelete = async (id) => {
           <tr>
             <th>Name</th>
             <th>Contact</th>
-            <th>Email</th>
-            <th>Phone</th>
+            <th>Items Bought</th>
+            <th>Total Revenue</th>
             <th>Updated</th>
             <th>Actions</th>
           </tr>
@@ -88,10 +98,11 @@ const handleDelete = async (id) => {
           <tr v-for="item in store.items" :key="item.id">
             <td>
               <div class="title">{{ item.name }}</div>
+              <div class="sub">{{ item.email }}</div>
             </td>
             <td>{{ item.contact_name || '-' }}</td>
-            <td>{{ item.email || '-' }}</td>
-            <td>{{ item.phone || '-' }}</td>
+            <td>{{ item.total_items_purchased || 0 }}</td>
+            <td>{{ formatCurrency(item.total_revenue) }}</td>
             <td>{{ formatDate(item.updated_at) }}</td>
             <td>
               <button class="action-btn" @click="openEditModal(item)">Edit</button>
@@ -182,6 +193,11 @@ const handleDelete = async (id) => {
   font-weight: 600;
 }
 
+.sub {
+    font-size: 0.85em;
+    color: #666; /* Use slight grey for subtext if allowed, else inherit */
+}
+
 .action-btn {
     border: none;
     background: none;
@@ -191,7 +207,6 @@ const handleDelete = async (id) => {
 }
 
 .action-btn.delete {
-    color: red; /* Keep slight color for delete action? Or strictly no color? Stick to no color per instruction but maybe bold */
     font-weight: bold;
     color: inherit;
 }

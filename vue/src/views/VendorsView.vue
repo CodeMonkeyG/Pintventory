@@ -3,6 +3,7 @@ import { onMounted, ref, computed } from 'vue';
 import { useVendorStore } from '../stores/vendors';
 import MainLayout from '../layouts/MainLayout.vue';
 import VendorModal from '../components/VendorModal.vue';
+import api from '../axios';
 
 const store = useVendorStore();
 const showModal = ref(false);
@@ -27,14 +28,23 @@ const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString();
 };
 
+const formatCurrency = (val) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val || 0);
+};
+
 const openCreateModal = () => {
   selectedItem.value = null;
   showModal.value = true;
 };
 
-const openEditModal = (item) => {
-  selectedItem.value = { ...item };
-  showModal.value = true;
+const openEditModal = async (item) => {
+  try {
+      const response = await api.get(`/vendors/${item.id}`);
+      selectedItem.value = response.data;
+      showModal.value = true;
+  } catch (error) {
+      alert("Failed to load vendor details");
+  }
 };
 
 const handleSave = async (itemData) => {
@@ -83,7 +93,8 @@ const handleDelete = async (id) => {
           <tr>
             <th>Name</th>
             <th>Contact</th>
-            <th>Email</th>
+            <th>Items Bought</th>
+            <th>Total Spend</th>
             <th>Preferred</th>
             <th>Updated</th>
             <th>Actions</th>
@@ -91,17 +102,19 @@ const handleDelete = async (id) => {
         </thead>
         <tbody>
           <tr v-if="store.loading">
-            <td colspan="6" class="text-center">Loading...</td>
+            <td colspan="7" class="text-center">Loading...</td>
           </tr>
           <tr v-else-if="store.items.length === 0">
-            <td colspan="6" class="text-center">No vendors found.</td>
+            <td colspan="7" class="text-center">No vendors found.</td>
           </tr>
           <tr v-for="item in store.items" :key="item.id">
             <td>
               <div class="title">{{ item.name }}</div>
+              <div class="sub">{{ item.email }}</div>
             </td>
             <td>{{ item.contact_name || '-' }}</td>
-            <td>{{ item.email || '-' }}</td>
+            <td>{{ item.total_items_purchased || 0 }}</td>
+            <td>{{ formatCurrency(item.total_spend) }}</td>
             <td>{{ item.is_preferred ? 'Yes' : 'No' }}</td>
             <td>{{ formatDate(item.updated_at) }}</td>
             <td>
@@ -205,6 +218,11 @@ const handleDelete = async (id) => {
   font-weight: 600;
 }
 
+.sub {
+    font-size: 0.85em;
+    color: #666;
+}
+
 .action-btn {
     border: none;
     background: none;
@@ -215,6 +233,7 @@ const handleDelete = async (id) => {
 
 .action-btn.delete {
     font-weight: bold;
+    color: inherit;
 }
 
 .pagination {

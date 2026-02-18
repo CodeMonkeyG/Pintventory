@@ -19,4 +19,9 @@ class Customer extends Model
         'address',
         'notes',
     ];
+
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
+    }
 }
