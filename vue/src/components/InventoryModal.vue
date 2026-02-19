@@ -11,10 +11,10 @@ const customerStore = useCustomerStore();
 
 const props = defineProps({
   show: Boolean,
-  item: Object // If null, we are in Create mode
+  item: Object
 });
 
-const emit = defineEmits(['close', 'save', 'delete-photo']);
+const emit = defineEmits(['close', 'save', 'delete-photo', 'update:show']);
 
 const activeTab = ref('details');
 const fileInput = ref(null);
@@ -23,11 +23,9 @@ const isAnalyzing = ref(false);
 const pendingPhotos = ref([]);
 const localPhotos = ref([]);
 
-// Lists for dropdowns
 const vendors = ref([]);
 const customers = ref([]);
 
-// Form state
 const formData = ref({
     title: '',
     sku: '',
@@ -41,13 +39,11 @@ const formData = ref({
     evaluation: ''
 });
 
-// Gallery State
 const showGallery = ref(false);
 const galleryIndex = ref(0);
 
 const isEdit = computed(() => !!props.item);
 
-// Purchase / Sale form state
 const showPurchaseForm = ref(false);
 const showSaleForm = ref(false);
 
@@ -67,7 +63,6 @@ const newSale = ref({
     notes: ''
 });
 
-// Initialize form when item changes or on create
 watch(() => props.item, (item) => {
     if (item) {
         formData.value = {
@@ -103,7 +98,6 @@ watch(() => props.item, (item) => {
     }
 }, { immediate: true });
 
-// Load vendors/customers when needed
 watch(activeTab, async (tab) => {
     if (tab === 'purchases') {
         vendors.value = await vendorStore.fetchAllVendors();
@@ -113,10 +107,8 @@ watch(activeTab, async (tab) => {
     }
 });
 
-// Cleanup blob URLs on modal close
 watch(() => props.show, (val) => {
     if (!val) {
-        // Revoke pending photo blob URLs
         const urls = pendingPhotos.value.map(p => p.url);
         revokeBlobUrls(urls);
         pendingPhotos.value = [];
@@ -147,7 +139,6 @@ const handleAutoFill = async (event) => {
             formData.value.tags = newTags;
         }
 
-        // Also add to pending photos
         const previewUrl = URL.createObjectURL(file);
         pendingPhotos.value.push({ file, url: previewUrl });
         
@@ -196,7 +187,6 @@ const openGallery = (index) => {
     showGallery.value = true;
 };
 
-// Transaction Logic
 const savePurchase = async () => {
     if (!newPurchase.value.vendor_id) return alert('Vendor is required');
     try {
@@ -206,7 +196,6 @@ const savePurchase = async () => {
         });
         alert('Purchase recorded. Item quantity updated.');
         showPurchaseForm.value = false;
-        // Reset form
         newPurchase.value = {
             vendor_id: '',
             quantity_purchased: 1,
@@ -236,450 +225,346 @@ const saveSale = async () => {
             sold_at: new Date().toISOString().split('T')[0],
             notes: ''
         };
-        emit('save', null, []); // Trigger refresh
+        emit('save', null, []);
     } catch (e) {
         alert('Failed to save sale: ' + (e.response?.data?.message || e.message));
     }
 };
 
 const formatDate = (d) => new Date(d).toLocaleDateString();
+
+const closeModal = () => {
+  $emit('close');
+  emit('update:show', false);
+};
 </script>
 
 <template>
-  <div v-if="show" class="modal-backdrop" @click.self="$emit('close')">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>{{ isEdit ? 'Edit Item' : 'Add New Item' }}</h2>
-        <button class="close-btn" @click="$emit('close')">&times;</button>
-      </div>
+  <v-dialog :modelValue="show" @update:modelValue="$emit('update:show', $event)" persistent max-width="800">
+    <v-card>
+      <v-card-title class="d-flex justify-space-between align-center">
+        <span>{{ isEdit ? 'Edit Item' : 'Add New Item' }}</span>
+        <v-btn icon @click="$emit('close')">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-card-title>
 
-      <!-- Navigation Tabs -->
-      <div class="tabs" v-if="isEdit">
-          <button :class="['tab-btn', { active: activeTab === 'details' }]" @click="activeTab = 'details'">Details & Photos</button>
-          <button :class="['tab-btn', { active: activeTab === 'purchases' }]" @click="activeTab = 'purchases'">Purchases</button>
-          <button :class="['tab-btn', { active: activeTab === 'sales' }]" @click="activeTab = 'sales'">Sales</button>
-      </div>
+      <v-tabs v-model="activeTab" v-if="isEdit">
+        <v-tab value="details">Details & Photos</v-tab>
+        <v-tab value="purchases">Purchases</v-tab>
+        <v-tab value="sales">Sales</v-tab>
+      </v-tabs>
 
-      <!-- Details & Photos Tab -->
-      <div class="modal-body" v-if="activeTab === 'details'">
-        <div class="auto-fill-section">
-            <input type="file" ref="autoFillInput" @change="handleAutoFill" accept="image/*" capture="environment" hidden />
-            <button class="btn-ai" @click="triggerAutoFill" :disabled="isAnalyzing">
-                {{ isAnalyzing ? 'Analyzing Image...' : '✨ Auto-Fill from Image' }}
-            </button>
-        </div>
+      <v-card-text class="pa-6">
+        <v-window v-model="activeTab">
+          <!-- Details & Photos Tab -->
+          <v-window-item value="details">
+            <div class="mb-4">
+              <v-btn
+                color="success"
+                @click="triggerAutoFill"
+                :disabled="isAnalyzing"
+                prepend-icon="mdi-sparkles"
+                class="mb-4"
+              >
+                {{ isAnalyzing ? 'Analyzing Image...' : 'Auto-Fill from Image' }}
+              </v-btn>
+              <input type="file" ref="autoFillInput" @change="handleAutoFill" accept="image/*" capture="environment" hidden />
+            </div>
 
-        <div class="photos-section">
-            <label>Photos</label>
-            <div class="photos-toolbar">
+            <v-card class="mb-4" variant="outlined">
+              <v-card-text>
+                <div class="d-flex justify-space-between align-center mb-3">
+                  <h3 class="text-h6">Photos</h3>
+                  <v-btn
+                    icon
+                    small
+                    color="primary"
+                    @click="triggerUpload"
+                  >
+                    <v-icon>mdi-plus</v-icon>
+                  </v-btn>
+                </div>
                 <input type="file" ref="fileInput" @change="handleFileUpload" accept="image/*" capture="environment" hidden />
-                <button class="btn-primary" @click="triggerUpload">+ Add Photo</button>
-            </div>
-            <div class="photos-grid">
-                <div v-if="localPhotos.length === 0 && pendingPhotos.length === 0" class="no-photos">No photos yet.</div>
-                
-                <!-- Existing Photos -->
-                <div v-for="(photo, index) in localPhotos" :key="photo.id" class="photo-card">
-                    <img :src="photo.url" :alt="photo.caption" @click="openGallery(index)" />
-                    <button class="delete-photo-btn" @click.stop="deletePhoto(photo)">&times;</button>
+
+                <div class="d-grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));">
+                  <div v-if="localPhotos.length === 0 && pendingPhotos.length === 0" class="text-center text-grey pa-4">
+                    No photos yet
+                  </div>
+                  
+                  <div
+                    v-for="(photo, index) in localPhotos"
+                    :key="photo.id"
+                    class="position-relative"
+                    style="aspect-ratio: 1; cursor: pointer; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;"
+                    @click="openGallery(index)"
+                  >
+                    <img :src="photo.url" :alt="photo.caption" style="width: 100%; height: 100%; object-fit: cover;" />
+                    <v-btn
+                      icon
+                      size="x-small"
+                      color="error"
+                      class="position-absolute"
+                      style="top: 4px; right: 4px;"
+                      @click.stop="deletePhoto(photo)"
+                    >
+                      <v-icon>mdi-close</v-icon>
+                    </v-btn>
+                  </div>
+                  
+                  <div
+                    v-for="photo in pendingPhotos"
+                    :key="photo.url"
+                    class="position-relative"
+                    style="aspect-ratio: 1; border: 2px dashed #bbb; border-radius: 4px; overflow: hidden;"
+                  >
+                    <img :src="photo.url" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7;" />
+                    <v-btn
+                      icon
+                      size="x-small"
+                      color="error"
+                      class="position-absolute"
+                      style="top: 4px; right: 4px;"
+                      @click="deletePhoto(photo)"
+                    >
+                      <v-icon>mdi-close</v-icon>
+                    </v-btn>
+                    <div class="position-absolute text-center" style="top: 50%; left: 50%; transform: translate(-50%, -50%); color: #999;">
+                      Pending
+                    </div>
+                  </div>
                 </div>
-                
-                <!-- Pending Photos -->
-                <div v-for="photo in pendingPhotos" :key="photo.url" class="photo-card pending">
-                    <img :src="photo.url" />
-                    <button class="delete-photo-btn" @click="deletePhoto(photo)">&times;</button>
+              </v-card-text>
+            </v-card>
+
+            <v-text-field
+              v-model="formData.title"
+              label="Title *"
+              placeholder="Item Name"
+              required
+            />
+            
+            <div class="d-flex gap-3">
+              <v-text-field
+                v-model="formData.sku"
+                label="SKU"
+                placeholder="INV-..."
+                class="flex-grow-1"
+              />
+              <v-select
+                v-model="formData.status"
+                label="Status"
+                :items="['in_stock', 'low_stock', 'out_of_stock', 'archived']"
+                class="flex-grow-1"
+              />
+            </div>
+
+            <div class="d-flex gap-3">
+              <v-text-field
+                v-model.number="formData.quantity_on_hand"
+                label="Quantity On Hand"
+                type="number"
+                disabled
+                class="flex-grow-1"
+              />
+              <v-text-field
+                v-model.number="formData.reorder_point"
+                label="Reorder Point"
+                type="number"
+                min="0"
+                class="flex-grow-1"
+              />
+              <v-text-field
+                v-model="formData.unit"
+                label="Unit"
+                class="flex-grow-1"
+              />
+            </div>
+
+            <v-text-field
+              v-model="formData.location"
+              label="Location"
+            />
+
+            <v-text-field
+              v-model="formData.tags"
+              label="Tags"
+              hint="Comma-separated"
+            />
+
+            <v-textarea
+              v-model="formData.evaluation"
+              label="Evaluation"
+              rows="2"
+            />
+
+            <v-textarea
+              v-model="formData.description"
+              label="Description"
+              rows="2"
+            />
+          </v-window-item>
+
+          <!-- Purchases Tab -->
+          <v-window-item value="purchases">
+            <div class="d-flex justify-space-between align-center mb-4">
+              <h3 class="text-h6">Purchase History</h3>
+              <v-btn
+                variant="outlined"
+                @click="showPurchaseForm = !showPurchaseForm"
+              >
+                {{ showPurchaseForm ? 'Cancel' : 'Record Purchase' }}
+              </v-btn>
+            </div>
+
+            <v-card v-if="showPurchaseForm" class="mb-4" variant="outlined">
+              <v-card-text>
+                <v-select
+                  v-model="newPurchase.vendor_id"
+                  label="Vendor *"
+                  :items="vendors"
+                  item-title="name"
+                  item-value="id"
+                  required
+                />
+                <div class="d-flex gap-3">
+                  <v-text-field
+                    v-model="newPurchase.purchased_at"
+                    label="Date"
+                    type="date"
+                    class="flex-grow-1"
+                  />
+                  <v-text-field
+                    v-model.number="newPurchase.quantity_purchased"
+                    label="Qty"
+                    type="number"
+                    min="1"
+                    class="flex-grow-1"
+                  />
+                  <v-text-field
+                    v-model.number="newPurchase.unit_cost"
+                    label="Unit Cost"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="flex-grow-1"
+                  />
                 </div>
-            </div>
-        </div>
+                <v-btn color="primary" @click="savePurchase">Save Purchase</v-btn>
+              </v-card-text>
+            </v-card>
 
-        <div class="form-group">
-          <label>Title *</label>
-          <input v-model="formData.title" type="text" placeholder="Item Name" />
-        </div>
-        
-        <div class="form-row">
-            <div class="form-group">
-            <label>SKU</label>
-            <input v-model="formData.sku" type="text" placeholder="INV-..." />
-            </div>
-            <div class="form-group">
-            <label>Status</label>
-            <select v-model="formData.status">
-                <option value="in_stock">In Stock</option>
-                <option value="low_stock">Low Stock</option>
-                <option value="out_of_stock">Out of Stock</option>
-                <option value="archived">Archived</option>
-            </select>
-            </div>
-        </div>
-
-        <div class="form-row">
-             <div class="form-group">
-                <label>Quantity On Hand</label>
-                <input v-model.number="formData.quantity_on_hand" type="number" disabled title="Adjust via Purchases/Sales" />
-                <small v-if="isEdit">Auto-calculated from ledger</small>
-            </div>
-             <div class="form-group">
-                <label>Reorder Point</label>
-                <input v-model.number="formData.reorder_point" type="number" min="0" />
-            </div>
-             <div class="form-group">
-                <label>Unit</label>
-                <input v-model="formData.unit" type="text" />
-            </div>
-        </div>
-
-        <div class="form-group">
-          <label>Location</label>
-          <input v-model="formData.location" type="text" />
-        </div>
-
-        <div class="form-group">
-          <label>Tags</label>
-          <input v-model="formData.tags" type="text" />
-        </div>
-
-        <div class="form-group">
-          <label>Evaluation</label>
-          <textarea v-model="formData.evaluation" rows="3"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label>Description</label>
-          <textarea v-model="formData.description" rows="3"></textarea>
-        </div>
-
-      </div>
-
-      <!-- Purchases Tab -->
-      <div class="modal-body" v-else-if="activeTab === 'purchases'">
-          <div class="ledger-header">
-              <h3>Purchase History</h3>
-              <button class="btn-primary" @click="showPurchaseForm = !showPurchaseForm">
-                  {{ showPurchaseForm ? 'Cancel' : '+ Record Purchase' }}
-              </button>
-          </div>
-
-          <div v-if="showPurchaseForm" class="ledger-form">
-              <div class="form-group">
-                  <label>Vendor</label>
-                  <select v-model="newPurchase.vendor_id">
-                      <option disabled value="">Select Vendor</option>
-                      <option v-for="v in vendors" :key="v.id" :value="v.id">{{ v.name }}</option>
-                  </select>
-              </div>
-              <div class="form-row">
-                  <div class="form-group">
-                      <label>Date</label>
-                      <input v-model="newPurchase.purchased_at" type="date" />
-                  </div>
-                  <div class="form-group">
-                      <label>Qty</label>
-                      <input v-model.number="newPurchase.quantity_purchased" type="number" min="1" />
-                  </div>
-                  <div class="form-group">
-                      <label>Unit Cost</label>
-                      <input v-model.number="newPurchase.unit_cost" type="number" min="0" step="0.01" />
-                  </div>
-              </div>
-              <button class="btn-save" @click="savePurchase">Save Purchase</button>
-          </div>
-
-          <table class="ledger-table">
+            <v-table v-if="item && item.purchases && item.purchases.length > 0">
               <thead>
-                  <tr>
-                      <th>Date</th>
-                      <th>Vendor</th>
-                      <th>Qty</th>
-                      <th>Cost</th>
-                  </tr>
+                <tr>
+                  <th>Date</th>
+                  <th>Vendor</th>
+                  <th>Qty</th>
+                  <th>Cost</th>
+                </tr>
               </thead>
               <tbody>
-                  <tr v-for="p in item.purchases" :key="p.id">
-                      <td>{{ formatDate(p.purchased_at) }}</td>
-                      <td>{{ p.vendor ? p.vendor.name : 'Unknown' }}</td>
-                      <td>{{ p.quantity_purchased }}</td>
-                      <td>{{ p.unit_cost }}</td>
-                  </tr>
-                  <tr v-if="!item.purchases || item.purchases.length === 0">
-                      <td colspan="4" class="text-center">No purchases recorded.</td>
-                  </tr>
+                <tr v-for="p in item.purchases" :key="p.id">
+                  <td>{{ formatDate(p.purchased_at) }}</td>
+                  <td>{{ p.vendor ? p.vendor.name : 'Unknown' }}</td>
+                  <td>{{ p.quantity_purchased }}</td>
+                  <td>{{ p.unit_cost }}</td>
+                </tr>
               </tbody>
-          </table>
-      </div>
+            </v-table>
+            <div v-else class="text-center py-6 text-grey">
+              No purchases recorded.
+            </div>
+          </v-window-item>
 
-      <!-- Sales Tab -->
-      <div class="modal-body" v-else-if="activeTab === 'sales'">
-          <div class="ledger-header">
-              <h3>Sales History</h3>
-              <button class="btn-primary" @click="showSaleForm = !showSaleForm">
-                  {{ showSaleForm ? 'Cancel' : '+ Record Sale' }}
-              </button>
-          </div>
+          <!-- Sales Tab -->
+          <v-window-item value="sales">
+            <div class="d-flex justify-space-between align-center mb-4">
+              <h3 class="text-h6">Sales History</h3>
+              <v-btn
+                variant="outlined"
+                @click="showSaleForm = !showSaleForm"
+              >
+                {{ showSaleForm ? 'Cancel' : 'Record Sale' }}
+              </v-btn>
+            </div>
 
-          <div v-if="showSaleForm" class="ledger-form">
-              <div class="form-group">
-                  <label>Customer</label>
-                  <select v-model="newSale.customer_id">
-                      <option disabled value="">Select Customer</option>
-                      <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
-                  </select>
-              </div>
-              <div class="form-row">
-                  <div class="form-group">
-                      <label>Date</label>
-                      <input v-model="newSale.sold_at" type="date" />
-                  </div>
-                  <div class="form-group">
-                      <label>Qty</label>
-                      <input v-model.number="newSale.quantity_sold" type="number" min="1" />
-                  </div>
-                  <div class="form-group">
-                      <label>Price</label>
-                      <input v-model.number="newSale.unit_price" type="number" min="0" step="0.01" />
-                  </div>
-              </div>
-              <button class="btn-save" @click="saveSale">Save Sale</button>
-          </div>
+            <v-card v-if="showSaleForm" class="mb-4" variant="outlined">
+              <v-card-text>
+                <v-select
+                  v-model="newSale.customer_id"
+                  label="Customer *"
+                  :items="customers"
+                  item-title="name"
+                  item-value="id"
+                  required
+                />
+                <div class="d-flex gap-3">
+                  <v-text-field
+                    v-model="newSale.sold_at"
+                    label="Date"
+                    type="date"
+                    class="flex-grow-1"
+                  />
+                  <v-text-field
+                    v-model.number="newSale.quantity_sold"
+                    label="Qty"
+                    type="number"
+                    min="1"
+                    class="flex-grow-1"
+                  />
+                  <v-text-field
+                    v-model.number="newSale.unit_price"
+                    label="Price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="flex-grow-1"
+                  />
+                </div>
+                <v-btn color="primary" @click="saveSale">Save Sale</v-btn>
+              </v-card-text>
+            </v-card>
 
-          <table class="ledger-table">
+            <v-table v-if="item && item.sales && item.sales.length > 0">
               <thead>
-                  <tr>
-                      <th>Date</th>
-                      <th>Customer</th>
-                      <th>Qty</th>
-                      <th>Price</th>
-                  </tr>
+                <tr>
+                  <th>Date</th>
+                  <th>Customer</th>
+                  <th>Qty</th>
+                  <th>Price</th>
+                </tr>
               </thead>
               <tbody>
-                  <tr v-for="s in item.sales" :key="s.id">
-                      <td>{{ formatDate(s.sold_at) }}</td>
-                      <td>{{ s.customer ? s.customer.name : 'Unknown' }}</td>
-                      <td>{{ s.quantity_sold }}</td>
-                      <td>{{ s.unit_price }}</td>
-                  </tr>
-                  <tr v-if="!item.sales || item.sales.length === 0">
-                      <td colspan="4" class="text-center">No sales recorded.</td>
-                  </tr>
+                <tr v-for="s in item.sales" :key="s.id">
+                  <td>{{ formatDate(s.sold_at) }}</td>
+                  <td>{{ s.customer ? s.customer.name : 'Unknown' }}</td>
+                  <td>{{ s.quantity_sold }}</td>
+                  <td>{{ s.unit_price }}</td>
+                </tr>
               </tbody>
-          </table>
-      </div>
+            </v-table>
+            <div v-else class="text-center py-6 text-grey">
+              No sales recorded.
+            </div>
+          </v-window-item>
+        </v-window>
+      </v-card-text>
       
-      <div class="modal-footer">
-        <button class="btn-cancel" @click="$emit('close')">Close</button>
-        <button v-if="activeTab === 'details'" class="btn-save" @click="save">{{ isEdit ? 'Save Changes' : 'Create Item' }}</button>
-      </div>
-    </div>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn @click="$emit('close')">Close</v-btn>
+        <v-btn v-if="activeTab === 'details'" color="primary" @click="save">
+          {{ isEdit ? 'Save Changes' : 'Create Item' }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 
-    <PhotoGallery
-      :show="showGallery"
-      :photos="localPhotos"
-      :startIndex="galleryIndex"
-      @close="showGallery = false"
-    />
-  </div>
+  <PhotoGallery
+    :show="showGallery"
+    :photos="localPhotos"
+    :startIndex="galleryIndex"
+    @close="showGallery = false"
+  />
 </template>
-
-<style scoped>
-/* Main Structure */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  border: 1px solid black;
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  width: 700px; /* Wider for tables */
-  max-width: 95%;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-/* Headers */
-.modal-header, .ledger-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.ledger-header {
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-}
-
-/* Tabs */
-.tabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
-    border-bottom: 1px solid black;
-}
-
-.tab-btn {
-    background: none;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    font-weight: 600;
-}
-
-.tab-btn.active {
-    font-weight: bold;
-    text-decoration: underline;
-}
-
-/* Forms */
-.modal-body {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    min-height: 300px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.form-row {
-    display: flex;
-    gap: 15px;
-}
-
-.form-row .form-group {
-    flex: 1;
-}
-
-input, select, textarea {
-    padding: 8px;
-    border: 1px solid black;
-    border-radius: 4px;
-}
-
-/* Ledger Tables */
-.ledger-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-.ledger-table th, .ledger-table td {
-    padding: 8px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-}
-
-.ledger-form {
-    padding: 15px;
-    border: 1px solid black;
-    margin-bottom: 20px;
-    border-radius: 4px;
-}
-
-/* Buttons */
-.modal-footer {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.btn-cancel, .btn-save, .btn-primary {
-  border: 1px solid black;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.btn-save {
-    font-weight: bold;
-}
-
-/* Photos */
-.photos-toolbar {
-    margin-bottom: 15px;
-}
-
-.photos-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-}
-
-.photo-card {
-    position: relative;
-    border: 1px solid black;
-    border-radius: 4px;
-    overflow: hidden;
-    aspect-ratio: 1;
-}
-
-.photo-card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    cursor: pointer;
-}
-
-.delete-photo-btn {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    border: 1px solid black;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: white; /* Ensure visibility */
-}
-
-.no-photos {
-    font-style: italic;
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 20px;
-}
-
-/* AI Button */
-.btn-ai {
-    width: 100%;
-    margin-bottom: 15px;
-    padding: 10px;
-    border: 1px solid #8e44ad;
-    color: #8e44ad;
-    font-weight: bold;
-    border-radius: 4px;
-    background: #fdf5ff;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.btn-ai:disabled {
-    opacity: 0.7;
-    cursor: wait;
-}
-</style>

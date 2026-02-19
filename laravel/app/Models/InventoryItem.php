@@ -32,7 +32,6 @@ class InventoryItem extends Model
 
     protected $casts = [
         'tags' => 'array',
-        'evaluation' => 'array',
         'archived_at' => 'datetime',
         'quantity_on_hand' => 'integer',
         'reorder_point' => 'integer',

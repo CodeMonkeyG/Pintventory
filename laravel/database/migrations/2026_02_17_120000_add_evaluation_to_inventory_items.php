@@ -14,8 +14,8 @@ return new class extends Migration
     public function up()
     {
         Schema::table('inventory_items', function (Blueprint $table) {
-            // JSON column to store AI evaluation/suggestion
-            $table->json('evaluation')->nullable()->after('description');
+            // Text column to store AI evaluation/suggestion
+            $table->text('evaluation')->nullable()->after('description');
         });
     }
 

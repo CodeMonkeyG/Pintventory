@@ -15,16 +15,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="app-container">
+  <v-app>
     <RouterView />
-  </div>
+  </v-app>
 </template>
-
-<style scoped>
-.app-container {
-  font-family: Arial, sans-serif;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
-</style>

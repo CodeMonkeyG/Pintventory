@@ -35,7 +35,6 @@ const populateForm = (user) => {
     profile.value.name = user.name;
     profile.value.email = user.email;
     profile.value.role = user.role;
-    // Merge defaults with saved preferences
     profile.value.preferences = { ...profile.value.preferences, ...(user.preferences || {}) };
 };
 
@@ -48,7 +47,6 @@ const saveProfile = async () => {
         preferences: profile.value.preferences
     });
     
-    // Update store
     authStore.user = response.data;
     message.value = 'Profile updated successfully.';
   } catch (error) {
@@ -62,146 +60,86 @@ const saveProfile = async () => {
 
 <template>
   <MainLayout>
-    <div class="header">
-      <h1>Profile</h1>
+    <div class="mb-6">
+      <h1 class="text-h3">Profile</h1>
     </div>
 
-    <div class="profile-container">
-        <div v-if="message" class="alert">{{ message }}</div>
+    <v-container max-width="600">
+      <v-alert v-if="message" :type="message.includes('success') ? 'success' : 'error'" class="mb-6">
+        {{ message }}
+      </v-alert>
 
-        <div class="form-section">
-            <h2>User Details</h2>
-            <div class="form-group">
-                <label>Name</label>
-                <input v-model="profile.name" type="text" />
-            </div>
-            <div class="form-group">
-                <label>Email</label>
-                <input :value="profile.email" type="text" disabled class="disabled" />
-            </div>
-            <div class="form-group">
-                <label>Role</label>
-                <input :value="profile.role" type="text" disabled class="disabled" />
-            </div>
-        </div>
+      <v-card class="mb-6">
+        <v-card-title class="text-h6">User Details</v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model="profile.name"
+            label="Name"
+          />
+          <v-text-field
+            :value="profile.email"
+            label="Email"
+            disabled
+            class="mt-3"
+          />
+          <v-text-field
+            :value="profile.role"
+            label="Role"
+            disabled
+            class="mt-3"
+          />
+        </v-card-text>
+      </v-card>
 
-        <div class="form-section">
-            <h2>Preferences</h2>
-            <div class="form-group">
-                <label>Currency (Default)</label>
-                <select v-model="profile.preferences.currency">
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="GBP">GBP (£)</option>
-                    <option value="CAD">GBP (C$)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Date Format</label>
-                <select v-model="profile.preferences.date_format">
-                    <option value="en-US">MM/DD/YYYY (US)</option>
-                    <option value="en-GB">DD/MM/YYYY (UK/EU)</option>
-                    <option value="iso">YYYY-MM-DD (ISO)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Tax Handling</label>
-                <select v-model="profile.preferences.tax_handling">
-                    <option value="exclude_tax">Exclude Tax (Add at checkout)</option>
-                    <option value="include_tax">Include Tax (VAT style)</option>
-                </select>
-            </div>
-            <div class="form-group checkbox-group">
-                <input type="checkbox" id="notify" v-model="profile.preferences.low_stock_notification" />
-                <label for="notify">Email me when stock is low</label>
-            </div>
-        </div>
+      <v-card class="mb-6">
+        <v-card-title class="text-h6">Preferences</v-card-title>
+        <v-card-text>
+          <v-select
+            v-model="profile.preferences.currency"
+            label="Currency (Default)"
+            :items="[
+              { value: 'USD', title: 'USD ($)' },
+              { value: 'EUR', title: 'EUR (€)' },
+              { value: 'GBP', title: 'GBP (£)' },
+              { value: 'CAD', title: 'CAD (C$)' }
+            ]"
+          />
+          <v-select
+            v-model="profile.preferences.date_format"
+            label="Date Format"
+            :items="[
+              { value: 'en-US', title: 'MM/DD/YYYY (US)' },
+              { value: 'en-GB', title: 'DD/MM/YYYY (UK/EU)' },
+              { value: 'iso', title: 'YYYY-MM-DD (ISO)' }
+            ]"
+            class="mt-3"
+          />
+          <v-select
+            v-model="profile.preferences.tax_handling"
+            label="Tax Handling"
+            :items="[
+              { value: 'exclude_tax', title: 'Exclude Tax (Add at checkout)' },
+              { value: 'include_tax', title: 'Include Tax (VAT style)' }
+            ]"
+            class="mt-3"
+          />
+          <v-checkbox
+            v-model="profile.preferences.low_stock_notification"
+            label="Email me when stock is low"
+            class="mt-3"
+          />
+        </v-card-text>
+      </v-card>
 
-        <button @click="saveProfile" :disabled="loading" class="btn-primary">
-            {{ loading ? 'Saving...' : 'Save Profile' }}
-        </button>
-    </div>
+      <v-btn
+        color="primary"
+        size="large"
+        @click="saveProfile"
+        :disabled="loading"
+        :loading="loading"
+      >
+        {{ loading ? 'Saving...' : 'Save Profile' }}
+      </v-btn>
+    </v-container>
   </MainLayout>
 </template>
-
-<style scoped>
-.header {
-  margin-bottom: 20px;
-}
-
-.profile-container {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    max-width: 600px;
-}
-
-.alert {
-    padding: 10px;
-    margin-bottom: 20px;
-    border: 1px solid black;
-    border-radius: 4px;
-}
-
-.form-section {
-    margin-bottom: 30px;
-}
-
-.form-section h2 {
-    font-size: 1.2em;
-    margin-bottom: 15px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 5px;
-}
-
-.form-group {
-    margin-bottom: 15px;
-    display: flex;
-    flex-direction: column;
-}
-
-.form-group label {
-    margin-bottom: 5px;
-    font-weight: 500;
-}
-
-input[type="text"], select {
-    padding: 8px;
-    border: 1px solid black;
-    border-radius: 4px;
-}
-
-input.disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    border-color: #ccc; /* Specifically visual cue for disabled */
-}
-
-.checkbox-group {
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
-}
-
-.checkbox-group input {
-    margin: 0;
-}
-
-.checkbox-group label {
-    margin: 0;
-    font-weight: normal;
-}
-
-.btn-primary {
-    padding: 10px 20px;
-    border: 1px solid black;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.btn-primary:disabled {
-    opacity: 0.5;
-}
-</style>

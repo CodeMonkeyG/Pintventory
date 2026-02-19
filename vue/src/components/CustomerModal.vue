@@ -3,10 +3,10 @@ import { ref, watch, computed } from 'vue';
 
 const props = defineProps({
   show: Boolean,
-  item: Object // If null, create mode
+  item: Object
 });
 
-const emit = defineEmits(['close', 'save']);
+const emit = defineEmits(['close', 'save', 'update:show']);
 
 const activeTab = ref('details');
 
@@ -47,200 +47,99 @@ const formatDate = (d) => new Date(d).toLocaleDateString();
 </script>
 
 <template>
-  <div v-if="show" class="modal-backdrop" @click.self="$emit('close')">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>{{ isEdit ? 'Edit Customer' : 'Add New Customer' }}</h2>
-        <button class="close-btn" @click="$emit('close')">&times;</button>
-      </div>
+  <v-dialog :modelValue="show" @update:modelValue="$emit('update:show', $event)" persistent max-width="600">
+    <v-card>
+      <v-card-title class="d-flex justify-space-between align-center">
+        <span>{{ isEdit ? 'Edit Customer' : 'Add New Customer' }}</span>
+        <v-btn icon @click="$emit('close')">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-card-title>
 
-      <div class="tabs" v-if="isEdit">
-          <button :class="['tab-btn', { active: activeTab === 'details' }]" @click="activeTab = 'details'">Details</button>
-          <button :class="['tab-btn', { active: activeTab === 'history' }]" @click="activeTab = 'history'">Purchase History</button>
-      </div>
+      <v-tabs v-model="activeTab" v-if="isEdit">
+        <v-tab value="details">Details</v-tab>
+        <v-tab value="history">Purchase History</v-tab>
+      </v-tabs>
       
-      <div class="modal-body" v-if="activeTab === 'details'">
-        <div class="form-group">
-          <label>Name *</label>
-          <input v-model="formData.name" type="text" placeholder="Company or Person Name" />
-        </div>
-        
-        <div class="form-row">
-            <div class="form-group">
-                <label>Contact Person</label>
-                <input v-model="formData.contact_name" type="text" />
+      <v-card-text>
+        <v-window v-model="activeTab">
+          <v-window-item value="details">
+            <div class="mt-4">
+              <v-text-field
+                v-model="formData.name"
+                label="Name *"
+                placeholder="Company or Person Name"
+                required
+              />
+              
+              <div class="d-flex gap-3">
+                <v-text-field
+                  v-model="formData.contact_name"
+                  label="Contact Person"
+                  class="flex-grow-1"
+                />
+                <v-text-field
+                  v-model="formData.email"
+                  label="Email"
+                  type="email"
+                  class="flex-grow-1"
+                />
+              </div>
+
+              <v-text-field
+                v-model="formData.phone"
+                label="Phone"
+              />
+
+              <v-textarea
+                v-model="formData.address"
+                label="Address"
+                rows="2"
+              />
+
+              <v-textarea
+                v-model="formData.notes"
+                label="Notes"
+                rows="3"
+              />
             </div>
-            <div class="form-group">
-                <label>Email</label>
-                <input v-model="formData.email" type="email" />
-            </div>
-        </div>
+          </v-window-item>
 
-        <div class="form-group">
-            <label>Phone</label>
-            <input v-model="formData.phone" type="text" />
-        </div>
-
-        <div class="form-group">
-          <label>Address</label>
-          <textarea v-model="formData.address" rows="2"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label>Notes</label>
-          <textarea v-model="formData.notes" rows="3"></textarea>
-        </div>
-      </div>
-
-      <div class="modal-body" v-else-if="activeTab === 'history'">
-          <table class="history-table">
-              <thead>
+          <v-window-item value="history">
+            <div class="mt-4">
+              <v-table v-if="item && item.sales && item.sales.length > 0">
+                <thead>
                   <tr>
-                      <th>Date</th>
-                      <th>Item</th>
-                      <th>Qty</th>
-                      <th>Total</th>
+                    <th>Date</th>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Total</th>
                   </tr>
-              </thead>
-              <tbody>
+                </thead>
+                <tbody>
                   <tr v-for="sale in item.sales" :key="sale.id">
-                      <td>{{ formatDate(sale.sold_at) }}</td>
-                      <td>{{ sale.inventory_item ? sale.inventory_item.title : 'Unknown' }}</td>
-                      <td>{{ sale.quantity_sold }}</td>
-                      <td>${{ (sale.quantity_sold * sale.unit_price).toFixed(2) }}</td>
+                    <td>{{ formatDate(sale.sold_at) }}</td>
+                    <td>{{ sale.inventory_item ? sale.inventory_item.title : 'Unknown' }}</td>
+                    <td>{{ sale.quantity_sold }}</td>
+                    <td>${{ (sale.quantity_sold * sale.unit_price).toFixed(2) }}</td>
                   </tr>
-                  <tr v-if="!item.sales || item.sales.length === 0">
-                      <td colspan="4" class="text-center">No purchases recorded.</td>
-                  </tr>
-              </tbody>
-          </table>
-      </div>
+                </tbody>
+              </v-table>
+              <div v-else class="text-center py-6">
+                No purchases recorded.
+              </div>
+            </div>
+          </v-window-item>
+        </v-window>
+      </v-card-text>
       
-      <div class="modal-footer">
-        <button class="btn-cancel" @click="$emit('close')">Close</button>
-        <button v-if="activeTab === 'details'" class="btn-save" @click="save">{{ isEdit ? 'Save Changes' : 'Create Customer' }}</button>
-      </div>
-    </div>
-  </div>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn @click="$emit('close')">Close</v-btn>
+        <v-btn v-if="activeTab === 'details'" color="primary" @click="save">
+          {{ isEdit ? 'Save Changes' : 'Create Customer' }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
-
-<style scoped>
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  border: 1px solid black;
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  width: 600px;
-  max-width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-}
-
-.modal-body {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    min-height: 300px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.form-row {
-    display: flex;
-    gap: 15px;
-}
-
-.form-row .form-group {
-    flex: 1;
-}
-
-input, select, textarea {
-    padding: 8px;
-    border: 1px solid black;
-    border-radius: 4px;
-}
-
-.modal-footer {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.btn-cancel {
-  border: 1px solid black;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.btn-save {
-  border: 1px solid black;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-/* Tabs */
-.tabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
-    border-bottom: 1px solid black;
-}
-
-.tab-btn {
-    background: none;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    font-weight: 600;
-}
-
-.tab-btn.active {
-    font-weight: bold;
-    text-decoration: underline;
-}
-
-.history-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.history-table th, .history-table td {
-    padding: 8px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-}
-</style>

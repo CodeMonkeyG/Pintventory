@@ -80,23 +80,36 @@ const handleDelete = async (id) => {
 
 <template>
   <MainLayout>
-    <div class="header">
-      <h1>Vendors</h1>
-      <button class="btn-primary" @click="openCreateModal">Add Vendor</button>
+    <div class="d-flex justify-space-between align-center mb-6">
+      <h1 class="text-h3">Vendors</h1>
+      <v-btn color="primary" @click="openCreateModal">
+        <v-icon left>mdi-plus</v-icon>
+        Add Vendor
+      </v-btn>
     </div>
 
-    <div class="filters">
-      <div class="filter-row">
-          <input v-model="searchInput" placeholder="Search vendors..." class="search-input" />
-          <div class="checkbox-group">
-              <input type="checkbox" id="prefFilter" v-model="isPreferredFilter" />
-              <label for="prefFilter">Preferred Only</label>
-          </div>
-      </div>
-    </div>
+    <v-card class="mb-6">
+      <v-card-text>
+        <div class="d-flex gap-3 align-center">
+          <v-text-field
+            v-model="searchInput"
+            placeholder="Search vendors..."
+            prepend-icon="mdi-magnify"
+            hide-details
+            class="flex-grow-1"
+          />
+          <v-checkbox
+            v-model="isPreferredFilter"
+            label="Preferred Only"
+            hide-details
+            class="flex-grow-0"
+          />
+        </div>
+      </v-card-text>
+    </v-card>
 
-    <div class="table-container">
-      <table class="data-table">
+    <v-card>
+      <v-table>
         <thead>
           <tr>
             <th>Name</th>
@@ -110,40 +123,57 @@ const handleDelete = async (id) => {
         </thead>
         <tbody>
           <tr v-if="store.loading">
-            <td colspan="7" class="text-center">Loading...</td>
+            <td colspan="7" class="text-center py-8">
+              <v-progress-circular indeterminate />
+            </td>
           </tr>
           <tr v-else-if="store.items.length === 0">
-            <td colspan="7" class="text-center">No vendors found.</td>
+            <td colspan="7" class="text-center py-8 text-grey">
+              No vendors found.
+            </td>
           </tr>
           <tr v-for="item in store.items" :key="item.id">
             <td>
-              <div class="title">{{ item.name }}</div>
-              <div class="sub">{{ item.email }}</div>
+              <div class="font-weight-600">{{ item.name }}</div>
+              <div class="text-caption text-grey">{{ item.email }}</div>
             </td>
             <td>{{ item.contact_name || '-' }}</td>
             <td>{{ item.total_items_purchased || 0 }}</td>
             <td>{{ formatCurrency(item.total_spend) }}</td>
-            <td>{{ item.is_preferred ? 'Yes' : 'No' }}</td>
+            <td>
+              <v-icon v-if="item.is_preferred" color="success" size="small">mdi-check</v-icon>
+              <span v-else class="text-grey">—</span>
+            </td>
             <td>{{ formatDate(item.updated_at) }}</td>
             <td>
-              <button class="action-btn" @click="openEditModal(item)">Edit</button>
-              <button class="action-btn delete" @click="handleDelete(item.id)">Delete</button>
+              <v-btn size="x-small" variant="text" @click="openEditModal(item)" class="mr-2">
+                Edit
+              </v-btn>
+              <v-btn size="x-small" variant="text" color="error" @click="handleDelete(item.id)">
+                Delete
+              </v-btn>
             </td>
           </tr>
         </tbody>
-      </table>
-    </div>
+      </v-table>
+    </v-card>
     
-    <div class="pagination" v-if="store.pagination.last_page > 1">
-        <button 
-            :disabled="store.pagination.current_page === 1" 
-            @click="store.fetchItems(store.pagination.current_page - 1)"
-        >Previous</button>
-        <span>Page {{ store.pagination.current_page }} of {{ store.pagination.last_page }}</span>
-        <button 
-            :disabled="store.pagination.current_page === store.pagination.last_page" 
-            @click="store.fetchItems(store.pagination.current_page + 1)"
-        >Next</button>
+    <div v-if="store.pagination.last_page > 1" class="d-flex justify-center align-center gap-4 mt-6">
+      <v-btn
+        :disabled="store.pagination.current_page === 1"
+        @click="store.fetchItems(store.pagination.current_page - 1)"
+      >
+        Previous
+      </v-btn>
+      <span class="text-body2">
+        Page {{ store.pagination.current_page }} of {{ store.pagination.last_page }}
+      </span>
+      <v-btn
+        :disabled="store.pagination.current_page === store.pagination.last_page"
+        @click="store.fetchItems(store.pagination.current_page + 1)"
+      >
+        Next
+      </v-btn>
     </div>
 
     <VendorModal 
@@ -154,111 +184,3 @@ const handleDelete = async (id) => {
     />
   </MainLayout>
 </template>
-
-<style scoped>
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.btn-primary {
-  border: 1px solid black;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.filters {
-  margin-bottom: 20px;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  background: white;
-}
-
-.filter-row {
-    display: flex;
-    gap: 20px;
-    align-items: center;
-}
-
-.search-input {
-  flex: 1;
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid black;
-}
-
-.checkbox-group {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-}
-
-.table-container {
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  overflow: hidden;
-  background: white;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.data-table th, .data-table td {
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.data-table th {
-  font-weight: 600;
-  font-size: 0.9em;
-  text-transform: uppercase;
-}
-
-.title {
-  font-weight: 600;
-}
-
-.sub {
-    font-size: 0.85em;
-    color: #666;
-}
-
-.action-btn {
-    border: none;
-    background: none;
-    cursor: pointer;
-    text-decoration: underline;
-    margin-right: 10px;
-}
-
-.action-btn.delete {
-    font-weight: bold;
-    color: inherit;
-}
-
-.pagination {
-    margin-top: 20px;
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    align-items: center;
-}
-
-.pagination button {
-    padding: 5px 10px;
-    cursor: pointer;
-}
-
-.pagination button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-</style>

@@ -46,7 +46,7 @@ class InventoryItemController extends Controller
             'title' => 'required|string|max:255',
             'sku' => 'nullable|string|max:255', // Unique check recommended but let's stick to basics
             'description' => 'nullable|string',
-            'evaluation' => 'nullable|array',
+            'evaluation' => 'nullable|string',
             'status' => 'in:in_stock,low_stock,out_of_stock,archived',
             'quantity_on_hand' => 'integer|min:0',
             'reorder_point' => 'integer|min:0',

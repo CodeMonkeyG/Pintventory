@@ -120,30 +120,47 @@ const openGallery = (item, index = 0) => {
 
 <template>
   <MainLayout>
-    <div class="header">
-      <h1>Inventory</h1>
-      <button class="btn-primary" @click="openCreateModal">Add Item</button>
+    <div class="d-flex justify-space-between align-center mb-6">
+      <h1 class="text-h3">Inventory</h1>
+      <v-btn color="primary" @click="openCreateModal">
+        <v-icon left>mdi-plus</v-icon>
+        Add Item
+      </v-btn>
     </div>
 
-    <div class="filters">
-      <input v-model="searchInput" placeholder="Search by title or SKU..." class="search-input" />
-      
-      <select v-model="statusFilter" class="filter-select">
-        <option value="">All Statuses</option>
-        <option value="in_stock">In Stock</option>
-        <option value="low_stock">Low Stock</option>
-        <option value="out_of_stock">Out of Stock</option>
-        <option value="archived">Archived</option>
-      </select>
-      
-      <label class="checkbox-label">
-        <input type="checkbox" v-model="lowStockFilter" />
-        Low Stock Only
-      </label>
-    </div>
+    <v-card class="mb-6">
+      <v-card-text>
+        <div class="d-flex gap-3 align-center flex-wrap">
+          <v-text-field
+            v-model="searchInput"
+            placeholder="Search by title or SKU..."
+            prepend-icon="mdi-magnify"
+            hide-details
+            class="flex-grow-1"
+            max-width="400"
+          />
+          
+          <v-select
+            v-model="statusFilter"
+            label="Status"
+            :items="['', 'in_stock', 'low_stock', 'out_of_stock', 'archived']"
+            hide-details
+            max-width="150"
+            class="flex-grow-1"
+          />
+          
+          <v-checkbox
+            v-model="lowStockFilter"
+            label="Low Stock Only"
+            hide-details
+            class="flex-grow-1"
+          />
+        </div>
+      </v-card-text>
+    </v-card>
 
-    <div class="table-container">
-      <table class="inventory-table">
+    <v-card>
+      <v-table>
         <thead>
           <tr>
             <th>Photo</th>
@@ -156,48 +173,67 @@ const openGallery = (item, index = 0) => {
         </thead>
         <tbody>
           <tr v-if="store.loading">
-            <td colspan="6" class="text-center">Loading...</td>
+            <td colspan="6" class="text-center py-8">
+              <v-progress-circular indeterminate />
+            </td>
           </tr>
           <tr v-else-if="store.items.length === 0">
-            <td colspan="6" class="text-center">No items found.</td>
+            <td colspan="6" class="text-center py-8 text-grey">
+              No items found.
+            </td>
           </tr>
           <tr v-for="item in store.items" :key="item.id">
             <td>
-                <div v-if="item.photos && item.photos.length > 0" class="photo-thumbnail" @click="openGallery(item)">
-                    <img :src="item.photos[0].url" alt="Item Photo" />
-                    <div v-if="item.photos.length > 1" class="photo-count">+{{ item.photos.length - 1 }}</div>
+              <div v-if="item.photos && item.photos.length > 0" class="position-relative" style="cursor: pointer; width: 40px; height: 40px; overflow: hidden; border-radius: 4px;" @click="openGallery(item)">
+                <img :src="item.photos[0].url" alt="Item Photo" style="width: 100%; height: 100%; object-fit: cover;" />
+                <div v-if="item.photos.length > 1" class="position-absolute text-white text-caption" style="bottom: 0; right: 0; background: rgba(0,0,0,0.6); padding: 1px 3px; border-top-left-radius: 3px;">
+                  +{{ item.photos.length - 1 }}
                 </div>
-                <div v-else class="photo-placeholder"></div> 
+              </div>
+              <div v-else style="width: 40px; height: 40px; border-radius: 4px; border: 1px dashed #999;" />
             </td>
             <td>
-              <div class="title">{{ item.title }}</div>
-              <div class="sku">{{ item.sku }}</div>
+              <div class="font-weight-600">{{ item.title }}</div>
+              <div class="text-caption text-grey">{{ item.sku }}</div>
             </td>
             <td>
-              <span :class="['status-badge', item.status]">{{ item.status.replace('_', ' ') }}</span>
+              <v-chip
+                :color="item.status === 'in_stock' ? 'success' : item.status === 'low_stock' ? 'warning' : 'error'"
+                size="small"
+              >
+                {{ item.status.replace('_', ' ') }}
+              </v-chip>
             </td>
             <td>
-                {{ item.quantity_on_hand }} {{ item.unit }}
+              {{ item.quantity_on_hand }} {{ item.unit }}
             </td>
             <td>{{ formatDate(item.updated_at) }}</td>
             <td>
-              <button class="action-btn" @click="openEditModal(item)">Edit</button>
+              <v-btn size="x-small" variant="text" @click="openEditModal(item)">
+                Edit
+              </v-btn>
             </td>
           </tr>
         </tbody>
-      </table>
-    </div>
+      </v-table>
+    </v-card>
     
-    <div class="pagination" v-if="store.pagination.last_page > 1">
-        <button 
-            :disabled="store.pagination.current_page === 1" 
-            @click="store.fetchItems(store.pagination.current_page - 1)"
-        >Previous</button>
-        <span>Page {{ store.pagination.current_page }} of {{ store.pagination.last_page }}</span>
-        <button 
-            :disabled="store.pagination.current_page === store.pagination.last_page" 
-            @click="store.fetchItems(store.pagination.current_page + 1)"
-        >Next</button>
+    <div v-if="store.pagination.last_page > 1" class="d-flex justify-center align-center gap-4 mt-6">
+      <v-btn
+        :disabled="store.pagination.current_page === 1"
+        @click="store.fetchItems(store.pagination.current_page - 1)"
+      >
+        Previous
+      </v-btn>
+      <span class="text-body2">
+        Page {{ store.pagination.current_page }} of {{ store.pagination.last_page }}
+      </span>
+      <v-btn
+        :disabled="store.pagination.current_page === store.pagination.last_page"
+        @click="store.fetchItems(store.pagination.current_page + 1)"
+      >
+        Next
+      </v-btn>
     </div>
 
     <InventoryModal 
@@ -216,144 +252,3 @@ const openGallery = (item, index = 0) => {
     />
   </MainLayout>
 </template>
-
-<style scoped>
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.btn-primary {
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  border: 1px solid black;
-}
-
-.filters {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 20px;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  align-items: center;
-  background: white;
-}
-
-.search-input {
-  flex: 1;
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid black;
-}
-
-.filter-select {
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid black;
-}
-
-.table-container {
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  overflow: hidden;
-  background: white;
-}
-
-.inventory-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.inventory-table th, .inventory-table td {
-  padding: 12px 15px;
-  text-align: left;
-}
-
-.inventory-table th {
-  font-weight: 600;
-  font-size: 0.9em;
-  text-transform: uppercase;
-}
-
-.photo-placeholder {
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
-  border: 1px dashed black;
-}
-
-.photo-thumbnail {
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
-  overflow: hidden;
-  position: relative;
-  cursor: pointer;
-}
-
-.photo-thumbnail img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.photo-count {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    background: rgba(0,0,0,0.6);
-    color: white;
-    font-size: 9px;
-    padding: 1px 3px;
-    border-top-left-radius: 3px;
-}
-
-.title {
-  font-weight: 600;
-}
-
-.sku {
-  font-size: 0.85em;
-}
-
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.8em;
-  font-weight: 600;
-  text-transform: capitalize;
-  border: 1px solid black;
-}
-
-.pagination {
-    margin-top: 20px;
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    align-items: center;
-}
-
-.pagination button {
-    padding: 5px 10px;
-    cursor: pointer;
-    border: 1px solid black;
-}
-
-.pagination button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.action-btn {
-    background: none;
-    border: none;
-    text-decoration: underline;
-    cursor: pointer;
-}
-</style>

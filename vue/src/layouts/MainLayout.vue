@@ -12,97 +12,34 @@ const logout = async () => {
 </script>
 
 <template>
-  <div class="layout">
-    <header class="navbar">
-      <div class="logo">Thriftly</div>
+  <v-app>
+    <v-app-bar color="primary" dark>
+      <v-app-bar-title class="text-h5 font-weight-bold">Thriftly</v-app-bar-title>
       
-      <nav class="nav-links">
-        <router-link to="/inventory" class="nav-item">Inventory</router-link>
-        <router-link to="/customers" class="nav-item">Customers</router-link>
-        <router-link to="/vendors" class="nav-item">Vendors</router-link>
-        <router-link to="/profile" class="nav-item">Profile</router-link>
-      </nav>
-
-      <div class="user-info">
-        <div v-if="authStore.user" class="user-details">
-            <img :src="authStore.user.avatar" alt="Avatar" class="avatar" v-if="authStore.user.avatar">
-            <span>{{ authStore.user.name }}</span>
-        </div>
-        <button @click="logout" class="logout-btn">Logout</button>
+      <v-spacer />
+      
+      <div class="d-flex align-center gap-2">
+        <router-link to="/inventory" style="color: white; text-decoration: none; padding: 0 12px; cursor: pointer; transition: opacity 0.2s;" @mouseover="$event.target.style.opacity='0.7'" @mouseout="$event.target.style.opacity='1'">Inventory</router-link>
+        <router-link to="/customers" style="color: white; text-decoration: none; padding: 0 12px; cursor: pointer; transition: opacity 0.2s;" @mouseover="$event.target.style.opacity='0.7'" @mouseout="$event.target.style.opacity='1'">Customers</router-link>
+        <router-link to="/vendors" style="color: white; text-decoration: none; padding: 0 12px; cursor: pointer; transition: opacity 0.2s;" @mouseover="$event.target.style.opacity='0.7'" @mouseout="$event.target.style.opacity='1'">Vendors</router-link>
+        <router-link to="/profile" style="color: white; text-decoration: none; padding: 0 12px; cursor: pointer; transition: opacity 0.2s;" @mouseover="$event.target.style.opacity='0.7'" @mouseout="$event.target.style.opacity='1'">Profile</router-link>
       </div>
-    </header>
+
+      <v-spacer />
+
+      <div class="d-flex align-center gap-2">
+        <div v-if="authStore.user" class="d-flex align-center gap-2">
+          <img v-if="authStore.user.avatar" :src="authStore.user.avatar" alt="Avatar" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;" />
+          <span class="text-body2">{{ authStore.user.name }}</span>
+        </div>
+        <v-btn variant="outlined" @click="logout">
+          Logout
+        </v-btn>
+      </div>
+    </v-app-bar>
     
-    <main class="content">
+    <v-main class="mt-6 pa-16" style="overflow-y: auto; overflow-x: hidden;">
       <slot></slot>
-    </main>
-  </div>
+    </v-main>
+  </v-app>
 </template>
-
-<style scoped>
-.layout {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  border-bottom: 1px solid #ddd; /* Light separator */
-}
-
-.logo {
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.nav-links {
-  display: flex;
-  gap: 20px;
-}
-
-.nav-item {
-  text-decoration: none;
-  padding: 5px 10px;
-  border-radius: 4px;
-}
-
-.nav-item.router-link-active {
-  font-weight: bold;
-  text-decoration: underline;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.user-details {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-}
-
-.logout-btn {
-  background: none;
-  border: 1px solid black;
-  padding: 5px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.content {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-}
-</style>
