@@ -20,7 +20,7 @@ onMounted(() => {
 <template>
   <v-container class="d-flex align-center justify-center" style="height: 100vh;">
     <v-card max-width="400" class="text-center pa-8">
-      <v-card-title class="text-h3 mb-2">Thriftly</v-card-title>
+      <v-card-title class="text-h3 mb-2">Pintventory</v-card-title>
       <v-card-text class="text-h6 mb-6">
         Please log in to continue.
       </v-card-text>

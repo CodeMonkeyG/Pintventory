@@ -1,4 +1,4 @@
-# Project: Thriftly
+# Project: Pintventory
 
 ## Architecture
 - **Database**: PostgreSQL

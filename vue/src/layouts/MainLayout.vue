@@ -14,7 +14,7 @@ const logout = async () => {
 <template>
   <v-app>
     <v-app-bar color="primary" dark>
-      <v-app-bar-title class="text-h5 font-weight-bold">Thriftly</v-app-bar-title>
+      <v-app-bar-title class="text-h5 font-weight-bold">Pintventory</v-app-bar-title>
       
       <v-spacer />
       
