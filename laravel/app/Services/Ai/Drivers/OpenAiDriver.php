@@ -26,7 +26,7 @@ class OpenAiDriver implements AiProvider
      * @param \Illuminate\Http\UploadedFile|string $image
      * @return array
      */
-    public function identifyImage($image): array
+    public function identifyImage(UploadedFile|string $image): array
     {
         // If an UploadedFile was provided, create a data URL (not recommended for large images).
         if ($image instanceof UploadedFile) {

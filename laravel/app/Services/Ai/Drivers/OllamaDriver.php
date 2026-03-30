@@ -37,14 +37,23 @@ class OllamaDriver implements AiProvider
     /**
      * Identify image and extract metadata using Ollama API
      *
-     * @param  \Illuminate\Http\UploadedFile  $image
+     * @param  \Illuminate\Http\UploadedFile|string  $image
      * @return array  Array with 'title', 'description', 'tags' keys
      * @throws \RuntimeException
      */
-    public function identifyImage(UploadedFile $image): array
+    public function identifyImage(UploadedFile|string $image): array
     {
         try {
-            $base64Image = base64_encode(file_get_contents($image->getRealPath()));
+            if ($image instanceof UploadedFile) {
+                $base64Image = base64_encode(file_get_contents($image->getRealPath()));
+            } else {
+                // If it's a URL, we need to fetch the image content
+                $response = Http::get($image);
+                if ($response->failed()) {
+                    throw new \RuntimeException("Failed to fetch image from URL: {$image}");
+                }
+                $base64Image = base64_encode($response->body());
+            }
 
             $response = Http::timeout(60)->post("{$this->baseUrl}/api/generate", [
                 'model' => $this->model,

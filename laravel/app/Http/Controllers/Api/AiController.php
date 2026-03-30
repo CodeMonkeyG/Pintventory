@@ -24,15 +24,9 @@ class AiController extends Controller
         ]);
 
         try {
-            // Store the uploaded file locally on the public disk so it's accessible during development.
+            // Pass the UploadedFile object directly to the AI driver.
             $file = $request->file('image');
-            $path = Storage::disk('public')->putFile('ai_uploads', $file);
-            $publicUrl = Storage::disk('public')->url($path);
-            Log::info('AI upload stored at: ' . $publicUrl);
-
-            // Pass the public URL to the AI driver. In the driver we will override this URL
-            // with a hardcoded remote image for local-development testing before calling OpenAI.
-            $result = $this->ai->identifyImage($publicUrl);
+            $result = $this->ai->identifyImage($file);
             return response()->json($result);
         } catch (\Exception $e) {
             return response()->json(['message' => 'AI Identification failed: ' . $e->getMessage()], 500);
