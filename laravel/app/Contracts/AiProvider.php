@@ -6,5 +6,5 @@ use Illuminate\Http\UploadedFile;
 
 interface AiProvider
 {
-    public function identifyImage(UploadedFile $image): array;
+    public function identifyImage(UploadedFile|string $image): array;
 }

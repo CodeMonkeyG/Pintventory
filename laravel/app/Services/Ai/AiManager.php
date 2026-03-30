@@ -34,7 +34,7 @@ class AiManager extends Manager implements AiProvider
         return new OllamaDriver($config['base_url'], $config['model']);
     }
 
-    public function identifyImage(\Illuminate\Http\UploadedFile $image): array
+    public function identifyImage(\Illuminate\Http\UploadedFile|string $image): array
     {
         return $this->driver()->identifyImage($image);
     }
