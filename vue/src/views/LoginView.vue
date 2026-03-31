@@ -23,9 +23,22 @@ onMounted(() => {
   <v-container class="d-flex align-center justify-center" style="min-height: 100vh;">
     <v-card :max-width="mobile ? '100%' : '450'" :class="mobile ? 'pa-6' : 'pa-10'" class="text-center" variant="outlined">
       <v-card-title :class="mobile ? 'text-h4' : 'text-h2'" class="font-weight-bold mb-4">Pintventory</v-card-title>
-      <v-card-text :class="mobile ? 'text-body-1' : 'text-h6'" class="mb-8">
-        Your smart inventory management solution. Please log in to continue.
+      <v-card-text :class="mobile ? 'text-body-1' : 'text-h6'" class="mb-6">
+        Pintventory is a smart, AI-powered inventory system designed for collectors and small businesses. Effortlessly track unique finds and bulk stock with automated image recognition.
       </v-card-text>
+      
+      <div class="mb-8">
+        <v-btn
+          variant="text"
+          color="primary"
+          to="/about"
+          append-icon="mdi-chevron-right"
+          class="text-none"
+        >
+          Learn more about Pintventory
+        </v-btn>
+      </div>
+
       <v-btn
         color="primary"
         size="large"

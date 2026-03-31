@@ -16,7 +16,7 @@ onMounted(async () => {
     theme.global.name.value = authStore.user.preferences.theme
   }
 
-  if (!authStore.loggedIn && router.currentRoute.value.name !== 'login') {
+  if (!authStore.loggedIn && !['login', 'about'].includes(router.currentRoute.value.name)) {
     router.push('/login')
   }
 })
