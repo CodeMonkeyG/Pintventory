@@ -2,7 +2,7 @@
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import api from '../axios';
 import PhotoGallery from './PhotoGallery.vue';
-import { revokeBlobUrls } from '../utils/helpers';
+import { revokeBlobUrls, saveDraftPhotos, loadDraftPhotos, clearDraftPhotos } from '../utils/helpers';
 import { useVendorStore } from '../stores/vendors';
 import { useCustomerStore } from '../stores/customers';
 import { useLocationStore } from '../stores/locations';
@@ -63,95 +63,61 @@ const showFullFacebookAnalysis = ref(false);
 const showFullEtsyAnalysis = ref(false);
 
 const isEdit = computed(() => !!props.item);
+const draftKey = computed(() => isEdit.value ? `inventory_edit_${props.item.id}` : 'inventory_new');
 
-const showPurchaseForm = ref(false);
-const showSaleForm = ref(false);
-
-const newPurchase = ref({
-    vendor_id: '',
-    quantity_purchased: 1,
-    unit_cost: 0,
-    purchased_at: new Date().toISOString().split('T')[0],
-    notes: ''
-});
-
-const newSale = ref({
-    customer_id: '',
-    quantity_sold: 1,
-    unit_price: 0,
-    sold_at: new Date().toISOString().split('T')[0],
-    notes: ''
-});
-
-watch(() => props.item, (item) => {
-    if (item) {
-        formData.value = {
-            title: item.title || '',
-            sku: item.sku || '',
-            status: item.status || 'in_stock',
-            item_type: item.item_type || 'standard',
-            quantity_on_hand: item.quantity_on_hand ?? 0,
-            reorder_point: item.reorder_point ?? 0,
-            unit: item.unit || '',
-            location: item.location || '',
-            storage_location_id: item.storage_location_id || null,
-            tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || ''),
-            description: item.description || '',
-            evaluation: item.evaluation || '',
-            market_analysis: item.market_analysis || null,
-            facebook_analysis: item.facebook_analysis || null,
-            etsy_analysis: item.etsy_analysis || null,
-            source_links: item.source_links || [],
-            ebay_listing_url: item.ebay_listing_url || '',
-            facebook_listing_url: item.facebook_listing_url || '',
-            etsy_listing_url: item.etsy_listing_url || ''
-        };
-        localPhotos.value = (item.photos || []).map(p => ({ id: p.id, url: p.url, caption: p.caption || '' }));
+// Persistence: Save text state to localStorage
+watch([formData, () => props.show], ([newForm, show]) => {
+    if (show) {
+        localStorage.setItem('pintventory_active_modal', 'inventory');
+        localStorage.setItem('pintventory_editing_id', isEdit.value ? props.item.id : 'new');
+        localStorage.setItem(`pintventory_draft_${draftKey.value}`, JSON.stringify(newForm));
     } else {
-        formData.value = {
-            title: '',
-            sku: '',
-            status: 'in_stock',
-            item_type: 'standard',
-            quantity_on_hand: 0,
-            reorder_point: 0,
-            unit: '',
-            location: '',
-            storage_location_id: null,
-            tags: '',
-            description: '',
-            evaluation: '',
-            market_analysis: null,
-            facebook_analysis: null,
-            etsy_analysis: null,
-            source_links: [],
-            ebay_listing_url: '',
-            facebook_listing_url: '',
-            etsy_listing_url: ''
-        };
-        localPhotos.value = [];
-        pendingPhotos.value = [];
-        showPurchaseForm.value = false;
-        showSaleForm.value = false;
-        showFullEvaluation.value = false;
-        showFullMarketAnalysis.value = false;
-        showFullFacebookAnalysis.value = false;
-        showFullEtsyAnalysis.value = false;
+        localStorage.removeItem('pintventory_active_modal');
+        localStorage.removeItem('pintventory_editing_id');
     }
-}, { immediate: true });
+}, { deep: true });
 
-watch(activeTab, async (tab) => {
-    if (tab === 'purchases') {
-        vendors.value = await vendorStore.fetchAllVendors();
+// Persistence: Save photos to IndexedDB
+watch(pendingPhotos, async (newPhotos) => {
+    if (props.show) {
+        const files = newPhotos.map(p => p.file);
+        await saveDraftPhotos(draftKey.value, files);
     }
-    if (tab === 'sales') {
-        customers.value = await customerStore.fetchAllCustomers();
+}, { deep: true });
+
+// Persistence: Load state
+onMounted(async () => {
+    const savedForm = localStorage.getItem(`pintventory_draft_${draftKey.value}`);
+    if (savedForm && !isEdit.value) { 
+        try {
+            const parsed = JSON.parse(savedForm);
+            if (localStorage.getItem('pintventory_active_modal') === 'inventory') {
+                formData.value = { ...formData.value, ...parsed };
+            }
+        } catch (e) { console.error('Draft restore failed', e); }
+    }
+
+    // Always check for photos if the modal is currently showing (or about to show)
+    if (props.show) {
+        loadPhotosFromDraft();
     }
 });
 
+const loadPhotosFromDraft = async () => {
+    const savedPhotos = await loadDraftPhotos(draftKey.value);
+    if (savedPhotos.length > 0 && pendingPhotos.value.length === 0) {
+        pendingPhotos.value = savedPhotos.map(file => ({
+            file,
+            url: URL.createObjectURL(file)
+        }));
+    }
+};
+
+// Add a watch to load photos when 'show' becomes true (if not already mounted)
 watch(() => props.show, (val) => {
     if (val) {
         locationStore.fetchItems();
+        loadPhotosFromDraft();
     }
     if (!val) {
         const urls = pendingPhotos.value.map(p => p.url);
@@ -445,7 +411,7 @@ const handleEtsyAnalysis = async () => {
     }
 };
 
-const save = () => {
+const save = async () => {
   if (!formData.value.title) return alert('Title is required');
 
   const payload = {
@@ -454,6 +420,10 @@ const save = () => {
   };
   
   emit('save', payload, pendingPhotos.value.map(p => p.file));
+  
+  // Clear persistence after emission (Parent handles success check usually, but we clear now to avoid restore on success)
+  localStorage.removeItem(`pintventory_draft_${draftKey.value}`);
+  await clearDraftPhotos(draftKey.value);
 };
 
 const triggerUpload = () => fileInput.value.click();

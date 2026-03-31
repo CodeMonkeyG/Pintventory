@@ -36,3 +36,80 @@ export function revokeBlobUrls(urls) {
     }
   });
 }
+
+/**
+ * Persistence: Open/Init IndexedDB for photo drafts
+ */
+const DB_NAME = 'pintventory_db';
+const STORE_NAME = 'photo_drafts';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+    request.onsuccess = (e) => resolve(e.target.result);
+    request.onerror = (e) => reject(e.target.error);
+  });
+}
+
+/**
+ * Save pending photos to IndexedDB
+ * @param {string} key - Unique key for the draft (e.g. 'inventory_new' or item ID)
+ * @param {File[]} files - Array of File objects
+ */
+export async function saveDraftPhotos(key, files) {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    // We store the raw file objects. IndexedDB supports File/Blob.
+    store.put(files, key);
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = (e) => reject(e.target.error);
+    });
+  } catch (e) {
+    console.error('IndexedDB save failed', e);
+  }
+}
+
+/**
+ * Load pending photos from IndexedDB
+ * @param {string} key - Unique key for the draft
+ * @returns {Promise<File[]>}
+ */
+export async function loadDraftPhotos(key) {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    const request = store.get(key);
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = (e) => reject(e.target.error);
+    });
+  } catch (e) {
+    console.error('IndexedDB load failed', e);
+    return [];
+  }
+}
+
+/**
+ * Clear photo drafts from IndexedDB
+ * @param {string} key 
+ */
+export async function clearDraftPhotos(key) {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    store.delete(key);
+  } catch (e) {
+    console.error('IndexedDB clear failed', e);
+  }
+}

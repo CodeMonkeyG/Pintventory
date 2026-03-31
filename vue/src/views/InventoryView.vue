@@ -21,8 +21,21 @@ const galleryIndex = ref(0);
 // Local search value for debouncing
 const searchInput = ref('');
 
-onMounted(() => {
-  store.fetchItems();
+onMounted(async () => {
+  await store.fetchItems();
+  
+  // Persistence: Check if we need to restore an open modal
+  const activeModal = localStorage.getItem('pintventory_active_modal');
+  const editingId = localStorage.getItem('pintventory_editing_id');
+  
+  if (activeModal === 'inventory') {
+      if (editingId && editingId !== 'new') {
+          const item = store.items.find(i => i.id === editingId) || { id: editingId };
+          openEditModal(item);
+      } else if (editingId === 'new') {
+          openCreateModal();
+      }
+  }
 });
 
 // Debounced search handler
