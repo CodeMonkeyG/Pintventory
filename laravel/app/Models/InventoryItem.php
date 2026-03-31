@@ -28,12 +28,20 @@ class InventoryItem extends Model
         'location',
         'storage_location_id',
         'evaluation',
+        'market_analysis',
+        'facebook_analysis',
+        'etsy_analysis',
+        'source_links',
         'created_by_user_id',
         'archived_at',
     ];
 
     protected $casts = [
         'tags' => 'array',
+        'market_analysis' => 'array',
+        'facebook_analysis' => 'array',
+        'etsy_analysis' => 'array',
+        'source_links' => 'array',
         'archived_at' => 'datetime',
         'quantity_on_hand' => 'integer',
         'reorder_point' => 'integer',
