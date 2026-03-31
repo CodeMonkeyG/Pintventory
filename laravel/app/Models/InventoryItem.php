@@ -20,6 +20,7 @@ class InventoryItem extends Model
         'title',
         'description',
         'status',
+        'item_type',
         'quantity_on_hand',
         'reorder_point',
         'unit',

@@ -77,6 +77,7 @@ PROMPT;
             $prompt = $systemPrompt . "\n\nIdentify this inventory item. Return a JSON object with: 
         - 'title': a concise name (3-10 words).
         - 'description': a short description (1-2 sentences).
+        - 'item_type': 'unique' if it's a one-of-a-kind, vintage, or rare item that will likely only have 1 in stock and not be reordered. 'standard' if it's a modern, mass-produced item that could have quantity and be reordered.
         - 'evaluation': a detailed evaluation including era, material, and value estimation as a plain text block.
         - 'tags': an array of 3-10 tags.";
 
@@ -101,13 +102,17 @@ PROMPT;
                         'properties' => [
                             'title' => ['type' => 'string'],
                             'description' => ['type' => 'string'],
+                            'item_type' => [
+                                'type' => 'string',
+                                'enum' => ['unique', 'standard']
+                            ],
                             'evaluation' => ['type' => 'string'],
                             'tags' => [
                                 'type' => 'array',
                                 'items' => ['type' => 'string']
                             ]
                         ],
-                        'required' => ['title', 'description', 'evaluation', 'tags']
+                        'required' => ['title', 'description', 'item_type', 'evaluation', 'tags']
                     ]
                 ]
             ]);

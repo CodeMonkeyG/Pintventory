@@ -34,6 +34,7 @@ const formData = ref({
     title: '',
     sku: '',
     status: 'in_stock',
+    item_type: 'standard',
     quantity_on_hand: 0,
     reorder_point: 0,
     unit: '',
@@ -75,6 +76,7 @@ watch(() => props.item, (item) => {
             title: item.title || '',
             sku: item.sku || '',
             status: item.status || 'in_stock',
+            item_type: item.item_type || 'standard',
             quantity_on_hand: item.quantity_on_hand ?? 0,
             reorder_point: item.reorder_point ?? 0,
             unit: item.unit || '',
@@ -90,6 +92,7 @@ watch(() => props.item, (item) => {
             title: '',
             sku: '',
             status: 'in_stock',
+            item_type: 'standard',
             quantity_on_hand: 0,
             reorder_point: 0,
             unit: '',
@@ -129,6 +132,7 @@ watch(() => props.show, (val) => {
             title: '',
             sku: '',
             status: 'in_stock',
+            item_type: 'standard',
             quantity_on_hand: 0,
             reorder_point: 0,
             unit: '',
@@ -209,6 +213,12 @@ const handleAutoFill = async (event) => {
         const data = response.data;
         if (data.title) formData.value.title = data.title;
         if (data.description) formData.value.description = data.description;
+        if (data.item_type) {
+            formData.value.item_type = data.item_type;
+            if (data.item_type === 'unique') {
+                formData.value.quantity_on_hand = 1;
+            }
+        }
         
         if (data.evaluation) {
             if (typeof data.evaluation === 'object') {
@@ -473,6 +483,21 @@ const closeModal = () => {
 
             <v-row dense>
               <v-col cols="12">
+                <v-select
+                  v-model="formData.item_type"
+                  label="Inventory Type *"
+                  :items="[
+                    { title: 'Standard (Bulk/Reorderable)', value: 'standard' },
+                    { title: 'Unique (One-of-a-kind/Vintage)', value: 'unique' }
+                  ]"
+                  variant="outlined"
+                  density="compact"
+                  required
+                  @update:model-value="(val) => { if (val === 'unique') formData.quantity_on_hand = 1 }"
+                />
+              </v-col>
+
+              <v-col cols="12">
                 <v-text-field
                   v-model="formData.title"
                   label="Title *"
@@ -511,13 +536,13 @@ const closeModal = () => {
                   v-model.number="formData.quantity_on_hand"
                   label="Qty On Hand"
                   type="number"
-                  disabled
+                  :disabled="formData.item_type === 'unique'"
                   variant="outlined"
                   density="compact"
                 />
               </v-col>
               
-              <v-col cols="6" sm="4">
+              <v-col cols="6" sm="4" v-if="formData.item_type === 'standard'">
                 <v-text-field
                   v-model.number="formData.reorder_point"
                   label="Reorder Pt"
@@ -528,7 +553,7 @@ const closeModal = () => {
                 />
               </v-col>
               
-              <v-col cols="12" sm="4">
+              <v-col cols="12" :sm="formData.item_type === 'standard' ? 4 : 6">
                 <v-text-field
                   v-model="formData.unit"
                   label="Unit (e.g. pcs, sets)"
