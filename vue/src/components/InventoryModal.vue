@@ -479,7 +479,7 @@ const closeModal = () => {
             </div>
 
             <v-expand-transition>
-              <v-card v-if="showPurchaseForm" class="mb-6 bg-grey-lighten-4" variant="flat" rounded="lg">
+              <v-card v-if="showPurchaseForm" class="mb-6 bg-grey-lighten-4" variant="tonal" border rounded="lg">
                 <v-card-text class="pa-4">
                   <v-select
                     v-model="newPurchase.vendor_id"
@@ -567,7 +567,7 @@ const closeModal = () => {
             </div>
 
             <v-expand-transition>
-              <v-card v-if="showSaleForm" class="mb-6 bg-grey-lighten-4" variant="flat" rounded="lg">
+              <v-card v-if="showSaleForm" class="mb-6 bg-grey-lighten-4" variant="tonal" border rounded="lg">
                 <v-card-text class="pa-4">
                   <v-select
                     v-model="newSale.customer_id"

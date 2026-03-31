@@ -49,8 +49,8 @@ const logout = async () => {
       </v-list>
       
       <template v-slot:append>
-        <div class="pa-2">
-          <v-btn block color="error" variant="outlined" @click="logout" prepend-icon="mdi-logout">
+        <div class="pa-4">
+          <v-btn block color="error" variant="tonal" @click="logout" prepend-icon="mdi-logout">
             Logout
           </v-btn>
         </div>
@@ -58,10 +58,10 @@ const logout = async () => {
     </v-navigation-drawer>
 
     <!-- App Bar -->
-    <v-app-bar color="primary" elevation="2">
+    <v-app-bar color="surface" elevation="0" border="b">
       <v-app-bar-nav-icon v-if="mobile" @click="drawer = !drawer"></v-app-bar-nav-icon>
       
-      <v-app-bar-title class="text-h6 text-md-h5 font-weight-bold">
+      <v-app-bar-title class="text-h6 text-md-h5 font-weight-bold text-primary">
         Pintventory
       </v-app-bar-title>
       
