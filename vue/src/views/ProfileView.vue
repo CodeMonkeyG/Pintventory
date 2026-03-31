@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import MainLayout from '../layouts/MainLayout.vue';
 import api from '../axios';
