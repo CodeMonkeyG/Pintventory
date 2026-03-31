@@ -13,40 +13,51 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: LoginView
+      component: LoginView,
+      meta: { title: 'Login' }
     },
     {
       path: '/about',
       name: 'about',
-      component: () => import('../views/AboutView.vue')
+      component: () => import('../views/AboutView.vue'),
+      meta: { title: 'About' }
     },
     {
       path: '/inventory',
       name: 'inventory',
-      component: InventoryView
+      component: InventoryView,
+      meta: { title: 'Inventory' }
     },
     {
       path: '/profile',
       name: 'profile',
-      component: () => import('../views/ProfileView.vue')
+      component: () => import('../views/ProfileView.vue'),
+      meta: { title: 'Profile' }
     },
-    // Placeholder routes for now
     {
       path: '/vendors',
       name: 'vendors',
-      component: () => import('../views/VendorsView.vue')
+      component: () => import('../views/VendorsView.vue'),
+      meta: { title: 'Vendors' }
     },
     {
       path: '/customers',
       name: 'customers',
-      component: () => import('../views/CustomersView.vue')
+      component: () => import('../views/CustomersView.vue'),
+      meta: { title: 'Customers' }
     },
     {
       path: '/storage-locations',
       name: 'storage-locations',
-      component: () => import('../views/StorageLocationsView.vue')
+      component: () => import('../views/StorageLocationsView.vue'),
+      meta: { title: 'Storage Locations' }
     }
   ]
+})
+
+router.afterEach((to) => {
+  const title = to.meta.title
+  document.title = title ? `${title} | Pintventory` : 'Pintventory'
 })
 
 export default router
