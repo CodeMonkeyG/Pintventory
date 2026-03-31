@@ -62,6 +62,25 @@ const showFullMarketAnalysis = ref(false);
 const showFullFacebookAnalysis = ref(false);
 const showFullEtsyAnalysis = ref(false);
 
+const showPurchaseForm = ref(false);
+const showSaleForm = ref(false);
+
+const newPurchase = ref({
+    vendor_id: '',
+    quantity_purchased: 1,
+    unit_cost: 0,
+    purchased_at: new Date().toISOString().split('T')[0],
+    notes: ''
+});
+
+const newSale = ref({
+    customer_id: '',
+    quantity_sold: 1,
+    unit_price: 0,
+    sold_at: new Date().toISOString().split('T')[0],
+    notes: ''
+});
+
 const isEdit = computed(() => !!props.item);
 const draftKey = computed(() => isEdit.value ? `inventory_edit_${props.item.id}` : 'inventory_new');
 
