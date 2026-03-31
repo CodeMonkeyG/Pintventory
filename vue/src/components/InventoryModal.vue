@@ -119,12 +119,57 @@ watch(() => props.show, (val) => {
 
 const triggerAutoFill = () => autoFillInput.value.click();
 
+const resizeImage = (file, maxPixels = 8000000) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const currentPixels = width * height;
+
+                if (currentPixels > maxPixels) {
+                    const ratio = Math.sqrt(maxPixels / currentPixels);
+                    width = Math.floor(width * ratio);
+                    height = Math.floor(height * ratio);
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const resizedFile = new File([blob], file.name, {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        });
+                        resolve(resizedFile);
+                    } else {
+                        reject(new Error('Canvas to Blob conversion failed'));
+                    }
+                }, 'image/jpeg', 0.85); // 0.85 quality to stay under 5MB for 8MP
+            };
+            img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+    });
+};
+
 const handleAutoFill = async (event) => {
-    const file = event.target.files[0];
+    let file = event.target.files[0];
     if (!file) return;
 
     isAnalyzing.value = true;
     try {
+        // Resize image if it's too large
+        file = await resizeImage(file);
+
         const formDataPayload = new FormData();
         formDataPayload.append('image', file);
 
