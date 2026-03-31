@@ -32,6 +32,9 @@ class InventoryItem extends Model
         'facebook_analysis',
         'etsy_analysis',
         'source_links',
+        'ebay_listing_url',
+        'facebook_listing_url',
+        'etsy_listing_url',
         'created_by_user_id',
         'archived_at',
     ];

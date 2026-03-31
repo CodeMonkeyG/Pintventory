@@ -59,6 +59,9 @@ class InventoryItemController extends Controller
             'facebook_analysis' => 'nullable|array',
             'etsy_analysis' => 'nullable|array',
             'source_links' => 'nullable|array',
+            'ebay_listing_url' => 'nullable|url|max:2048',
+            'facebook_listing_url' => 'nullable|url|max:2048',
+            'etsy_listing_url' => 'nullable|url|max:2048',
         ]);
 
         // Auto-generate SKU if missing
@@ -112,6 +115,9 @@ class InventoryItemController extends Controller
             'facebook_analysis' => 'nullable|array',
             'etsy_analysis' => 'nullable|array',
             'source_links' => 'nullable|array',
+            'ebay_listing_url' => 'nullable|url|max:2048',
+            'facebook_listing_url' => 'nullable|url|max:2048',
+            'etsy_listing_url' => 'nullable|url|max:2048',
         ]);
 
         $item->update($validated);

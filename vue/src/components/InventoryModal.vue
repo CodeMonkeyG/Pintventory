@@ -48,7 +48,10 @@ const formData = ref({
     market_analysis: null,
     facebook_analysis: null,
     etsy_analysis: null,
-    source_links: []
+    source_links: [],
+    ebay_listing_url: '',
+    facebook_listing_url: '',
+    etsy_listing_url: ''
 });
 
 const showGallery = ref(false);
@@ -97,7 +100,10 @@ watch(() => props.item, (item) => {
             market_analysis: item.market_analysis || null,
             facebook_analysis: item.facebook_analysis || null,
             etsy_analysis: item.etsy_analysis || null,
-            source_links: item.source_links || []
+            source_links: item.source_links || [],
+            ebay_listing_url: item.ebay_listing_url || '',
+            facebook_listing_url: item.facebook_listing_url || '',
+            etsy_listing_url: item.etsy_listing_url || ''
         };
         localPhotos.value = (item.photos || []).map(p => ({ id: p.id, url: p.url, caption: p.caption || '' }));
     } else {
@@ -117,7 +123,10 @@ watch(() => props.item, (item) => {
             market_analysis: null,
             facebook_analysis: null,
             etsy_analysis: null,
-            source_links: []
+            source_links: [],
+            ebay_listing_url: '',
+            facebook_listing_url: '',
+            etsy_listing_url: ''
         };
         localPhotos.value = [];
         pendingPhotos.value = [];
@@ -165,7 +174,10 @@ watch(() => props.show, (val) => {
             market_analysis: null,
             facebook_analysis: null,
             etsy_analysis: null,
-            source_links: []
+            source_links: [],
+            ebay_listing_url: '',
+            facebook_listing_url: '',
+            etsy_listing_url: ''
         };
         localPhotos.value = [];
         showPurchaseForm.value = false;
@@ -1045,6 +1057,54 @@ const closeModal = () => {
                   density="compact"
                   auto-grow
                 />
+              </v-col>
+
+              <v-col cols="12">
+                <div class="text-subtitle-2 font-weight-bold mb-2">My Listings</div>
+                <v-row dense>
+                  <v-col cols="12">
+                    <v-text-field
+                      v-model="formData.ebay_listing_url"
+                      label="eBay Listing URL"
+                      variant="outlined"
+                      density="compact"
+                      prepend-inner-icon="mdi-link"
+                      placeholder="https://www.ebay.com/itm/..."
+                    >
+                      <template v-slot:append-inner v-if="formData.ebay_listing_url">
+                        <v-btn icon="mdi-launch" variant="text" size="x-small" :href="formData.ebay_listing_url" target="_blank" @click.stop title="Visit Listing" />
+                      </template>
+                    </v-text-field>
+                  </v-col>
+                  <v-col cols="12">
+                    <v-text-field
+                      v-model="formData.facebook_listing_url"
+                      label="Facebook Listing URL"
+                      variant="outlined"
+                      density="compact"
+                      prepend-inner-icon="mdi-link"
+                      placeholder="https://www.facebook.com/marketplace/item/..."
+                    >
+                      <template v-slot:append-inner v-if="formData.facebook_listing_url">
+                        <v-btn icon="mdi-launch" variant="text" size="x-small" :href="formData.facebook_listing_url" target="_blank" @click.stop title="Visit Listing" />
+                      </template>
+                    </v-text-field>
+                  </v-col>
+                  <v-col cols="12">
+                    <v-text-field
+                      v-model="formData.etsy_listing_url"
+                      label="Etsy Listing URL"
+                      variant="outlined"
+                      density="compact"
+                      prepend-inner-icon="mdi-link"
+                      placeholder="https://www.etsy.com/listing/..."
+                    >
+                      <template v-slot:append-inner v-if="formData.etsy_listing_url">
+                        <v-btn icon="mdi-launch" variant="text" size="x-small" :href="formData.etsy_listing_url" target="_blank" @click.stop title="Visit Listing" />
+                      </template>
+                    </v-text-field>
+                  </v-col>
+                </v-row>
               </v-col>
             </v-row>
           </v-window-item>
