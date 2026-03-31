@@ -322,7 +322,7 @@ const getStatusColor = (status) => {
     </div>
 
     <InventoryModal 
-      :show="showModal" 
+      v-model:show="showModal" 
       :item="selectedItem" 
       @close="showModal = false" 
       @save="handleSave"

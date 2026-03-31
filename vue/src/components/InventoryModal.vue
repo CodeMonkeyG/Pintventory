@@ -26,6 +26,7 @@ const isAnalyzing = ref(false);
 const isMarketAnalyzing = ref(false);
 const isFacebookAnalyzing = ref(false);
 const isEtsyAnalyzing = ref(false);
+const isUploading = ref(false);
 const pendingPhotos = ref([]);
 const localPhotos = ref([]);
 
@@ -457,12 +458,23 @@ const save = () => {
 
 const triggerUpload = () => fileInput.value.click();
 
-const handleFileUpload = (event) => {
-    const file = event.target.files[0];
+const handleFileUpload = async (event) => {
+    let file = event.target.files[0];
     if (!file) return;
-    const previewUrl = URL.createObjectURL(file);
-    pendingPhotos.value.push({ file, url: previewUrl });
-    event.target.value = null;
+    
+    isUploading.value = true;
+    try {
+        // Resize image immediately to save memory on mobile
+        file = await resizeImage(file);
+        const previewUrl = URL.createObjectURL(file);
+        pendingPhotos.value.push({ file, url: previewUrl });
+    } catch (e) {
+        console.error("Image processing failed", e);
+        alert("Failed to process image.");
+    } finally {
+        isUploading.value = false;
+        event.target.value = null;
+    }
 };
 
 const deletePhoto = (photo) => {
@@ -534,7 +546,7 @@ const copyToClipboard = (text) => {
 };
 
 const closeModal = () => {
-  $emit('close');
+  emit('close');
   emit('update:show', false);
 };
 </script>
@@ -566,7 +578,7 @@ const closeModal = () => {
       </v-card-title>
 
       <v-progress-linear
-        v-if="isAnalyzing || isMarketAnalyzing || isFacebookAnalyzing || isEtsyAnalyzing"
+        v-if="isAnalyzing || isMarketAnalyzing || isFacebookAnalyzing || isEtsyAnalyzing || isUploading"
         indeterminate
         color="secondary"
         height="2"
@@ -878,6 +890,7 @@ const closeModal = () => {
                     color="primary"
                     prepend-icon="mdi-camera"
                     @click="triggerUpload"
+                    :loading="isUploading"
                   >
                     Add Photo
                   </v-btn>
