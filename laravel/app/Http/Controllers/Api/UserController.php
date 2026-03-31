@@ -61,4 +61,20 @@ class UserController extends Controller
 
         return response()->json($user);
     }
+
+    /**
+     * Log out the authenticated user.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function logout(Request $request)
+    {
+        Auth::guard('web')->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return response()->json(['message' => 'Successfully logged out']);
+    }
 }

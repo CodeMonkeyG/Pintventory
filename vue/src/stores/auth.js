@@ -45,10 +45,11 @@ export const useAuthStore = defineStore('auth', {
         async logout() {
             try {
                 await api.post('/logout');
-                this.user = null;
-                this.loggedIn = false;
             } catch (error) {
                 console.error('Logout failed:', error);
+            } finally {
+                this.user = null;
+                this.loggedIn = false;
             }
         },
     },
