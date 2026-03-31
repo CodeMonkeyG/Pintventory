@@ -22,8 +22,10 @@ const emit = defineEmits(['close', 'save', 'delete-photo', 'update:show']);
 
 const activeTab = ref('details');
 const fileInput = ref(null);
-const autoFillInput = ref(null);
 const isAnalyzing = ref(false);
+const isMarketAnalyzing = ref(false);
+const isFacebookAnalyzing = ref(false);
+const isEtsyAnalyzing = ref(false);
 const pendingPhotos = ref([]);
 const localPhotos = ref([]);
 
@@ -42,12 +44,19 @@ const formData = ref({
     storage_location_id: null,
     tags: '',
     description: '',
-    evaluation: ''
+    evaluation: '',
+    market_analysis: null,
+    facebook_analysis: null,
+    etsy_analysis: null,
+    source_links: []
 });
 
 const showGallery = ref(false);
 const galleryIndex = ref(0);
 const showFullEvaluation = ref(false);
+const showFullMarketAnalysis = ref(false);
+const showFullFacebookAnalysis = ref(false);
+const showFullEtsyAnalysis = ref(false);
 
 const isEdit = computed(() => !!props.item);
 
@@ -84,7 +93,11 @@ watch(() => props.item, (item) => {
             storage_location_id: item.storage_location_id || null,
             tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || ''),
             description: item.description || '',
-            evaluation: item.evaluation || ''
+            evaluation: item.evaluation || '',
+            market_analysis: item.market_analysis || null,
+            facebook_analysis: item.facebook_analysis || null,
+            etsy_analysis: item.etsy_analysis || null,
+            source_links: item.source_links || []
         };
         localPhotos.value = (item.photos || []).map(p => ({ id: p.id, url: p.url, caption: p.caption || '' }));
     } else {
@@ -100,12 +113,20 @@ watch(() => props.item, (item) => {
             storage_location_id: null,
             tags: '',
             description: '',
-            evaluation: ''
+            evaluation: '',
+            market_analysis: null,
+            facebook_analysis: null,
+            etsy_analysis: null,
+            source_links: []
         };
         localPhotos.value = [];
         pendingPhotos.value = [];
         showPurchaseForm.value = false;
         showSaleForm.value = false;
+        showFullEvaluation.value = false;
+        showFullMarketAnalysis.value = false;
+        showFullFacebookAnalysis.value = false;
+        showFullEtsyAnalysis.value = false;
     }
 }, { immediate: true });
 
@@ -140,17 +161,22 @@ watch(() => props.show, (val) => {
             storage_location_id: null,
             tags: '',
             description: '',
-            evaluation: ''
+            evaluation: '',
+            market_analysis: null,
+            facebook_analysis: null,
+            etsy_analysis: null,
+            source_links: []
         };
         localPhotos.value = [];
         showPurchaseForm.value = false;
         showSaleForm.value = false;
         showFullEvaluation.value = false;
+        showFullMarketAnalysis.value = false;
+        showFullFacebookAnalysis.value = false;
+        showFullEtsyAnalysis.value = false;
         activeTab.value = 'details';
     }
 });
-
-const triggerAutoFill = () => autoFillInput.value.click();
 
 const resizeImage = (file, maxPixels = 8000000) => {
     return new Promise((resolve, reject) => {
@@ -194,9 +220,26 @@ const resizeImage = (file, maxPixels = 8000000) => {
     });
 };
 
-const handleAutoFill = async (event) => {
-    let file = event.target.files[0];
-    if (!file) return;
+const handleAiAutoFill = async () => {
+    let file = null;
+    if (pendingPhotos.value.length > 0) {
+        file = pendingPhotos.value[0].file;
+    } else if (localPhotos.value.length > 0) {
+        try {
+            const response = await fetch(localPhotos.value[0].url);
+            const blob = await response.blob();
+            file = new File([blob], 'photo.jpg', { type: blob.type });
+        } catch (e) {
+            console.error('Failed to fetch local photo for AI analysis', e);
+            alert('Could not access the photo for AI analysis.');
+            return;
+        }
+    }
+
+    if (!file) {
+        alert('Please upload a photo first.');
+        return;
+    }
 
     isAnalyzing.value = true;
     try {
@@ -217,6 +260,7 @@ const handleAutoFill = async (event) => {
             formData.value.item_type = data.item_type;
             if (data.item_type === 'unique') {
                 formData.value.quantity_on_hand = 1;
+                formData.value.unit = 'pcs';
             }
         }
         
@@ -243,16 +287,148 @@ const handleAutoFill = async (event) => {
             formData.value.tags = newTags;
         }
 
-        const previewUrl = URL.createObjectURL(file);
-        pendingPhotos.value.push({ file, url: previewUrl });
-        
+        if (data.source_links) {
+            formData.value.source_links = data.source_links;
+        }
+
         alert('Auto-fill complete!');
     } catch (error) {
         console.error(error);
         alert('AI Analysis failed: ' + (error.response?.data?.message || error.message));
     } finally {
         isAnalyzing.value = false;
-        event.target.value = null;
+    }
+};
+
+const handleMarketAnalysis = async () => {
+    let file = null;
+    if (pendingPhotos.value.length > 0) {
+        file = pendingPhotos.value[0].file;
+    } else if (localPhotos.value.length > 0) {
+        try {
+            const response = await fetch(localPhotos.value[0].url);
+            const blob = await response.blob();
+            file = new File([blob], 'photo.jpg', { type: blob.type });
+        } catch (e) {
+            console.error('Failed to fetch local photo for Market analysis', e);
+            alert('Could not access the photo for Market analysis.');
+            return;
+        }
+    }
+
+    if (!file) {
+        alert('Please upload a photo first.');
+        return;
+    }
+
+    isMarketAnalyzing.value = true;
+    try {
+        file = await resizeImage(file);
+
+        const formDataPayload = new FormData();
+        formDataPayload.append('image', file);
+
+        const response = await api.post('/ai/market-analyze', formDataPayload, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        formData.value.market_analysis = response.data;
+        showFullMarketAnalysis.value = true;
+        
+        alert('Market analysis complete!');
+    } catch (error) {
+        console.error(error);
+        alert('Market Analysis failed: ' + (error.response?.data?.message || error.message));
+    } finally {
+        isMarketAnalyzing.value = false;
+    }
+};
+
+const handleFacebookAnalysis = async () => {
+    let file = null;
+    if (pendingPhotos.value.length > 0) {
+        file = pendingPhotos.value[0].file;
+    } else if (localPhotos.value.length > 0) {
+        try {
+            const response = await fetch(localPhotos.value[0].url);
+            const blob = await response.blob();
+            file = new File([blob], 'photo.jpg', { type: blob.type });
+        } catch (e) {
+            console.error('Failed to fetch local photo for Facebook analysis', e);
+            alert('Could not access the photo for Facebook analysis.');
+            return;
+        }
+    }
+
+    if (!file) {
+        alert('Please upload a photo first.');
+        return;
+    }
+
+    isFacebookAnalyzing.value = true;
+    try {
+        file = await resizeImage(file);
+
+        const formDataPayload = new FormData();
+        formDataPayload.append('image', file);
+
+        const response = await api.post('/ai/facebook-analyze', formDataPayload, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        formData.value.facebook_analysis = response.data;
+        showFullFacebookAnalysis.value = true;
+        
+        alert('Facebook analysis complete!');
+    } catch (error) {
+        console.error(error);
+        alert('Facebook Analysis failed: ' + (error.response?.data?.message || error.message));
+    } finally {
+        isFacebookAnalyzing.value = false;
+    }
+};
+
+const handleEtsyAnalysis = async () => {
+    let file = null;
+    if (pendingPhotos.value.length > 0) {
+        file = pendingPhotos.value[0].file;
+    } else if (localPhotos.value.length > 0) {
+        try {
+            const response = await fetch(localPhotos.value[0].url);
+            const blob = await response.blob();
+            file = new File([blob], 'photo.jpg', { type: blob.type });
+        } catch (e) {
+            console.error('Failed to fetch local photo for Etsy analysis', e);
+            alert('Could not access the photo for Etsy analysis.');
+            return;
+        }
+    }
+
+    if (!file) {
+        alert('Please upload a photo first.');
+        return;
+    }
+
+    isEtsyAnalyzing.value = true;
+    try {
+        file = await resizeImage(file);
+
+        const formDataPayload = new FormData();
+        formDataPayload.append('image', file);
+
+        const response = await api.post('/ai/etsy-analyze', formDataPayload, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        formData.value.etsy_analysis = response.data;
+        showFullEtsyAnalysis.value = true;
+        
+        alert('Etsy analysis complete!');
+    } catch (error) {
+        console.error(error);
+        alert('Etsy Analysis failed: ' + (error.response?.data?.message || error.message));
+    } finally {
+        isEtsyAnalyzing.value = false;
     }
 };
 
@@ -337,6 +513,14 @@ const saveSale = async () => {
 
 const formatDate = (d) => new Date(d).toLocaleDateString();
 
+const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Copied to clipboard!');
+    }).catch(err => {
+        console.error('Could not copy text: ', err);
+    });
+};
+
 const closeModal = () => {
   $emit('close');
   emit('update:show', false);
@@ -369,6 +553,13 @@ const closeModal = () => {
         </v-btn>
       </v-card-title>
 
+      <v-progress-linear
+        v-if="isAnalyzing || isMarketAnalyzing || isFacebookAnalyzing || isEtsyAnalyzing"
+        indeterminate
+        color="secondary"
+        height="2"
+      ></v-progress-linear>
+
       <v-tabs v-model="activeTab" v-if="isEdit" color="primary" grow>
         <v-tab value="details">Details</v-tab>
         <v-tab value="purchases">Purchases</v-tab>
@@ -379,31 +570,17 @@ const closeModal = () => {
         <v-window v-model="activeTab">
           <!-- Details & Photos Tab -->
           <v-window-item value="details">
-            <div class="mb-6">
-              <v-btn
-                color="success"
-                @click="triggerAutoFill"
-                :disabled="isAnalyzing"
-                prepend-icon="mdi-sparkles"
-                block
-                size="large"
-                elevation="1"
-              >
-                {{ isAnalyzing ? 'Analyzing Image...' : 'AI Auto-Fill from Image' }}
-              </v-btn>
-              <input type="file" ref="autoFillInput" @change="handleAutoFill" accept="image/*" capture="environment" hidden />
-              
+            <div class="mb-0">
               <!-- Expandable AI Evaluation -->
               <v-expand-transition>
                 <v-card
                   v-if="formData.evaluation"
                   variant="tonal"
                   color="success"
-                  class="mt-3 cursor-pointer"
-                  @click="showFullEvaluation = !showFullEvaluation"
+                  class="mt-0 mb-6"
                 >
                   <v-card-text class="pa-3">
-                    <div class="d-flex align-center mb-1">
+                    <div class="d-flex align-center mb-1 cursor-pointer" @click="showFullEvaluation = !showFullEvaluation">
                       <v-icon size="16" class="mr-2">mdi-information-outline</v-icon>
                       <span class="text-caption font-weight-bold uppercase">AI Evaluation</span>
                       <v-spacer />
@@ -412,8 +589,204 @@ const closeModal = () => {
                     <div :class="showFullEvaluation ? '' : 'text-truncate-2'" class="text-body-2 white-space-pre-wrap">
                       {{ formData.evaluation }}
                     </div>
-                    <div v-if="!showFullEvaluation" class="text-center text-caption mt-1 font-italic opacity-70">
+
+                    <div v-if="!showFullEvaluation" class="text-center text-caption mt-1 font-italic opacity-70 cursor-pointer" @click="showFullEvaluation = !showFullEvaluation">
                       Click to expand
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-expand-transition>
+
+              <!-- Expandable Market Analysis -->
+              <v-expand-transition>
+                <v-card
+                  v-if="formData.market_analysis"
+                  variant="tonal"
+                  color="amber-darken-3"
+                  class="mt-3 mb-6"
+                >
+                  <v-card-text class="pa-3">
+                    <div class="d-flex align-center mb-1 cursor-pointer" @click="showFullMarketAnalysis = !showFullMarketAnalysis">
+                      <v-icon size="16" class="mr-2">mdi-chart-line</v-icon>
+                      <span class="text-caption font-weight-bold uppercase">eBay Market Analysis</span>
+                      <v-spacer />
+                      <v-icon :icon="showFullMarketAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="16" />
+                    </div>
+                    
+                    <div class="d-flex flex-wrap gap-2 mb-2 cursor-pointer" @click="showFullMarketAnalysis = !showFullMarketAnalysis">
+                      <v-chip size="x-small" color="amber-darken-4">List: {{ formData.market_analysis.listing_price_range }}</v-chip>
+                      <v-chip size="x-small" color="success">Sold: {{ formData.market_analysis.sold_price_range }}</v-chip>
+                      <v-chip size="x-small" color="primary">STR: {{ formData.market_analysis.sell_through_rate }}</v-chip>
+                      <v-btn 
+                        v-if="formData.market_analysis.market_url"
+                        :href="formData.market_analysis.market_url" 
+                        target="_blank" 
+                        variant="text" 
+                        size="x-small" 
+                        color="primary"
+                        prepend-icon="mdi-launch"
+                        @click.stop
+                        class="ml-auto"
+                      >
+                        View Live Listings
+                      </v-btn>
+                    </div>
+
+                    <div v-if="showFullMarketAnalysis">
+                      <div class="text-caption font-weight-bold mt-2">Suggested Title:</div>
+                      <div class="text-body-2 mb-2">{{ formData.market_analysis.suggested_ebay_title }}</div>
+                      
+                      <div class="text-caption font-weight-bold mt-2">Flipping Advice:</div>
+                      <div class="text-body-2 mb-2 white-space-pre-wrap">{{ formData.market_analysis.flipping_advice }}</div>
+
+                      <div class="mt-4 p-3 bg-grey-darken-4 rounded-lg position-relative" v-if="formData.market_analysis.listing_copy">
+                        <div class="text-caption font-weight-bold mb-1 d-flex align-center">
+                          <v-icon size="14" class="mr-1">mdi-content-copy</v-icon>
+                          Listing Template
+                          <v-spacer />
+                          <v-btn icon="mdi-content-copy" variant="text" size="x-small" @click.stop="copyToClipboard(formData.market_analysis.listing_copy)" title="Copy to clipboard" />
+                        </div>
+                        <div class="text-body-2 white-space-pre-wrap font-italic text-grey-lighten-1">
+                          {{ formData.market_analysis.listing_copy }}
+                        </div>
+                      </div>
+                    </div>
+                    <div v-else class="text-center text-caption mt-1 font-italic opacity-70">
+                      Click to expand strategy
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-expand-transition>
+
+              <!-- Expandable Facebook Analysis -->
+              <v-expand-transition>
+                <v-card
+                  v-if="formData.facebook_analysis"
+                  variant="tonal"
+                  color="blue-darken-2"
+                  class="mt-3 mb-6"
+                >
+                  <v-card-text class="pa-3">
+                    <div class="d-flex align-center mb-1 cursor-pointer" @click="showFullFacebookAnalysis = !showFullFacebookAnalysis">
+                      <v-icon size="16" class="mr-2">mdi-facebook</v-icon>
+                      <span class="text-caption font-weight-bold uppercase">FB Marketplace Analysis</span>
+                      <v-spacer />
+                      <v-icon :icon="showFullFacebookAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="16" />
+                    </div>
+                    
+                    <div class="d-flex flex-wrap gap-2 mb-2 cursor-pointer" @click="showFullFacebookAnalysis = !showFullFacebookAnalysis">
+                      <v-chip size="x-small" color="blue-darken-3">Local: {{ formData.facebook_analysis.local_price_estimate }}</v-chip>
+                      <v-chip size="x-small" color="indigo">Target: {{ formData.facebook_analysis.target_audience }}</v-chip>
+                      <v-btn 
+                        v-if="formData.facebook_analysis.market_url"
+                        :href="formData.facebook_analysis.market_url" 
+                        target="_blank" 
+                        variant="text" 
+                        size="x-small" 
+                        color="white"
+                        prepend-icon="mdi-launch"
+                        @click.stop
+                        class="ml-auto"
+                      >
+                        Search Marketplace
+                      </v-btn>
+                    </div>
+
+                    <div v-if="showFullFacebookAnalysis">
+                      <div class="text-caption font-weight-bold mt-2">Suggested Groups:</div>
+                      <div class="d-flex flex-wrap gap-1 mb-2">
+                        <v-chip v-for="group in formData.facebook_analysis.suggested_groups" :key="group" size="x-small" variant="outlined">
+                          {{ group }}
+                        </v-chip>
+                      </div>
+                      
+                      <div class="text-caption font-weight-bold mt-2">Safety & Scams:</div>
+                      <div class="text-body-2 mb-2">{{ formData.facebook_analysis.safety_tips }}</div>
+
+                      <div class="text-caption font-weight-bold mt-2">Listing Strategy:</div>
+                      <div class="text-body-2 mb-2 white-space-pre-wrap">{{ formData.facebook_analysis.listing_strategy }}</div>
+
+                      <div class="mt-4 p-3 bg-grey-darken-4 rounded-lg position-relative" v-if="formData.facebook_analysis.listing_copy">
+                        <div class="text-caption font-weight-bold mb-1 d-flex align-center">
+                          <v-icon size="14" class="mr-1">mdi-content-copy</v-icon>
+                          FB Listing Copy
+                          <v-spacer />
+                          <v-btn icon="mdi-content-copy" variant="text" size="x-small" @click.stop="copyToClipboard(formData.facebook_analysis.listing_copy)" title="Copy to clipboard" />
+                        </div>
+                        <div class="text-body-2 white-space-pre-wrap font-italic text-grey-lighten-1">
+                          {{ formData.facebook_analysis.listing_copy }}
+                        </div>
+                      </div>
+                    </div>
+                    <div v-else class="text-center text-caption mt-1 font-italic opacity-70">
+                      Click to expand strategy
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-expand-transition>
+
+              <!-- Expandable Etsy Analysis -->
+              <v-expand-transition>
+                <v-card
+                  v-if="formData.etsy_analysis"
+                  variant="tonal"
+                  color="orange-darken-3"
+                  class="mt-3 mb-6"
+                >
+                  <v-card-text class="pa-3">
+                    <div class="d-flex align-center mb-1 cursor-pointer" @click="showFullEtsyAnalysis = !showFullEtsyAnalysis">
+                      <v-icon size="16" class="mr-2">mdi-storefront-outline</v-icon>
+                      <span class="text-caption font-weight-bold uppercase">Etsy Market Analysis</span>
+                      <v-spacer />
+                      <v-icon :icon="showFullEtsyAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="16" />
+                    </div>
+                    
+                    <div class="d-flex flex-wrap gap-2 mb-2 cursor-pointer" @click="showFullEtsyAnalysis = !showFullEtsyAnalysis">
+                      <v-chip size="x-small" color="orange-darken-4">Etsy: {{ formData.etsy_analysis.etsy_price_estimate }}</v-chip>
+                      <v-chip size="x-small" color="deep-orange-darken-1">Target: {{ formData.etsy_analysis.target_persona }}</v-chip>
+                      <v-btn 
+                        v-if="formData.etsy_analysis.market_url"
+                        :href="formData.etsy_analysis.market_url" 
+                        target="_blank" 
+                        variant="text" 
+                        size="x-small" 
+                        color="white"
+                        prepend-icon="mdi-launch"
+                        @click.stop
+                        class="ml-auto"
+                      >
+                        Search Etsy
+                      </v-btn>
+                    </div>
+
+                    <div v-if="showFullEtsyAnalysis">
+                      <div class="text-caption font-weight-bold mt-2">13 Etsy Tags:</div>
+                      <div class="d-flex flex-wrap gap-1 mb-2">
+                        <v-chip v-for="tag in formData.etsy_analysis.seo_tags" :key="tag" size="x-small" variant="outlined">
+                          {{ tag }}
+                        </v-chip>
+                      </div>
+                      
+                      <div class="text-caption font-weight-bold mt-2">Shipping Strategy:</div>
+                      <div class="text-body-2 mb-2">{{ formData.etsy_analysis.shipping_advice }}</div>
+
+                      <div class="text-caption font-weight-bold mt-2">Curation & Aesthetic:</div>
+                      <div class="text-body-2 mb-2 white-space-pre-wrap">{{ formData.etsy_analysis.curation_strategy }}</div>
+
+                      <div class="mt-4 p-3 bg-grey-darken-4 rounded-lg position-relative" v-if="formData.etsy_analysis.listing_copy">
+                        <div class="text-caption font-weight-bold mb-1 d-flex align-center">
+                          <v-icon size="14" class="mr-1">mdi-content-copy</v-icon>
+                          Etsy Listing Copy
+                          <v-spacer />
+                          <v-btn icon="mdi-content-copy" variant="text" size="x-small" @click.stop="copyToClipboard(formData.etsy_analysis.listing_copy)" title="Copy to clipboard" />
+                        </div>
+                        <div class="text-body-2 white-space-pre-wrap font-italic text-grey-lighten-1">
+                          {{ formData.etsy_analysis.listing_copy }}
+                        </div>
+                      </div>
+                    </div>
+                    <div v-else class="text-center text-caption mt-1 font-italic opacity-70">
+                      Click to expand strategy
                     </div>
                   </v-card-text>
                 </v-card>
@@ -423,15 +796,80 @@ const closeModal = () => {
             <div class="mb-6">
               <div class="d-flex justify-space-between align-center mb-3">
                 <h3 class="text-subtitle-1 font-weight-bold">Photos</h3>
-                <v-btn
-                  variant="tonal"
-                  size="small"
-                  color="primary"
-                  prepend-icon="mdi-camera"
-                  @click="triggerUpload"
-                >
-                  Add Photo
-                </v-btn>
+                <div class="d-flex align-center gap-2">
+                  <v-menu v-if="pendingPhotos.length > 0 || localPhotos.length > 0" :close-on-content-click="false">
+                    <template v-slot:activator="{ props }">
+                      <v-btn
+                        variant="tonal"
+                        size="small"
+                        color="secondary"
+                        prepend-icon="mdi-robot"
+                        append-icon="mdi-chevron-down"
+                        v-bind="props"
+                      >
+                        AI Tools
+                      </v-btn>
+                    </template>
+                    <v-list density="comfortable" style="min-width: 200px;">
+                      <v-list-item
+                        @click="handleAiAutoFill"
+                        :disabled="isAnalyzing"
+                        density="comfortable"
+                      >
+                        <template v-slot:prepend>
+                          <v-progress-circular v-if="isAnalyzing" indeterminate size="20" width="2" color="success" class="mr-3" />
+                          <v-icon v-else color="success">mdi-auto-fix</v-icon>
+                        </template>
+                        <v-list-item-title>Quick AI Analysis & Auto-Fill</v-list-item-title>
+                      </v-list-item>
+
+                      <v-list-item
+                        @click="handleMarketAnalysis"
+                        :disabled="isMarketAnalyzing"
+                        density="comfortable"
+                      >
+                        <template v-slot:prepend>
+                          <v-progress-circular v-if="isMarketAnalyzing" indeterminate size="20" width="2" color="amber-darken-3" class="mr-3" />
+                          <v-icon v-else color="amber-darken-3">mdi-shopping-outline</v-icon>
+                        </template>
+                        <v-list-item-title>eBay Market Check</v-list-item-title>
+                      </v-list-item>
+
+                      <v-list-item
+                        @click="handleFacebookAnalysis"
+                        :disabled="isFacebookAnalyzing"
+                        density="comfortable"
+                      >
+                        <template v-slot:prepend>
+                          <v-progress-circular v-if="isFacebookAnalyzing" indeterminate size="20" width="2" color="blue-darken-2" class="mr-3" />
+                          <v-icon v-else color="blue-darken-2">mdi-facebook</v-icon>
+                        </template>
+                        <v-list-item-title>FB Market Check</v-list-item-title>
+                      </v-list-item>
+
+                      <v-list-item
+                        @click="handleEtsyAnalysis"
+                        :disabled="isEtsyAnalyzing"
+                        density="comfortable"
+                      >
+                        <template v-slot:prepend>
+                          <v-progress-circular v-if="isEtsyAnalyzing" indeterminate size="20" width="2" color="orange-darken-3" class="mr-3" />
+                          <v-icon v-else color="orange-darken-3">mdi-storefront-outline</v-icon>
+                        </template>
+                        <v-list-item-title>Etsy Market Check</v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
+                  <v-btn
+                    variant="tonal"
+                    size="small"
+                    color="primary"
+                    prepend-icon="mdi-camera"
+                    @click="triggerUpload"
+                  >
+                    Add Photo
+                  </v-btn>
+                </div>
               </div>
               <input type="file" ref="fileInput" @change="handleFileUpload" accept="image/*" capture="environment" hidden />
 
@@ -493,7 +931,7 @@ const closeModal = () => {
                   variant="outlined"
                   density="compact"
                   required
-                  @update:model-value="(val) => { if (val === 'unique') formData.quantity_on_hand = 1 }"
+                  @update:model-value="(val) => { if (val === 'unique') { formData.quantity_on_hand = 1; formData.unit = 'pcs'; } }"
                 />
               </v-col>
 
@@ -818,6 +1256,9 @@ const closeModal = () => {
 }
 .border-dashed {
   border: 2px dashed #e0e0e0;
+}
+.gap-2 {
+  gap: 8px;
 }
 .gap-3 {
   gap: 12px;
