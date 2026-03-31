@@ -1,10 +1,10 @@
 1. Product overview
 
-- **App name:** Inventory Ledger
+- **App name:** Inventory Ledger (Pintventory)
 - **Purpose:** Track inventory items with photo evidence and a complete purchase/sale ledger across vendors and customers.
 - **Primary users / roles:**
 	- **Owner / Admin:** full access, user/role management, exports, deletes/archives
-	- **Staff:** CRUD inventory, purchases, sales, customers, vendors
+	- **Staff:** CRUD inventory, purchases, sales, customers, vendors, storage locations
 	- **Read-only (optional):** view-only reporting + item detail
 
 - **Top success criteria:**
@@ -27,7 +27,7 @@
 
 3. Global app structure
 
-- **Navigation:** left sidebar (Inventory, Customers, Vendors, Profile)
+- **Navigation:** left sidebar (Inventory, Customers, Vendors, Storage Locations, Profile)
 - **Global search:** inventory + customers + vendors (single search box, scoped results)
 - **Sort / filters:** saved filters per user; default sort by `updated_at` desc
 - **Pagination:** cursor or page-based; default 25 rows; remember last page per user
@@ -36,12 +36,17 @@
 
 4. Core data model
 
-This is SKU-style inventory (not unique physical objects). Primary entities:
+This is SKU-style inventory (not unique physical objects, though "unique" type is supported). Primary entities:
 
 - **InventoryItem**
-	- `id` (uuid), `sku`, `title` (required), `description`, `status` (in_stock | low_stock | out_of_stock | archived)
-	- `quantity_on_hand` (integer, updated by transactions), `reorder_point`, `unit`, `tags` (string[]), `location`
+	- `id` (uuid), `sku`, `title` (required), `description`, `evaluation`, `status` (in_stock | low_stock | out_of_stock | archived)
+	- `item_type` (standard | unique) - default: standard
+	- `quantity_on_hand` (integer, updated by transactions), `reorder_point`, `unit`, `tags` (string[]), `location` (deprecated text field)
+	- `storage_location_id` (foreign key to `storage_locations`)
 	- `created_at`, `updated_at`, `created_by_user_id`, `archived_at`
+
+- **StorageLocation**
+	- `id`, `name` (required), `description`, `user_id`, `created_at`, `updated_at`
 
 - **Photo**
 	- `id`, `inventory_item_id`, `storage_key`, `mime_type`, `caption`, `sort_order`, `created_at`
@@ -65,9 +70,14 @@ This is SKU-style inventory (not unique physical objects). Primary entities:
 - **Inventory Page**
 	- **Purpose:** find items fast, see on-hand, and act (purchase/sell/edit) without leaving the page.
 	- **Primary actions:** Add Item, Edit, Quick Purchase, Quick Sale, Archive
-	- **List columns:** Photo thumbnail, Title (with SKU), Status, Qty on hand, Last unit cost, Last unit price, Updated, Actions
-	- **Filters:** Status, Tag, Location, Vendor, Customer, Low stock toggle (qty <= reorder_point), Updated date range
+	- **List columns:** Photo thumbnail, Title (with SKU), Status, Type, Qty on hand, Location, Actions
+	- **Filters:** Status, Item Type, Tag, Storage Location, Vendor, Customer, Low stock toggle (qty <= reorder_point), Updated date range
 	- **Item detail:** separate route `/inventory/:id` for deep history and sharing links
+
+- **Storage Locations Page**
+	- **Purpose:** manage physical or logical storage areas.
+	- **Primary actions:** Add Location, Edit, Delete
+	- **Columns:** Name, Description, Created At, Actions
 
 - **Profile Page**
 	- **Purpose:** user identity, preferences, and admin user management
@@ -101,8 +111,11 @@ The Inventory modal is a key UI surface and has been extended with the following
 - **Details tab**
 	- Title: required (3–120 chars)
 	- Description: plain text (optionally markdown later)
+	- Evaluation: AI-assisted or manual assessment of the item
+	- Item Type: "standard" or "unique"
 	- Tags: freeform chips + autocomplete from existing tags (stored as string[])
-	- Location, SKU (auto-generate INV-YYYY-#### if blank), Reorder point (default 0), Unit (default "each"), Status
+	- Storage Location: Dropdown from `storage_locations`
+	- SKU (auto-generate INV-YYYY-#### if blank), Reorder point (default 0), Unit (default "each"), Status
 
 - **Purchases (Vendors)**
 	- Inline subtable with “Add Purchase” form
@@ -169,12 +182,16 @@ Vendors / Customers
 - `GET|POST|PUT /vendors`
 - `GET|POST|PUT /customers`
 
+Storage Locations
+
+- `GET|POST|PUT|DELETE /storage-locations`
+
 Security & Auth
 
 - **Auth:** cookie session with CSRF protection
 - **Authorization (RBAC):**
 	- **Admin:** full access
-	- **Staff:** CRUD inventory, transactions, vendors, customers; cannot hard-delete; can archive
+	- **Staff:** CRUD inventory, transactions, vendors, customers, locations; cannot hard-delete; can archive
 	- **Read-only:** GET-only
 
 9. Open questions and recommended defaults
