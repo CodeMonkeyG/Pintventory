@@ -45,6 +45,58 @@ const vuetify = createVuetify({
           success: '#10b981',    // Emerald 500
           warning: '#f59e0b',    // Amber 500
         }
+      },
+      'gruvbox-dark': {
+        dark: true,
+        colors: {
+          primary: '#fabd2f',    // Yellow
+          secondary: '#a89984',  // Gray
+          surface: '#282828',    // Dark 1
+          background: '#1d2021', // Dark 0 hard
+          error: '#fb4934',      // Red
+          info: '#83a598',       // Blue
+          success: '#b8bb26',    // Green
+          warning: '#fe8019',    // Orange
+        }
+      },
+      'gruvbox-light': {
+        dark: false,
+        colors: {
+          primary: '#af3a03',    // Orange
+          secondary: '#7c6f64',  // Gray
+          surface: '#f2e5bc',    // Light 1
+          background: '#fbf1c7', // Light 0
+          error: '#9d0006',      // Red
+          info: '#076678',       // Blue
+          success: '#79740e',    // Green
+          warning: '#b57614',    // Yellow
+        }
+      },
+      'solarized-dark': {
+        dark: true,
+        colors: {
+          primary: '#268bd2',    // Blue
+          secondary: '#586e75',  // Base01
+          surface: '#073642',    // Base02
+          background: '#002b36', // Base03
+          error: '#dc322f',      // Red
+          info: '#2aa198',       // Cyan
+          success: '#859900',    // Green
+          warning: '#b58900',    // Yellow
+        }
+      },
+      'monokai': {
+        dark: true,
+        colors: {
+          primary: '#a6e22e',    // Green
+          secondary: '#93a1a1',
+          surface: '#272822',    // Dark gray
+          background: '#1e1f1c', // Slightly darker
+          error: '#f92672',      // Pink
+          info: '#66d9ef',       // Cyan
+          success: '#a6e22e',    // Green
+          warning: '#fd971f',    // Orange
+        }
       }
     }
   }

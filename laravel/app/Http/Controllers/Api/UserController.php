@@ -43,6 +43,7 @@ class UserController extends Controller
             'preferences.currency' => 'nullable|string|size:3',
             'preferences.date_format' => 'nullable|string',
             'preferences.tax_handling' => 'nullable|string',
+            'preferences.theme' => 'nullable|string',
             'preferences.low_stock_notification' => 'boolean',
         ]);
 

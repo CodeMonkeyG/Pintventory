@@ -3,10 +3,11 @@ import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import MainLayout from '../layouts/MainLayout.vue';
 import api from '../axios';
-import { useDisplay } from 'vuetify';
+import { useDisplay, useTheme } from 'vuetify';
 
 const authStore = useAuthStore();
 const { mobile } = useDisplay();
+const theme = useTheme();
 const loading = ref(false);
 const message = ref('');
 
@@ -18,7 +19,14 @@ const profile = ref({
     currency: 'USD',
     date_format: 'en-US',
     tax_handling: 'exclude_tax',
+    theme: 'dark',
     low_stock_notification: false,
+  }
+});
+
+watch(() => profile.value.preferences.theme, (newTheme) => {
+  if (newTheme) {
+    theme.global.name.value = newTheme;
   }
 });
 
@@ -114,6 +122,23 @@ const saveProfile = async () => {
           <v-card-title class="text-h6 pb-0">Preferences</v-card-title>
           <v-card-text class="pt-4">
             <v-row dense>
+              <v-col cols="12">
+                <v-select
+                  v-model="profile.preferences.theme"
+                  label="App Theme"
+                  :items="[
+                    { value: 'light', title: 'Classic Light' },
+                    { value: 'dark', title: 'Deep Slate (Dark)' },
+                    { value: 'gruvbox-dark', title: 'Gruvbox Dark' },
+                    { value: 'gruvbox-light', title: 'Gruvbox Light' },
+                    { value: 'solarized-dark', title: 'Solarized Dark' },
+                    { value: 'monokai', title: 'Monokai' }
+                  ]"
+                  variant="outlined"
+                  density="compact"
+                  prepend-inner-icon="mdi-palette"
+                />
+              </v-col>
               <v-col cols="12">
                 <v-select
                   v-model="profile.preferences.currency"
