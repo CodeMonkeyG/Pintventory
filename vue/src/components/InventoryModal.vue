@@ -46,6 +46,7 @@ const formData = ref({
 
 const showGallery = ref(false);
 const galleryIndex = ref(0);
+const showFullEvaluation = ref(false);
 
 const isEdit = computed(() => !!props.item);
 
@@ -140,6 +141,7 @@ watch(() => props.show, (val) => {
         localPhotos.value = [];
         showPurchaseForm.value = false;
         showSaleForm.value = false;
+        showFullEvaluation.value = false;
         activeTab.value = 'details';
     }
 });
@@ -380,6 +382,32 @@ const closeModal = () => {
                 {{ isAnalyzing ? 'Analyzing Image...' : 'AI Auto-Fill from Image' }}
               </v-btn>
               <input type="file" ref="autoFillInput" @change="handleAutoFill" accept="image/*" capture="environment" hidden />
+              
+              <!-- Expandable AI Evaluation -->
+              <v-expand-transition>
+                <v-card
+                  v-if="formData.evaluation"
+                  variant="tonal"
+                  color="success"
+                  class="mt-3 cursor-pointer"
+                  @click="showFullEvaluation = !showFullEvaluation"
+                >
+                  <v-card-text class="pa-3">
+                    <div class="d-flex align-center mb-1">
+                      <v-icon size="16" class="mr-2">mdi-information-outline</v-icon>
+                      <span class="text-caption font-weight-bold uppercase">AI Evaluation</span>
+                      <v-spacer />
+                      <v-icon :icon="showFullEvaluation ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="16" />
+                    </div>
+                    <div :class="showFullEvaluation ? '' : 'text-truncate-2'" class="text-body-2 white-space-pre-wrap">
+                      {{ formData.evaluation }}
+                    </div>
+                    <div v-if="!showFullEvaluation" class="text-center text-caption mt-1 font-italic opacity-70">
+                      Click to expand
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-expand-transition>
             </div>
 
             <div class="mb-6">
@@ -542,17 +570,6 @@ const closeModal = () => {
                   variant="outlined"
                   density="compact"
                   prepend-inner-icon="mdi-tag"
-                />
-              </v-col>
-
-              <v-col cols="12">
-                <v-textarea
-                  v-model="formData.evaluation"
-                  label="AI Evaluation"
-                  rows="3"
-                  variant="outlined"
-                  density="compact"
-                  auto-grow
                 />
               </v-col>
 
@@ -779,5 +796,20 @@ const closeModal = () => {
 }
 .gap-3 {
   gap: 12px;
+}
+.cursor-pointer {
+  cursor: pointer;
+}
+.text-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.white-space-pre-wrap {
+  white-space: pre-wrap;
+}
+.opacity-70 {
+  opacity: 0.7;
 }
 </style>
