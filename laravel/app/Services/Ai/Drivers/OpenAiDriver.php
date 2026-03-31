@@ -149,4 +149,19 @@ class OpenAiDriver implements AiProvider
 
         return json_decode($content, true) ?? [];
     }
+
+    public function marketAnalysis(UploadedFile|string $image): array
+    {
+        throw new \RuntimeException('Market analysis is not yet implemented for the OpenAI driver.');
+    }
+
+    public function facebookAnalysis(UploadedFile|string $image): array
+    {
+        throw new \RuntimeException('Facebook analysis is not yet implemented for the OpenAI driver.');
+    }
+
+    public function etsyAnalysis(UploadedFile|string $image): array
+    {
+        throw new \RuntimeException('Etsy analysis is not yet implemented for the OpenAI driver.');
+    }
 }

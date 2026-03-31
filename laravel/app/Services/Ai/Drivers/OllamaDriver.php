@@ -83,4 +83,19 @@ class OllamaDriver implements AiProvider
             throw new \RuntimeException("Image identification failed: {$e->getMessage()}");
         }
     }
+
+    public function marketAnalysis(UploadedFile|string $image): array
+    {
+        throw new \RuntimeException('Market analysis is not yet implemented for the Ollama driver.');
+    }
+
+    public function facebookAnalysis(UploadedFile|string $image): array
+    {
+        throw new \RuntimeException('Facebook analysis is not yet implemented for the Ollama driver.');
+    }
+
+    public function etsyAnalysis(UploadedFile|string $image): array
+    {
+        throw new \RuntimeException('Etsy analysis is not yet implemented for the Ollama driver.');
+    }
 }
