@@ -5,10 +5,12 @@ import PhotoGallery from './PhotoGallery.vue';
 import { revokeBlobUrls } from '../utils/helpers';
 import { useVendorStore } from '../stores/vendors';
 import { useCustomerStore } from '../stores/customers';
+import { useLocationStore } from '../stores/locations';
 import { useDisplay } from 'vuetify';
 
 const vendorStore = useVendorStore();
 const customerStore = useCustomerStore();
+const locationStore = useLocationStore();
 const { mobile } = useDisplay();
 
 const props = defineProps({
@@ -36,6 +38,7 @@ const formData = ref({
     reorder_point: 0,
     unit: '',
     location: '',
+    storage_location_id: null,
     tags: '',
     description: '',
     evaluation: ''
@@ -75,6 +78,7 @@ watch(() => props.item, (item) => {
             reorder_point: item.reorder_point ?? 0,
             unit: item.unit || '',
             location: item.location || '',
+            storage_location_id: item.storage_location_id || null,
             tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || ''),
             description: item.description || '',
             evaluation: item.evaluation || ''
@@ -89,6 +93,7 @@ watch(() => props.item, (item) => {
             reorder_point: 0,
             unit: '',
             location: '',
+            storage_location_id: null,
             tags: '',
             description: '',
             evaluation: ''
@@ -110,6 +115,9 @@ watch(activeTab, async (tab) => {
 });
 
 watch(() => props.show, (val) => {
+    if (val) {
+        locationStore.fetchItems();
+    }
     if (!val) {
         const urls = pendingPhotos.value.map(p => p.url);
         revokeBlobUrls(urls);
@@ -124,6 +132,7 @@ watch(() => props.show, (val) => {
             reorder_point: 0,
             unit: '',
             location: '',
+            storage_location_id: null,
             tags: '',
             description: '',
             evaluation: ''
@@ -501,13 +510,28 @@ const closeModal = () => {
               </v-col>
 
               <v-col cols="12">
-                <v-text-field
-                  v-model="formData.location"
-                  label="Storage Location"
-                  variant="outlined"
-                  density="compact"
-                  prepend-inner-icon="mdi-map-marker"
-                />
+                <div class="d-flex align-center gap-2">
+                  <v-select
+                    v-model="formData.storage_location_id"
+                    label="Storage Location"
+                    :items="locationStore.items"
+                    item-title="name"
+                    item-value="id"
+                    variant="outlined"
+                    density="compact"
+                    prepend-inner-icon="mdi-map-marker"
+                    clearable
+                    class="flex-grow-1"
+                  />
+                  <v-btn
+                    icon="mdi-cog"
+                    variant="text"
+                    size="small"
+                    to="/storage-locations"
+                    title="Manage Locations"
+                    class="mb-5"
+                  />
+                </div>
               </v-col>
 
               <v-col cols="12">

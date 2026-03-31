@@ -25,6 +25,7 @@ class InventoryItem extends Model
         'unit',
         'tags',
         'location',
+        'storage_location_id',
         'evaluation',
         'created_by_user_id',
         'archived_at',
@@ -55,6 +56,11 @@ class InventoryItem extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    public function storageLocation()
+    {
+        return $this->belongsTo(StorageLocation::class);
     }
 
     /**

@@ -18,7 +18,7 @@ class InventoryItemController extends Controller
     public function index(Request $request)
     {
         $query = InventoryItem::query()
-            ->with(['photos'])
+            ->with(['photos', 'storageLocation'])
             ->search($request->input('search'))
             ->byStatus($request->input('status'))
             ->byTag($request->input('tag'));
@@ -53,6 +53,7 @@ class InventoryItemController extends Controller
             'unit' => 'string|max:50',
             'tags' => 'nullable|array',
             'location' => 'nullable|string|max:255',
+            'storage_location_id' => 'nullable|exists:storage_locations,id',
         ]);
 
         // Auto-generate SKU if missing
@@ -100,6 +101,7 @@ class InventoryItemController extends Controller
             'unit' => 'string|max:50',
             'tags' => 'nullable|array',
             'location' => 'nullable|string|max:255',
+            'storage_location_id' => 'nullable|exists:storage_locations,id',
         ]);
 
         $item->update($validated);

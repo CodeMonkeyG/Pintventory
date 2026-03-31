@@ -14,6 +14,7 @@ const navItems = [
   { title: 'Inventory', to: '/inventory', icon: 'mdi-package-variant-closed' },
   { title: 'Customers', to: '/customers', icon: 'mdi-account-group' },
   { title: 'Vendors', to: '/vendors', icon: 'mdi-truck-delivery' },
+  { title: 'Locations', to: '/storage-locations', icon: 'mdi-map-marker' },
   { title: 'Profile', to: '/profile', icon: 'mdi-account' },
 ];
 

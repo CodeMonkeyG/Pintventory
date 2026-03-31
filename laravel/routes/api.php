@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\PurchaseController;
 use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\UserController; // Import UserController
 use App\Http\Controllers\Auth\GoogleController; // Import GoogleController
+use App\Http\Controllers\Api\StorageLocationController;
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', [UserController::class, 'show']);
@@ -22,6 +23,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('customers', CustomerController::class);
     Route::apiResource('purchases', PurchaseController::class);
     Route::apiResource('sales', SaleController::class);
+    Route::apiResource('storage-locations', StorageLocationController::class);
     
     // AI Routes (with rate limiting)
     Route::middleware('rate-limit-ai')->group(function () {

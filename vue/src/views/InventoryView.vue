@@ -224,6 +224,10 @@ const getStatusColor = (status) => {
                 <div class="mt-1 font-weight-medium">
                   {{ item.quantity_on_hand }} {{ item.unit }}
                 </div>
+                <div v-if="item.storage_location" class="text-caption text-primary mt-1">
+                  <v-icon size="12" class="mr-1">mdi-map-marker</v-icon>
+                  {{ item.storage_location.name }}
+                </div>
                 <div class="text-caption text-grey mt-1">
                   Updated: {{ formatDate(item.updated_at) }}
                 </div>
@@ -240,6 +244,7 @@ const getStatusColor = (status) => {
             <tr>
               <th>Photo</th>
               <th>Title / SKU</th>
+              <th>Location</th>
               <th>Status</th>
               <th>On Hand</th>
               <th>Updated</th>
@@ -264,6 +269,16 @@ const getStatusColor = (status) => {
               <td>
                 <div class="font-weight-bold">{{ item.title }}</div>
                 <div class="text-caption text-grey">{{ item.sku }}</div>
+              </td>
+              <td>
+                <div v-if="item.storage_location" class="text-body-2">
+                  <v-icon size="14" color="primary" class="mr-1">mdi-map-marker</v-icon>
+                  {{ item.storage_location.name }}
+                </div>
+                <div v-else-if="item.location" class="text-caption text-grey italic">
+                  {{ item.location }}
+                </div>
+                <span v-else class="text-grey">—</span>
               </td>
               <td>
                 <v-chip :color="getStatusColor(item.status)" size="small">
