@@ -41,6 +41,20 @@ watch(() => props.item, (newItem) => {
   }
 }, { immediate: true });
 
+watch(() => props.show, (val) => {
+  if (!val) {
+    formData.value = {
+      name: '',
+      contact_name: '',
+      email: '',
+      phone: '',
+      address: '',
+      notes: ''
+    };
+    activeTab.value = 'details';
+  }
+});
+
 const save = () => {
   if (!formData.value.name) return alert('Name is required');
   emit('save', formData.value);

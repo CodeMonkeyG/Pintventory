@@ -114,6 +114,24 @@ watch(() => props.show, (val) => {
         const urls = pendingPhotos.value.map(p => p.url);
         revokeBlobUrls(urls);
         pendingPhotos.value = [];
+        
+        // Reset form data and state when modal closes
+        formData.value = {
+            title: '',
+            sku: '',
+            status: 'in_stock',
+            quantity_on_hand: 0,
+            reorder_point: 0,
+            unit: '',
+            location: '',
+            tags: '',
+            description: '',
+            evaluation: ''
+        };
+        localPhotos.value = [];
+        showPurchaseForm.value = false;
+        showSaleForm.value = false;
+        activeTab.value = 'details';
     }
 });
 
