@@ -5,9 +5,11 @@ import PhotoGallery from './PhotoGallery.vue';
 import { revokeBlobUrls } from '../utils/helpers';
 import { useVendorStore } from '../stores/vendors';
 import { useCustomerStore } from '../stores/customers';
+import { useDisplay } from 'vuetify';
 
 const vendorStore = useVendorStore();
 const customerStore = useCustomerStore();
+const { mobile } = useDisplay();
 
 const props = defineProps({
   show: Boolean,
@@ -240,221 +242,293 @@ const closeModal = () => {
 </script>
 
 <template>
-  <v-dialog :modelValue="show" @update:modelValue="$emit('update:show', $event)" persistent max-width="800">
-    <v-card>
-      <v-card-title class="d-flex justify-space-between align-center">
-        <span>{{ isEdit ? 'Edit Item' : 'Add New Item' }}</span>
+  <v-dialog 
+    :modelValue="show" 
+    @update:modelValue="$emit('update:show', $event)" 
+    persistent 
+    :fullscreen="mobile"
+    :max-width="mobile ? undefined : '800'"
+    :transition="mobile ? 'dialog-bottom-transition' : 'dialog-transition'"
+  >
+    <v-card :rounded="mobile ? '0' : 'lg'">
+      <v-toolbar color="primary" v-if="mobile">
         <v-btn icon @click="$emit('close')">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+        <v-toolbar-title>{{ isEdit ? 'Edit Item' : 'Add Item' }}</v-toolbar-title>
+        <v-spacer></v-spacer>
+        <v-btn variant="text" @click="save">Save</v-btn>
+      </v-toolbar>
+
+      <v-card-title class="d-flex justify-space-between align-center px-6 pt-6 pb-2" v-else>
+        <span class="text-h5">{{ isEdit ? 'Edit Inventory Item' : 'Add New Inventory Item' }}</span>
+        <v-btn icon variant="text" @click="$emit('close')">
           <v-icon>mdi-close</v-icon>
         </v-btn>
       </v-card-title>
 
-      <v-tabs v-model="activeTab" v-if="isEdit">
-        <v-tab value="details">Details & Photos</v-tab>
+      <v-tabs v-model="activeTab" v-if="isEdit" color="primary" grow>
+        <v-tab value="details">Details</v-tab>
         <v-tab value="purchases">Purchases</v-tab>
         <v-tab value="sales">Sales</v-tab>
       </v-tabs>
 
-      <v-card-text class="pa-6">
+      <v-card-text :class="mobile ? 'pa-4' : 'pa-6'">
         <v-window v-model="activeTab">
           <!-- Details & Photos Tab -->
           <v-window-item value="details">
-            <div class="mb-4">
+            <div class="mb-6">
               <v-btn
                 color="success"
                 @click="triggerAutoFill"
                 :disabled="isAnalyzing"
                 prepend-icon="mdi-sparkles"
-                class="mb-4"
+                block
+                size="large"
+                elevation="1"
               >
-                {{ isAnalyzing ? 'Analyzing Image...' : 'Auto-Fill from Image' }}
+                {{ isAnalyzing ? 'Analyzing Image...' : 'AI Auto-Fill from Image' }}
               </v-btn>
               <input type="file" ref="autoFillInput" @change="handleAutoFill" accept="image/*" capture="environment" hidden />
             </div>
 
-            <v-card class="mb-4" variant="outlined">
-              <v-card-text>
-                <div class="d-flex justify-space-between align-center mb-3">
-                  <h3 class="text-h6">Photos</h3>
+            <div class="mb-6">
+              <div class="d-flex justify-space-between align-center mb-3">
+                <h3 class="text-subtitle-1 font-weight-bold">Photos</h3>
+                <v-btn
+                  variant="tonal"
+                  size="small"
+                  color="primary"
+                  prepend-icon="mdi-camera"
+                  @click="triggerUpload"
+                >
+                  Add Photo
+                </v-btn>
+              </div>
+              <input type="file" ref="fileInput" @change="handleFileUpload" accept="image/*" capture="environment" hidden />
+
+              <div class="d-flex flex-nowrap gap-3 pb-2 overflow-x-auto" style="min-height: 100px;">
+                <div v-if="localPhotos.length === 0 && pendingPhotos.length === 0" class="w-100 d-flex flex-column align-center justify-center border-dashed rounded-lg py-8 text-grey">
+                  <v-icon size="32" class="mb-2">mdi-image-plus</v-icon>
+                  <span class="text-caption">No photos uploaded</span>
+                </div>
+                
+                <div
+                  v-for="(photo, index) in localPhotos"
+                  :key="photo.id"
+                  class="flex-shrink-0 position-relative rounded-lg overflow-hidden border"
+                  style="width: 100px; height: 100px; cursor: pointer;"
+                  @click="openGallery(index)"
+                >
+                  <v-img :src="photo.url" :alt="photo.caption" cover class="fill-height" />
                   <v-btn
-                    icon
-                    small
-                    color="primary"
-                    @click="triggerUpload"
-                  >
-                    <v-icon>mdi-plus</v-icon>
-                  </v-btn>
+                    icon="mdi-close"
+                    size="x-small"
+                    color="error"
+                    class="position-absolute"
+                    style="top: 4px; right: 4px;"
+                    @click.stop="deletePhoto(photo)"
+                  />
                 </div>
-                <input type="file" ref="fileInput" @change="handleFileUpload" accept="image/*" capture="environment" hidden />
-
-                <div class="d-grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));">
-                  <div v-if="localPhotos.length === 0 && pendingPhotos.length === 0" class="text-center text-grey pa-4">
-                    No photos yet
-                  </div>
-                  
-                  <div
-                    v-for="(photo, index) in localPhotos"
-                    :key="photo.id"
-                    class="position-relative"
-                    style="aspect-ratio: 1; cursor: pointer; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;"
-                    @click="openGallery(index)"
-                  >
-                    <img :src="photo.url" :alt="photo.caption" style="width: 100%; height: 100%; object-fit: cover;" />
-                    <v-btn
-                      icon
-                      size="x-small"
-                      color="error"
-                      class="position-absolute"
-                      style="top: 4px; right: 4px;"
-                      @click.stop="deletePhoto(photo)"
-                    >
-                      <v-icon>mdi-close</v-icon>
-                    </v-btn>
-                  </div>
-                  
-                  <div
-                    v-for="photo in pendingPhotos"
-                    :key="photo.url"
-                    class="position-relative"
-                    style="aspect-ratio: 1; border: 2px dashed #bbb; border-radius: 4px; overflow: hidden;"
-                  >
-                    <img :src="photo.url" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7;" />
-                    <v-btn
-                      icon
-                      size="x-small"
-                      color="error"
-                      class="position-absolute"
-                      style="top: 4px; right: 4px;"
-                      @click="deletePhoto(photo)"
-                    >
-                      <v-icon>mdi-close</v-icon>
-                    </v-btn>
-                    <div class="position-absolute text-center" style="top: 50%; left: 50%; transform: translate(-50%, -50%); color: #999;">
-                      Pending
-                    </div>
+                
+                <div
+                  v-for="photo in pendingPhotos"
+                  :key="photo.url"
+                  class="flex-shrink-0 position-relative rounded-lg overflow-hidden border-dashed"
+                  style="width: 100px; height: 100px;"
+                >
+                  <v-img :src="photo.url" cover class="fill-height" style="opacity: 0.6;" />
+                  <v-btn
+                    icon="mdi-close"
+                    size="x-small"
+                    color="error"
+                    class="position-absolute"
+                    style="top: 4px; right: 4px;"
+                    @click="deletePhoto(photo)"
+                  />
+                  <div class="position-absolute text-center w-100" style="top: 50%; transform: translateY(-50%); font-size: 10px; font-weight: bold; background: rgba(255,255,255,0.7);">
+                    PENDING
                   </div>
                 </div>
-              </v-card-text>
-            </v-card>
-
-            <v-text-field
-              v-model="formData.title"
-              label="Title *"
-              placeholder="Item Name"
-              required
-            />
-            
-            <div class="d-flex gap-3">
-              <v-text-field
-                v-model="formData.sku"
-                label="SKU"
-                placeholder="INV-..."
-                class="flex-grow-1"
-              />
-              <v-select
-                v-model="formData.status"
-                label="Status"
-                :items="['in_stock', 'low_stock', 'out_of_stock', 'archived']"
-                class="flex-grow-1"
-              />
+              </div>
             </div>
 
-            <div class="d-flex gap-3">
-              <v-text-field
-                v-model.number="formData.quantity_on_hand"
-                label="Quantity On Hand"
-                type="number"
-                disabled
-                class="flex-grow-1"
-              />
-              <v-text-field
-                v-model.number="formData.reorder_point"
-                label="Reorder Point"
-                type="number"
-                min="0"
-                class="flex-grow-1"
-              />
-              <v-text-field
-                v-model="formData.unit"
-                label="Unit"
-                class="flex-grow-1"
-              />
-            </div>
+            <v-row dense>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="formData.title"
+                  label="Title *"
+                  variant="outlined"
+                  density="compact"
+                  required
+                />
+              </v-col>
+              
+              <v-col cols="12" sm="6">
+                <v-text-field
+                  v-model="formData.sku"
+                  label="SKU"
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
+              
+              <v-col cols="12" sm="6">
+                <v-select
+                  v-model="formData.status"
+                  label="Status"
+                  :items="[
+                    { title: 'In Stock', value: 'in_stock' },
+                    { title: 'Low Stock', value: 'low_stock' },
+                    { title: 'Out of Stock', value: 'out_of_stock' },
+                    { title: 'Archived', value: 'archived' }
+                  ]"
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
 
-            <v-text-field
-              v-model="formData.location"
-              label="Location"
-            />
+              <v-col cols="6" sm="4">
+                <v-text-field
+                  v-model.number="formData.quantity_on_hand"
+                  label="Qty On Hand"
+                  type="number"
+                  disabled
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
+              
+              <v-col cols="6" sm="4">
+                <v-text-field
+                  v-model.number="formData.reorder_point"
+                  label="Reorder Pt"
+                  type="number"
+                  min="0"
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
+              
+              <v-col cols="12" sm="4">
+                <v-text-field
+                  v-model="formData.unit"
+                  label="Unit (e.g. pcs, sets)"
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
 
-            <v-text-field
-              v-model="formData.tags"
-              label="Tags"
-              hint="Comma-separated"
-            />
+              <v-col cols="12">
+                <v-text-field
+                  v-model="formData.location"
+                  label="Storage Location"
+                  variant="outlined"
+                  density="compact"
+                  prepend-inner-icon="mdi-map-marker"
+                />
+              </v-col>
 
-            <v-textarea
-              v-model="formData.evaluation"
-              label="Evaluation"
-              rows="2"
-            />
+              <v-col cols="12">
+                <v-text-field
+                  v-model="formData.tags"
+                  label="Tags"
+                  hint="Separate with commas"
+                  variant="outlined"
+                  density="compact"
+                  prepend-inner-icon="mdi-tag"
+                />
+              </v-col>
 
-            <v-textarea
-              v-model="formData.description"
-              label="Description"
-              rows="2"
-            />
+              <v-col cols="12">
+                <v-textarea
+                  v-model="formData.evaluation"
+                  label="AI Evaluation"
+                  rows="3"
+                  variant="outlined"
+                  density="compact"
+                  auto-grow
+                />
+              </v-col>
+
+              <v-col cols="12">
+                <v-textarea
+                  v-model="formData.description"
+                  label="Description"
+                  rows="2"
+                  variant="outlined"
+                  density="compact"
+                  auto-grow
+                />
+              </v-col>
+            </v-row>
           </v-window-item>
 
           <!-- Purchases Tab -->
           <v-window-item value="purchases">
             <div class="d-flex justify-space-between align-center mb-4">
-              <h3 class="text-h6">Purchase History</h3>
+              <h3 class="text-subtitle-1 font-weight-bold">Purchase History</h3>
               <v-btn
                 variant="outlined"
+                size="small"
                 @click="showPurchaseForm = !showPurchaseForm"
+                :color="showPurchaseForm ? 'error' : 'primary'"
               >
-                {{ showPurchaseForm ? 'Cancel' : 'Record Purchase' }}
+                {{ showPurchaseForm ? 'Cancel' : 'Add Purchase' }}
               </v-btn>
             </div>
 
-            <v-card v-if="showPurchaseForm" class="mb-4" variant="outlined">
-              <v-card-text>
-                <v-select
-                  v-model="newPurchase.vendor_id"
-                  label="Vendor *"
-                  :items="vendors"
-                  item-title="name"
-                  item-value="id"
-                  required
-                />
-                <div class="d-flex gap-3">
-                  <v-text-field
-                    v-model="newPurchase.purchased_at"
-                    label="Date"
-                    type="date"
-                    class="flex-grow-1"
+            <v-expand-transition>
+              <v-card v-if="showPurchaseForm" class="mb-6 bg-grey-lighten-4" variant="flat" rounded="lg">
+                <v-card-text class="pa-4">
+                  <v-select
+                    v-model="newPurchase.vendor_id"
+                    label="Vendor *"
+                    :items="vendors"
+                    item-title="name"
+                    item-value="id"
+                    variant="outlined"
+                    density="compact"
+                    required
                   />
-                  <v-text-field
-                    v-model.number="newPurchase.quantity_purchased"
-                    label="Qty"
-                    type="number"
-                    min="1"
-                    class="flex-grow-1"
-                  />
-                  <v-text-field
-                    v-model.number="newPurchase.unit_cost"
-                    label="Unit Cost"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    class="flex-grow-1"
-                  />
-                </div>
-                <v-btn color="primary" @click="savePurchase">Save Purchase</v-btn>
-              </v-card-text>
-            </v-card>
+                  <v-row dense>
+                    <v-col cols="12" sm="6">
+                      <v-text-field
+                        v-model="newPurchase.purchased_at"
+                        label="Date"
+                        type="date"
+                        variant="outlined"
+                        density="compact"
+                      />
+                    </v-col>
+                    <v-col cols="6" sm="3">
+                      <v-text-field
+                        v-model.number="newPurchase.quantity_purchased"
+                        label="Qty"
+                        type="number"
+                        min="1"
+                        variant="outlined"
+                        density="compact"
+                      />
+                    </v-col>
+                    <v-col cols="6" sm="3">
+                      <v-text-field
+                        v-model.number="newPurchase.unit_cost"
+                        label="Cost"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        variant="outlined"
+                        density="compact"
+                      />
+                    </v-col>
+                  </v-row>
+                  <v-btn color="primary" block @click="savePurchase" class="mt-2">Record Purchase</v-btn>
+                </v-card-text>
+              </v-card>
+            </v-expand-transition>
 
-            <v-table v-if="item && item.purchases && item.purchases.length > 0">
+            <v-table v-if="item && item.purchases && item.purchases.length > 0" density="comfortable">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -466,67 +540,83 @@ const closeModal = () => {
               <tbody>
                 <tr v-for="p in item.purchases" :key="p.id">
                   <td>{{ formatDate(p.purchased_at) }}</td>
-                  <td>{{ p.vendor ? p.vendor.name : 'Unknown' }}</td>
+                  <td class="text-truncate" style="max-width: 120px;">{{ p.vendor ? p.vendor.name : 'Unknown' }}</td>
                   <td>{{ p.quantity_purchased }}</td>
-                  <td>{{ p.unit_cost }}</td>
+                  <td>${{ p.unit_cost }}</td>
                 </tr>
               </tbody>
             </v-table>
-            <div v-else class="text-center py-6 text-grey">
-              No purchases recorded.
+            <div v-else class="text-center py-8 text-grey border rounded-lg">
+              <v-icon size="32" class="mb-2">mdi-history</v-icon>
+              <div class="text-caption">No purchases recorded.</div>
             </div>
           </v-window-item>
 
           <!-- Sales Tab -->
           <v-window-item value="sales">
             <div class="d-flex justify-space-between align-center mb-4">
-              <h3 class="text-h6">Sales History</h3>
+              <h3 class="text-subtitle-1 font-weight-bold">Sales History</h3>
               <v-btn
                 variant="outlined"
+                size="small"
                 @click="showSaleForm = !showSaleForm"
+                :color="showSaleForm ? 'error' : 'primary'"
               >
-                {{ showSaleForm ? 'Cancel' : 'Record Sale' }}
+                {{ showSaleForm ? 'Cancel' : 'Add Sale' }}
               </v-btn>
             </div>
 
-            <v-card v-if="showSaleForm" class="mb-4" variant="outlined">
-              <v-card-text>
-                <v-select
-                  v-model="newSale.customer_id"
-                  label="Customer *"
-                  :items="customers"
-                  item-title="name"
-                  item-value="id"
-                  required
-                />
-                <div class="d-flex gap-3">
-                  <v-text-field
-                    v-model="newSale.sold_at"
-                    label="Date"
-                    type="date"
-                    class="flex-grow-1"
+            <v-expand-transition>
+              <v-card v-if="showSaleForm" class="mb-6 bg-grey-lighten-4" variant="flat" rounded="lg">
+                <v-card-text class="pa-4">
+                  <v-select
+                    v-model="newSale.customer_id"
+                    label="Customer *"
+                    :items="customers"
+                    item-title="name"
+                    item-value="id"
+                    variant="outlined"
+                    density="compact"
+                    required
                   />
-                  <v-text-field
-                    v-model.number="newSale.quantity_sold"
-                    label="Qty"
-                    type="number"
-                    min="1"
-                    class="flex-grow-1"
-                  />
-                  <v-text-field
-                    v-model.number="newSale.unit_price"
-                    label="Price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    class="flex-grow-1"
-                  />
-                </div>
-                <v-btn color="primary" @click="saveSale">Save Sale</v-btn>
-              </v-card-text>
-            </v-card>
+                  <v-row dense>
+                    <v-col cols="12" sm="6">
+                      <v-text-field
+                        v-model="newSale.sold_at"
+                        label="Date"
+                        type="date"
+                        variant="outlined"
+                        density="compact"
+                      />
+                    </v-col>
+                    <v-col cols="6" sm="3">
+                      <v-text-field
+                        v-model.number="newSale.quantity_sold"
+                        label="Qty"
+                        type="number"
+                        min="1"
+                        variant="outlined"
+                        density="compact"
+                      />
+                    </v-col>
+                    <v-col cols="6" sm="3">
+                      <v-text-field
+                        v-model.number="newSale.unit_price"
+                        label="Price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        variant="outlined"
+                        density="compact"
+                      />
+                    </v-col>
+                  </v-row>
+                  <v-btn color="primary" block @click="saveSale" class="mt-2">Record Sale</v-btn>
+                </v-card-text>
+              </v-card>
+            </v-expand-transition>
 
-            <v-table v-if="item && item.sales && item.sales.length > 0">
+            <v-table v-if="item && item.sales && item.sales.length > 0" density="comfortable">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -538,23 +628,25 @@ const closeModal = () => {
               <tbody>
                 <tr v-for="s in item.sales" :key="s.id">
                   <td>{{ formatDate(s.sold_at) }}</td>
-                  <td>{{ s.customer ? s.customer.name : 'Unknown' }}</td>
+                  <td class="text-truncate" style="max-width: 120px;">{{ s.customer ? s.customer.name : 'Unknown' }}</td>
                   <td>{{ s.quantity_sold }}</td>
-                  <td>{{ s.unit_price }}</td>
+                  <td>${{ s.unit_price }}</td>
                 </tr>
               </tbody>
             </v-table>
-            <div v-else class="text-center py-6 text-grey">
-              No sales recorded.
+            <div v-else class="text-center py-8 text-grey border rounded-lg">
+              <v-icon size="32" class="mb-2">mdi-history</v-icon>
+              <div class="text-caption">No sales recorded.</div>
             </div>
           </v-window-item>
         </v-window>
       </v-card-text>
       
-      <v-card-actions>
+      <v-divider v-if="!mobile"></v-divider>
+      <v-card-actions class="pa-4" v-if="!mobile">
         <v-spacer />
-        <v-btn @click="$emit('close')">Close</v-btn>
-        <v-btn v-if="activeTab === 'details'" color="primary" @click="save">
+        <v-btn variant="text" @click="$emit('close')">Cancel</v-btn>
+        <v-btn v-if="activeTab === 'details'" color="primary" variant="elevated" @click="save">
           {{ isEdit ? 'Save Changes' : 'Create Item' }}
         </v-btn>
       </v-card-actions>
@@ -568,3 +660,19 @@ const closeModal = () => {
     @close="showGallery = false"
   />
 </template>
+
+<style scoped>
+.overflow-x-auto {
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+}
+.overflow-x-auto::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+.border-dashed {
+  border: 2px dashed #e0e0e0;
+}
+.gap-3 {
+  gap: 12px;
+}
+</style>

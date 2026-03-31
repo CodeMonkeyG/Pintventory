@@ -1,9 +1,21 @@
 <script setup>
+import { ref } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
+import { useDisplay } from 'vuetify';
 
 const authStore = useAuthStore();
 const router = useRouter();
+const { mobile } = useDisplay();
+
+const drawer = ref(false);
+
+const navItems = [
+  { title: 'Inventory', to: '/inventory', icon: 'mdi-package-variant-closed' },
+  { title: 'Customers', to: '/customers', icon: 'mdi-account-group' },
+  { title: 'Vendors', to: '/vendors', icon: 'mdi-truck-delivery' },
+  { title: 'Profile', to: '/profile', icon: 'mdi-account' },
+];
 
 const logout = async () => {
   await authStore.logout();
@@ -13,33 +25,88 @@ const logout = async () => {
 
 <template>
   <v-app>
-    <v-app-bar color="primary" dark>
-      <v-app-bar-title class="text-h5 font-weight-bold">Pintventory</v-app-bar-title>
+    <!-- Navigation Drawer for Mobile -->
+    <v-navigation-drawer v-model="drawer" temporary v-if="mobile">
+      <v-list>
+        <v-list-item
+          v-if="authStore.user"
+          :prepend-avatar="authStore.user.avatar"
+          :title="authStore.user.name"
+          :subtitle="authStore.user.email"
+          class="mb-2"
+        ></v-list-item>
+        
+        <v-divider></v-divider>
+        
+        <v-list-item
+          v-for="item in navItems"
+          :key="item.title"
+          :to="item.to"
+          :prepend-icon="item.icon"
+          :title="item.title"
+          color="primary"
+        ></v-list-item>
+      </v-list>
+      
+      <template v-slot:append>
+        <div class="pa-2">
+          <v-btn block color="error" variant="outlined" @click="logout" prepend-icon="mdi-logout">
+            Logout
+          </v-btn>
+        </div>
+      </template>
+    </v-navigation-drawer>
+
+    <!-- App Bar -->
+    <v-app-bar color="primary" elevation="2">
+      <v-app-bar-nav-icon v-if="mobile" @click="drawer = !drawer"></v-app-bar-nav-icon>
+      
+      <v-app-bar-title class="text-h6 text-md-h5 font-weight-bold">
+        Pintventory
+      </v-app-bar-title>
       
       <v-spacer />
       
-      <div class="d-flex align-center gap-2">
-        <router-link to="/inventory" style="color: white; text-decoration: none; padding: 0 12px; cursor: pointer; transition: opacity 0.2s;" @mouseover="$event.target.style.opacity='0.7'" @mouseout="$event.target.style.opacity='1'">Inventory</router-link>
-        <router-link to="/customers" style="color: white; text-decoration: none; padding: 0 12px; cursor: pointer; transition: opacity 0.2s;" @mouseover="$event.target.style.opacity='0.7'" @mouseout="$event.target.style.opacity='1'">Customers</router-link>
-        <router-link to="/vendors" style="color: white; text-decoration: none; padding: 0 12px; cursor: pointer; transition: opacity 0.2s;" @mouseover="$event.target.style.opacity='0.7'" @mouseout="$event.target.style.opacity='1'">Vendors</router-link>
-        <router-link to="/profile" style="color: white; text-decoration: none; padding: 0 12px; cursor: pointer; transition: opacity 0.2s;" @mouseover="$event.target.style.opacity='0.7'" @mouseout="$event.target.style.opacity='1'">Profile</router-link>
+      <!-- Desktop Navigation -->
+      <div v-if="!mobile" class="d-flex align-center gap-1 mr-4">
+        <v-btn
+          v-for="item in navItems"
+          :key="item.title"
+          :to="item.to"
+          variant="text"
+          class="text-none"
+        >
+          {{ item.title }}
+        </v-btn>
       </div>
 
-      <v-spacer />
+      <v-spacer v-if="!mobile" />
 
-      <div class="d-flex align-center gap-2">
+      <!-- User Profile & Logout (Desktop) -->
+      <div v-if="!mobile" class="d-flex align-center gap-3 mr-2">
         <div v-if="authStore.user" class="d-flex align-center gap-2">
-          <img v-if="authStore.user.avatar" :src="authStore.user.avatar" alt="Avatar" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;" />
-          <span class="text-body2">{{ authStore.user.name }}</span>
+          <v-avatar size="32">
+            <v-img v-if="authStore.user.avatar" :src="authStore.user.avatar" alt="Avatar"></v-img>
+            <v-icon v-else>mdi-account</v-icon>
+          </v-avatar>
+          <span class="text-body-2 font-weight-medium">{{ authStore.user.name }}</span>
         </div>
-        <v-btn variant="outlined" @click="logout">
+        <v-btn variant="outlined" size="small" @click="logout" class="text-none">
           Logout
         </v-btn>
       </div>
     </v-app-bar>
     
-    <v-main class="mt-6 pa-16" style="overflow-y: auto; overflow-x: hidden;">
-      <slot></slot>
+    <v-main :class="mobile ? 'pa-4' : 'pa-8 pa-md-16'" style="overflow-y: auto; overflow-x: hidden;">
+      <v-container fluid class="max-width-1200 mx-auto pa-0">
+        <slot></slot>
+      </v-container>
     </v-main>
   </v-app>
 </template>
+
+<style scoped>
+.max-width-1200 {
+  max-width: 1200px;
+}
+</style>

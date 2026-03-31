@@ -3,8 +3,10 @@ import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import MainLayout from '../layouts/MainLayout.vue';
 import api from '../axios';
+import { useDisplay } from 'vuetify';
 
 const authStore = useAuthStore();
+const { mobile } = useDisplay();
 const loading = ref(false);
 const message = ref('');
 
@@ -61,85 +63,122 @@ const saveProfile = async () => {
 <template>
   <MainLayout>
     <div class="mb-6">
-      <h1 class="text-h3">Profile</h1>
+      <h1 :class="mobile ? 'text-h4' : 'text-h3'">Profile</h1>
     </div>
 
-    <v-container max-width="600">
-      <v-alert v-if="message" :type="message.includes('success') ? 'success' : 'error'" class="mb-6">
-        {{ message }}
-      </v-alert>
+    <v-row justify="center">
+      <v-col cols="12" md="8" lg="6">
+        <v-alert v-if="message" :type="message.includes('success') ? 'success' : 'error'" class="mb-6" variant="tonal" closable @click:close="message = ''">
+          {{ message }}
+        </v-alert>
 
-      <v-card class="mb-6">
-        <v-card-title class="text-h6">User Details</v-card-title>
-        <v-card-text>
-          <v-text-field
-            v-model="profile.name"
-            label="Name"
-          />
-          <v-text-field
-            :value="profile.email"
-            label="Email"
-            disabled
-            class="mt-3"
-          />
-          <v-text-field
-            :value="profile.role"
-            label="Role"
-            disabled
-            class="mt-3"
-          />
-        </v-card-text>
-      </v-card>
+        <v-card class="mb-6" variant="outlined">
+          <v-card-title class="text-h6 pb-0">User Details</v-card-title>
+          <v-card-text class="pt-4">
+            <v-row dense>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="profile.name"
+                  label="Name"
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field
+                  :value="profile.email"
+                  label="Email"
+                  disabled
+                  variant="outlined"
+                  density="compact"
+                  hint="Email cannot be changed"
+                  persistent-hint
+                />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field
+                  :value="profile.role"
+                  label="Role"
+                  disabled
+                  variant="outlined"
+                  density="compact"
+                  hint="Contact admin to change role"
+                  persistent-hint
+                />
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
 
-      <v-card class="mb-6">
-        <v-card-title class="text-h6">Preferences</v-card-title>
-        <v-card-text>
-          <v-select
-            v-model="profile.preferences.currency"
-            label="Currency (Default)"
-            :items="[
-              { value: 'USD', title: 'USD ($)' },
-              { value: 'EUR', title: 'EUR (€)' },
-              { value: 'GBP', title: 'GBP (£)' },
-              { value: 'CAD', title: 'CAD (C$)' }
-            ]"
-          />
-          <v-select
-            v-model="profile.preferences.date_format"
-            label="Date Format"
-            :items="[
-              { value: 'en-US', title: 'MM/DD/YYYY (US)' },
-              { value: 'en-GB', title: 'DD/MM/YYYY (UK/EU)' },
-              { value: 'iso', title: 'YYYY-MM-DD (ISO)' }
-            ]"
-            class="mt-3"
-          />
-          <v-select
-            v-model="profile.preferences.tax_handling"
-            label="Tax Handling"
-            :items="[
-              { value: 'exclude_tax', title: 'Exclude Tax (Add at checkout)' },
-              { value: 'include_tax', title: 'Include Tax (VAT style)' }
-            ]"
-            class="mt-3"
-          />
-          <v-checkbox
-            v-model="profile.preferences.low_stock_notification"
-            label="Email me when stock is low"
-            class="mt-3"
-          />
-        </v-card-text>
-      </v-card>
+        <v-card class="mb-6" variant="outlined">
+          <v-card-title class="text-h6 pb-0">Preferences</v-card-title>
+          <v-card-text class="pt-4">
+            <v-row dense>
+              <v-col cols="12">
+                <v-select
+                  v-model="profile.preferences.currency"
+                  label="Default Currency"
+                  :items="[
+                    { value: 'USD', title: 'USD ($)' },
+                    { value: 'EUR', title: 'EUR (€)' },
+                    { value: 'GBP', title: 'GBP (£)' },
+                    { value: 'CAD', title: 'CAD (C$)' }
+                  ]"
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
+              <v-col cols="12">
+                <v-select
+                  v-model="profile.preferences.date_format"
+                  label="Date Format"
+                  :items="[
+                    { value: 'en-US', title: 'MM/DD/YYYY (US)' },
+                    { value: 'en-GB', title: 'DD/MM/YYYY (UK/EU)' },
+                    { value: 'iso', title: 'YYYY-MM-DD (ISO)' }
+                  ]"
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
+              <v-col cols="12">
+                <v-select
+                  v-model="profile.preferences.tax_handling"
+                  label="Tax Handling"
+                  :items="[
+                    { value: 'exclude_tax', title: 'Exclude Tax (Add at checkout)' },
+                    { value: 'include_tax', title: 'Include Tax (VAT style)' }
+                  ]"
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
+              <v-col cols="12">
+                <v-checkbox
+                  v-model="profile.preferences.low_stock_notification"
+                  label="Email me when stock is low"
+                  density="compact"
+                  hide-details
+                />
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
 
-      <v-btn
-        color="primary"
-        size="large"
-        @click="saveProfile"
-        :disabled="loading"
-        :loading="loading"
-      >
-        {{ loading ? 'Saving...' : 'Save Profile' }}
-      </v-btn>
-    </v-container>
+        <div class="d-flex justify-end">
+          <v-btn
+            color="primary"
+            size="large"
+            @click="saveProfile"
+            :disabled="loading"
+            :loading="loading"
+            :block="mobile"
+            elevation="1"
+          >
+            Save Profile
+          </v-btn>
+        </div>
+      </v-col>
+    </v-row>
   </MainLayout>
 </template>

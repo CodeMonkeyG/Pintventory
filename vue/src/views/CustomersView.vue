@@ -5,8 +5,10 @@ import MainLayout from '../layouts/MainLayout.vue';
 import CustomerModal from '../components/CustomerModal.vue';
 import api from '../axios';
 import { debounce } from '../utils/helpers';
+import { useDisplay } from 'vuetify';
 
 const store = useCustomerStore();
+const { mobile, smAndDown } = useDisplay();
 const showModal = ref(false);
 const selectedItem = ref(null);
 
@@ -75,9 +77,9 @@ const handleDelete = async (id) => {
 
 <template>
   <MainLayout>
-    <div class="d-flex justify-space-between align-center mb-6">
-      <h1 class="text-h3">Customers</h1>
-      <v-btn color="primary" @click="openCreateModal">
+    <div :class="mobile ? 'd-flex flex-column gap-4' : 'd-flex justify-space-between align-center'" class="mb-6">
+      <h1 :class="mobile ? 'text-h4' : 'text-h3'">Customers</h1>
+      <v-btn color="primary" @click="openCreateModal" :block="mobile">
         <v-icon left>mdi-plus</v-icon>
         Add Customer
       </v-btn>
@@ -88,70 +90,106 @@ const handleDelete = async (id) => {
         <v-text-field
           v-model="searchInput"
           placeholder="Search customers..."
-          prepend-icon="mdi-magnify"
+          prepend-inner-icon="mdi-magnify"
           hide-details
+          variant="outlined"
+          density="compact"
         />
       </v-card-text>
     </v-card>
 
-    <v-card>
-      <v-table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Contact</th>
-            <th>Items Bought</th>
-            <th>Total Revenue</th>
-            <th>Updated</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="store.loading">
-            <td colspan="6" class="text-center py-8">
-              <v-progress-circular indeterminate />
-            </td>
-          </tr>
-          <tr v-else-if="store.items.length === 0">
-            <td colspan="6" class="text-center py-8 text-grey">
-              No customers found.
-            </td>
-          </tr>
-          <tr v-for="item in store.items" :key="item.id">
-            <td>
-              <div class="font-weight-600">{{ item.name }}</div>
-              <div class="text-caption text-grey">{{ item.email }}</div>
-            </td>
-            <td>{{ item.contact_name || '-' }}</td>
-            <td>{{ item.total_items_purchased || 0 }}</td>
-            <td>{{ formatCurrency(item.total_revenue) }}</td>
-            <td>{{ formatDate(item.updated_at) }}</td>
-            <td>
-              <v-btn size="x-small" variant="text" @click="openEditModal(item)" class="mr-2">
-                Edit
-              </v-btn>
-              <v-btn size="x-small" variant="text" color="error" @click="handleDelete(item.id)">
-                Delete
-              </v-btn>
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-    </v-card>
+    <div v-if="store.loading" class="text-center py-12">
+      <v-progress-circular indeterminate size="64" color="primary" />
+    </div>
+
+    <div v-else-if="store.items.length === 0" class="text-center py-12 text-grey">
+      <v-icon size="64" class="mb-4">mdi-account-group-outline</v-icon>
+      <div class="text-h6">No customers found.</div>
+    </div>
+
+    <template v-else>
+      <!-- Mobile View: Cards -->
+      <v-row v-if="smAndDown">
+        <v-col v-for="item in store.items" :key="item.id" cols="12">
+          <v-card variant="outlined" class="pa-4">
+            <div class="d-flex justify-space-between align-start mb-2">
+              <div>
+                <div class="text-h6 font-weight-bold">{{ item.name }}</div>
+                <div class="text-caption text-grey">{{ item.email }}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-subtitle-2 font-weight-bold text-success">{{ formatCurrency(item.total_revenue) }}</div>
+                <div class="text-caption">{{ item.total_items_purchased || 0 }} items</div>
+              </div>
+            </div>
+            
+            <v-divider class="my-2"></v-divider>
+            
+            <div class="d-flex justify-space-between align-center">
+              <div class="text-caption">
+                <v-icon size="14" class="mr-1">mdi-account</v-icon>
+                {{ item.contact_name || '-' }}
+              </div>
+              <div class="d-flex gap-2">
+                <v-btn size="small" variant="tonal" @click="openEditModal(item)">Edit</v-btn>
+                <v-btn size="small" variant="tonal" color="error" @click="handleDelete(item.id)">Delete</v-btn>
+              </div>
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Desktop View: Table -->
+      <v-card v-else>
+        <v-table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Contact</th>
+              <th>Items Bought</th>
+              <th>Total Revenue</th>
+              <th>Updated</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in store.items" :key="item.id">
+              <td>
+                <div class="font-weight-bold">{{ item.name }}</div>
+                <div class="text-caption text-grey">{{ item.email }}</div>
+              </td>
+              <td>{{ item.contact_name || '-' }}</td>
+              <td>{{ item.total_items_purchased || 0 }}</td>
+              <td>{{ formatCurrency(item.total_revenue) }}</td>
+              <td>{{ formatDate(item.updated_at) }}</td>
+              <td>
+                <v-btn size="small" variant="text" icon="mdi-pencil" @click="openEditModal(item)" class="mr-1"></v-btn>
+                <v-btn size="small" variant="text" icon="mdi-delete" color="error" @click="handleDelete(item.id)"></v-btn>
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+      </v-card>
+    </template>
     
-    <div v-if="store.pagination.last_page > 1" class="d-flex justify-center align-center gap-4 mt-6">
+    <!-- Pagination -->
+    <div v-if="store.pagination.last_page > 1" class="d-flex justify-center align-center gap-4 mt-8 flex-wrap">
       <v-btn
         :disabled="store.pagination.current_page === 1"
         @click="store.fetchItems(store.pagination.current_page - 1)"
+        variant="outlined"
+        size="small"
       >
         Previous
       </v-btn>
-      <span class="text-body2">
-        Page {{ store.pagination.current_page }} of {{ store.pagination.last_page }}
+      <span class="text-body-2 font-weight-medium">
+        {{ store.pagination.current_page }} / {{ store.pagination.last_page }}
       </span>
       <v-btn
         :disabled="store.pagination.current_page === store.pagination.last_page"
         @click="store.fetchItems(store.pagination.current_page + 1)"
+        variant="outlined"
+        size="small"
       >
         Next
       </v-btn>

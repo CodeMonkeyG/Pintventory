@@ -6,8 +6,10 @@ import InventoryModal from '../components/InventoryModal.vue';
 import PhotoGallery from '../components/PhotoGallery.vue';
 import api from '../axios';
 import { debounce } from '../utils/helpers';
+import { useDisplay } from 'vuetify';
 
 const store = useInventoryStore();
+const { mobile, smAndDown } = useDisplay();
 const showModal = ref(false);
 const selectedItem = ref(null);
 
@@ -116,13 +118,23 @@ const openGallery = (item, index = 0) => {
         showGallery.value = true;
     }
 };
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'in_stock': return 'success';
+    case 'low_stock': return 'warning';
+    case 'out_of_stock': return 'error';
+    case 'archived': return 'grey';
+    default: return 'primary';
+  }
+};
 </script>
 
 <template>
   <MainLayout>
-    <div class="d-flex justify-space-between align-center mb-6">
-      <h1 class="text-h3">Inventory</h1>
-      <v-btn color="primary" @click="openCreateModal">
+    <div :class="mobile ? 'd-flex flex-column gap-4' : 'd-flex justify-space-between align-center'" class="mb-6">
+      <h1 :class="mobile ? 'text-h4' : 'text-h3'">Inventory</h1>
+      <v-btn color="primary" @click="openCreateModal" :block="mobile">
         <v-icon left>mdi-plus</v-icon>
         Add Item
       </v-btn>
@@ -130,107 +142,165 @@ const openGallery = (item, index = 0) => {
 
     <v-card class="mb-6">
       <v-card-text>
-        <div class="d-flex gap-3 align-center flex-wrap">
-          <v-text-field
-            v-model="searchInput"
-            placeholder="Search by title or SKU..."
-            prepend-icon="mdi-magnify"
-            hide-details
-            class="flex-grow-1"
-            max-width="400"
-          />
+        <v-row dense align="center">
+          <v-col cols="12" md="4">
+            <v-text-field
+              v-model="searchInput"
+              placeholder="Search by title or SKU..."
+              prepend-inner-icon="mdi-magnify"
+              hide-details
+              density="compact"
+              variant="outlined"
+            />
+          </v-col>
           
-          <v-select
-            v-model="statusFilter"
-            label="Status"
-            :items="['', 'in_stock', 'low_stock', 'out_of_stock', 'archived']"
-            hide-details
-            max-width="150"
-            class="flex-grow-1"
-          />
+          <v-col cols="12" sm="6" md="3">
+            <v-select
+              v-model="statusFilter"
+              label="Status"
+              :items="[
+                { title: 'All Statuses', value: '' },
+                { title: 'In Stock', value: 'in_stock' },
+                { title: 'Low Stock', value: 'low_stock' },
+                { title: 'Out of Stock', value: 'out_of_stock' },
+                { title: 'Archived', value: 'archived' }
+              ]"
+              hide-details
+              density="compact"
+              variant="outlined"
+            />
+          </v-col>
           
-          <v-checkbox
-            v-model="lowStockFilter"
-            label="Low Stock Only"
-            hide-details
-            class="flex-grow-1"
-          />
-        </div>
+          <v-col cols="12" sm="6" md="3">
+            <v-checkbox
+              v-model="lowStockFilter"
+              label="Low Stock Only"
+              hide-details
+              density="compact"
+            />
+          </v-col>
+        </v-row>
       </v-card-text>
     </v-card>
 
-    <v-card>
-      <v-table>
-        <thead>
-          <tr>
-            <th>Photo</th>
-            <th>Title / SKU</th>
-            <th>Status</th>
-            <th>On Hand</th>
-            <th>Updated</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="store.loading">
-            <td colspan="6" class="text-center py-8">
-              <v-progress-circular indeterminate />
-            </td>
-          </tr>
-          <tr v-else-if="store.items.length === 0">
-            <td colspan="6" class="text-center py-8 text-grey">
-              No items found.
-            </td>
-          </tr>
-          <tr v-for="item in store.items" :key="item.id">
-            <td>
-              <div v-if="item.photos && item.photos.length > 0" class="position-relative" style="cursor: pointer; width: 40px; height: 40px; overflow: hidden; border-radius: 4px;" @click="openGallery(item)">
-                <img :src="item.photos[0].url" alt="Item Photo" style="width: 100%; height: 100%; object-fit: cover;" />
-                <div v-if="item.photos.length > 1" class="position-absolute text-white text-caption" style="bottom: 0; right: 0; background: rgba(0,0,0,0.6); padding: 1px 3px; border-top-left-radius: 3px;">
-                  +{{ item.photos.length - 1 }}
+    <div v-if="store.loading" class="text-center py-12">
+      <v-progress-circular indeterminate size="64" color="primary" />
+    </div>
+
+    <div v-else-if="store.items.length === 0" class="text-center py-12 text-grey">
+      <v-icon size="64" class="mb-4">mdi-package-variant</v-icon>
+      <div class="text-h6">No items found.</div>
+    </div>
+
+    <template v-else>
+      <!-- Mobile View: Cards -->
+      <v-row v-if="smAndDown">
+        <v-col v-for="item in store.items" :key="item.id" cols="12">
+          <v-card variant="outlined" @click="openEditModal(item)">
+            <div class="d-flex pa-3">
+              <v-avatar size="80" rounded="lg" class="mr-4">
+                <v-img 
+                  v-if="item.photos && item.photos.length > 0" 
+                  :src="item.photos[0].url" 
+                  cover
+                >
+                  <template v-slot:placeholder>
+                    <v-row class="fill-height ma-0" align="center" justify="center">
+                      <v-progress-circular indeterminate color="grey-lighten-5" />
+                    </v-row>
+                  </template>
+                </v-img>
+                <v-icon v-else size="40" color="grey">mdi-package-variant</v-icon>
+              </v-avatar>
+              
+              <div class="flex-grow-1 min-width-0">
+                <div class="d-flex justify-space-between align-start">
+                  <div class="font-weight-bold text-truncate pr-2">{{ item.title }}</div>
+                  <v-chip :color="getStatusColor(item.status)" size="x-small">
+                    {{ item.status.replace('_', ' ') }}
+                  </v-chip>
+                </div>
+                <div class="text-caption text-grey">{{ item.sku }}</div>
+                <div class="mt-1 font-weight-medium">
+                  {{ item.quantity_on_hand }} {{ item.unit }}
+                </div>
+                <div class="text-caption text-grey mt-1">
+                  Updated: {{ formatDate(item.updated_at) }}
                 </div>
               </div>
-              <div v-else style="width: 40px; height: 40px; border-radius: 4px; border: 1px dashed #999;" />
-            </td>
-            <td>
-              <div class="font-weight-600">{{ item.title }}</div>
-              <div class="text-caption text-grey">{{ item.sku }}</div>
-            </td>
-            <td>
-              <v-chip
-                :color="item.status === 'in_stock' ? 'success' : item.status === 'low_stock' ? 'warning' : 'error'"
-                size="small"
-              >
-                {{ item.status.replace('_', ' ') }}
-              </v-chip>
-            </td>
-            <td>
-              {{ item.quantity_on_hand }} {{ item.unit }}
-            </td>
-            <td>{{ formatDate(item.updated_at) }}</td>
-            <td>
-              <v-btn size="x-small" variant="text" @click="openEditModal(item)">
-                Edit
-              </v-btn>
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-    </v-card>
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Desktop View: Table -->
+      <v-card v-else>
+        <v-table>
+          <thead>
+            <tr>
+              <th>Photo</th>
+              <th>Title / SKU</th>
+              <th>Status</th>
+              <th>On Hand</th>
+              <th>Updated</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in store.items" :key="item.id">
+              <td>
+                <v-avatar size="40" rounded="sm" style="cursor: pointer" @click="openGallery(item)">
+                  <v-img 
+                    v-if="item.photos && item.photos.length > 0" 
+                    :src="item.photos[0].url" 
+                    cover
+                  />
+                  <v-icon v-else color="grey-lighten-2">mdi-package-variant</v-icon>
+                  <div v-if="item.photos && item.photos.length > 1" class="position-absolute text-white text-caption" style="bottom: 0; right: 0; background: rgba(0,0,0,0.6); padding: 0 2px; border-top-left-radius: 2px; font-size: 8px !important;">
+                    +{{ item.photos.length - 1 }}
+                  </div>
+                </v-avatar>
+              </td>
+              <td>
+                <div class="font-weight-bold">{{ item.title }}</div>
+                <div class="text-caption text-grey">{{ item.sku }}</div>
+              </td>
+              <td>
+                <v-chip :color="getStatusColor(item.status)" size="small">
+                  {{ item.status.replace('_', ' ') }}
+                </v-chip>
+              </td>
+              <td>
+                {{ item.quantity_on_hand }} {{ item.unit }}
+              </td>
+              <td>{{ formatDate(item.updated_at) }}</td>
+              <td>
+                <v-btn size="small" variant="text" icon="mdi-pencil" @click="openEditModal(item)"></v-btn>
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+      </v-card>
+    </template>
     
-    <div v-if="store.pagination.last_page > 1" class="d-flex justify-center align-center gap-4 mt-6">
+    <!-- Pagination -->
+    <div v-if="store.pagination.last_page > 1" class="d-flex justify-center align-center gap-4 mt-8 flex-wrap">
       <v-btn
         :disabled="store.pagination.current_page === 1"
         @click="store.fetchItems(store.pagination.current_page - 1)"
+        variant="outlined"
+        size="small"
       >
         Previous
       </v-btn>
-      <span class="text-body2">
-        Page {{ store.pagination.current_page }} of {{ store.pagination.last_page }}
+      <span class="text-body-2 font-weight-medium">
+        {{ store.pagination.current_page }} / {{ store.pagination.last_page }}
       </span>
       <v-btn
         :disabled="store.pagination.current_page === store.pagination.last_page"
         @click="store.fetchItems(store.pagination.current_page + 1)"
+        variant="outlined"
+        size="small"
       >
         Next
       </v-btn>
@@ -252,3 +322,9 @@ const openGallery = (item, index = 0) => {
     />
   </MainLayout>
 </template>
+
+<style scoped>
+.min-width-0 {
+  min-width: 0;
+}
+</style>
