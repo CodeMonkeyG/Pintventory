@@ -38,4 +38,19 @@ class AiManager extends Manager implements AiProvider
     {
         return $this->driver()->identifyImage($image);
     }
+
+    public function marketAnalysis(\Illuminate\Http\UploadedFile|string $image): array
+    {
+        return $this->driver()->marketAnalysis($image);
+    }
+
+    public function facebookAnalysis(\Illuminate\Http\UploadedFile|string $image): array
+    {
+        return $this->driver()->facebookAnalysis($image);
+    }
+
+    public function etsyAnalysis(\Illuminate\Http\UploadedFile|string $image): array
+    {
+        return $this->driver()->etsyAnalysis($image);
+    }
 }
