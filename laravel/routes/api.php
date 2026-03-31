@@ -29,6 +29,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // AI Routes (with rate limiting)
     Route::middleware('rate-limit-ai')->group(function () {
         Route::post('/ai/image-identify', [App\Http\Controllers\Api\AiController::class, 'identify']);
+        Route::post('/ai/market-analyze', [App\Http\Controllers\Api\AiController::class, 'marketAnalyze']);
+        Route::post('/ai/facebook-analyze', [App\Http\Controllers\Api\AiController::class, 'facebookAnalyze']);
+        Route::post('/ai/etsy-analyze', [App\Http\Controllers\Api\AiController::class, 'etsyAnalyze']);
     });
 });
 

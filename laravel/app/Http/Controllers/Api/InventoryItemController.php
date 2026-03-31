@@ -55,6 +55,10 @@ class InventoryItemController extends Controller
             'tags' => 'nullable|array',
             'location' => 'nullable|string|max:255',
             'storage_location_id' => 'nullable|exists:storage_locations,id',
+            'market_analysis' => 'nullable|array',
+            'facebook_analysis' => 'nullable|array',
+            'etsy_analysis' => 'nullable|array',
+            'source_links' => 'nullable|array',
         ]);
 
         // Auto-generate SKU if missing
@@ -104,6 +108,10 @@ class InventoryItemController extends Controller
             'tags' => 'nullable|array',
             'location' => 'nullable|string|max:255',
             'storage_location_id' => 'nullable|exists:storage_locations,id',
+            'market_analysis' => 'nullable|array',
+            'facebook_analysis' => 'nullable|array',
+            'etsy_analysis' => 'nullable|array',
+            'source_links' => 'nullable|array',
         ]);
 
         $item->update($validated);
