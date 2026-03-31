@@ -77,9 +77,8 @@ PROMPT;
             $prompt = $systemPrompt . "\n\nIdentify this inventory item. Return a JSON object with: 
         - 'title': a concise name (3-10 words).
         - 'description': a short description (1-2 sentences).
-        - 'evaluation': a detailed evaluation including era, material, and value estimation.
-        - 'tags': an array of 3-10 tags.
-        Do not include markdown formatting like ```json ... ```. Just the raw JSON string.";
+        - 'evaluation': a detailed evaluation including era, material, and value estimation as a plain text block.
+        - 'tags': an array of 3-10 tags.";
 
             $response = Http::timeout(30)->post($url, [
                 'contents' => [
@@ -93,6 +92,22 @@ PROMPT;
                                 ]
                             ]
                         ]
+                    ]
+                ],
+                'generationConfig' => [
+                    'response_mime_type' => 'application/json',
+                    'response_schema' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'title' => ['type' => 'string'],
+                            'description' => ['type' => 'string'],
+                            'evaluation' => ['type' => 'string'],
+                            'tags' => [
+                                'type' => 'array',
+                                'items' => ['type' => 'string']
+                            ]
+                        ],
+                        'required' => ['title', 'description', 'evaluation', 'tags']
                     ]
                 ]
             ]);
@@ -111,9 +126,6 @@ PROMPT;
 
             $text = $data['candidates'][0]['content']['parts'][0]['text'];
             
-            // Clean up markdown code blocks if present
-            $text = preg_replace('/^```json\s*|```\s*$/', '', trim($text));
-
             $result = json_decode($text, true);
             if (!is_array($result)) {
                 throw new \RuntimeException('Invalid JSON response from Gemini');
