@@ -68,12 +68,7 @@ const draftKey = computed(() => isEdit.value ? `inventory_edit_${props.item.id}`
 // Persistence: Save text state to localStorage
 watch([formData, () => props.show], ([newForm, show]) => {
     if (show) {
-        localStorage.setItem('pintventory_active_modal', 'inventory');
-        localStorage.setItem('pintventory_editing_id', isEdit.value ? props.item.id : 'new');
         localStorage.setItem(`pintventory_draft_${draftKey.value}`, JSON.stringify(newForm));
-    } else {
-        localStorage.removeItem('pintventory_active_modal');
-        localStorage.removeItem('pintventory_editing_id');
     }
 }, { deep: true });
 
@@ -88,12 +83,11 @@ watch(pendingPhotos, async (newPhotos) => {
 // Persistence: Load state
 onMounted(async () => {
     const savedForm = localStorage.getItem(`pintventory_draft_${draftKey.value}`);
-    if (savedForm && !isEdit.value) { 
+    if (savedForm) { 
         try {
             const parsed = JSON.parse(savedForm);
-            if (localStorage.getItem('pintventory_active_modal') === 'inventory') {
-                formData.value = { ...formData.value, ...parsed };
-            }
+            // Merge saved draft into current form
+            formData.value = { ...formData.value, ...parsed };
         } catch (e) { console.error('Draft restore failed', e); }
     }
 

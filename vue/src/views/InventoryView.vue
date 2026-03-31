@@ -7,8 +7,11 @@ import PhotoGallery from '../components/PhotoGallery.vue';
 import api from '../axios';
 import { debounce } from '../utils/helpers';
 import { useDisplay } from 'vuetify';
+import { useRouter, useRoute } from 'vue-router';
 
 const store = useInventoryStore();
+const router = useRouter();
+const route = useRoute();
 const { mobile, smAndDown } = useDisplay();
 const showModal = ref(false);
 const selectedItem = ref(null);
@@ -21,20 +24,37 @@ const galleryIndex = ref(0);
 // Local search value for debouncing
 const searchInput = ref('');
 
+const checkRouteForModal = async () => {
+  if (route.name === 'inventory-new') {
+    selectedItem.value = null;
+    showModal.value = true;
+  } else if (route.name === 'inventory-edit' && route.params.id) {
+    try {
+      selectedItem.value = await store.fetchItemDetail(route.params.id);
+      showModal.value = true;
+    } catch (e) {
+      console.error('Failed to load item from URL', e);
+      router.push('/inventory');
+    }
+  } else {
+    showModal.value = false;
+  }
+};
+
 onMounted(async () => {
   await store.fetchItems();
-  
-  // Persistence: Check if we need to restore an open modal
-  const activeModal = localStorage.getItem('pintventory_active_modal');
-  const editingId = localStorage.getItem('pintventory_editing_id');
-  
-  if (activeModal === 'inventory') {
-      if (editingId && editingId !== 'new') {
-          const item = store.items.find(i => i.id === editingId) || { id: editingId };
-          openEditModal(item);
-      } else if (editingId === 'new') {
-          openCreateModal();
-      }
+  checkRouteForModal();
+});
+
+// Watch route changes to open/close modal
+watch(() => route.path, () => {
+  checkRouteForModal();
+});
+
+// Watch modal closure to clean up URL
+watch(showModal, (val) => {
+  if (!val && (route.name === 'inventory-new' || route.name === 'inventory-edit')) {
+    router.push('/inventory');
   }
 });
 
@@ -63,18 +83,11 @@ const formatDate = (dateString) => {
 };
 
 const openCreateModal = () => {
-  selectedItem.value = null;
-  showModal.value = true;
+  router.push({ name: 'inventory-new' });
 };
 
 const openEditModal = async (item) => {
-  try {
-      selectedItem.value = await store.fetchItemDetail(item.id);
-      showModal.value = true;
-  } catch (error) {
-      console.error("Failed to fetch item details", error);
-      alert("Could not load item details.");
-  }
+  router.push({ name: 'inventory-edit', params: { id: item.id } });
 };
 
 const handleSave = async (itemData, newPhotos = []) => {

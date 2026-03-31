@@ -26,7 +26,21 @@ const router = createRouter({
       path: '/inventory',
       name: 'inventory',
       component: InventoryView,
-      meta: { title: 'Inventory' }
+      meta: { title: 'Inventory' },
+      children: [
+        {
+          path: 'new',
+          name: 'inventory-new',
+          component: InventoryView,
+          meta: { title: 'New Item' }
+        },
+        {
+          path: 'edit/:id',
+          name: 'inventory-edit',
+          component: InventoryView,
+          meta: { title: 'Edit Item' }
+        }
+      ]
     },
     {
       path: '/profile',
