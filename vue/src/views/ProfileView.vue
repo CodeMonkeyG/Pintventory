@@ -132,7 +132,11 @@ const saveProfile = async () => {
                     { value: 'gruvbox-dark', title: 'Gruvbox Dark' },
                     { value: 'gruvbox-light', title: 'Gruvbox Light' },
                     { value: 'solarized-dark', title: 'Solarized Dark' },
-                    { value: 'monokai', title: 'Monokai' }
+                    { value: 'monokai', title: 'Monokai' },
+                    { value: 'dracula', title: 'Dracula' },
+                    { value: 'material', title: 'Material Design' },
+                    { value: 'mono-amber', title: 'Mono Amber (Retro)' },
+                    { value: 'mono-green', title: 'Mono Green (Retro)' }
                   ]"
                   variant="outlined"
                   density="compact"

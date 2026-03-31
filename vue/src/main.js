@@ -97,6 +97,58 @@ const vuetify = createVuetify({
           success: '#a6e22e',    // Green
           warning: '#fd971f',    // Orange
         }
+      },
+      'dracula': {
+        dark: true,
+        colors: {
+          primary: '#bd93f9',    // Purple
+          secondary: '#6272a4',  // Comment
+          surface: '#282a36',    // Background
+          background: '#1e1f29', // Darker background
+          error: '#ff5555',      // Red
+          info: '#8be9fd',       // Cyan
+          success: '#50fa7b',    // Green
+          warning: '#ffb86c',    // Orange
+        }
+      },
+      'material': {
+        dark: true,
+        colors: {
+          primary: '#82aaff',    // Blue
+          secondary: '#546e7a',  // Gray Blue
+          surface: '#263238',    // Background
+          background: '#1a2327', // Darker background
+          error: '#f07178',      // Red
+          info: '#89ddff',       // Cyan
+          success: '#c3e88d',    // Green
+          warning: '#ffcb6b',    // Yellow
+        }
+      },
+      'mono-amber': {
+        dark: true,
+        colors: {
+          primary: '#ffb000',    // Amber
+          secondary: '#4d3b00',  // Dark Amber
+          surface: '#1a1a1a',    // Dark surface
+          background: '#000000', // Black
+          error: '#ff5555',      
+          info: '#ffb000',
+          success: '#ffb000',
+          warning: '#ffb000',
+        }
+      },
+      'mono-green': {
+        dark: true,
+        colors: {
+          primary: '#00ff00',    // Green
+          secondary: '#004d00',  // Dark Green
+          surface: '#1a1a1a',    // Dark surface
+          background: '#000000', // Black
+          error: '#ff5555',
+          info: '#00ff00',
+          success: '#00ff00',
+          warning: '#00ff00',
+        }
       }
     }
   }
