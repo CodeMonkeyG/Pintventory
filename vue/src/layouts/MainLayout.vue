@@ -98,7 +98,7 @@ const logout = async () => {
     </v-app-bar>
     
     <v-main :class="(mobile ? 'pa-4' : 'pa-8 pa-md-16') + ' pt-16'" style="overflow-y: auto; overflow-x: hidden;">
-      <v-container fluid class="max-width-1200 mx-auto pa-0">
+      <v-container fluid class="max-width-1200 mx-auto pa-0 mt-4">
         <slot></slot>
       </v-container>
     </v-main>
