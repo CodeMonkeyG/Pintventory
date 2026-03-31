@@ -129,14 +129,14 @@ const saveProfile = async () => {
                   :items="[
                     { value: 'light', title: 'Classic Light' },
                     { value: 'dark', title: 'Deep Slate (Dark)' },
+                    { value: 'dracula', title: 'Dracula' },
                     { value: 'gruvbox-dark', title: 'Gruvbox Dark' },
                     { value: 'gruvbox-light', title: 'Gruvbox Light' },
-                    { value: 'solarized-dark', title: 'Solarized Dark' },
-                    { value: 'monokai', title: 'Monokai' },
-                    { value: 'dracula', title: 'Dracula' },
                     { value: 'material', title: 'Material Design' },
                     { value: 'mono-amber', title: 'Mono Amber (Retro)' },
-                    { value: 'mono-green', title: 'Mono Green (Retro)' }
+                    { value: 'mono-green', title: 'Mono Green (Retro)' },
+                    { value: 'monokai', title: 'Monokai' },
+                    { value: 'solarized-dark', title: 'Solarized Dark' }
                   ]"
                   variant="outlined"
                   density="compact"
