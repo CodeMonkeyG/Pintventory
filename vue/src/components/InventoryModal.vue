@@ -180,7 +180,25 @@ const handleAutoFill = async (event) => {
         const data = response.data;
         if (data.title) formData.value.title = data.title;
         if (data.description) formData.value.description = data.description;
-        if (data.evaluation) formData.value.evaluation = data.evaluation;
+        
+        if (data.evaluation) {
+            if (typeof data.evaluation === 'object') {
+                // If it's an object (era, material, value), format it nicely
+                let evalString = '';
+                if (data.evaluation.era) evalString += `Era: ${data.evaluation.era}\n`;
+                if (data.evaluation.material) evalString += `Material: ${data.evaluation.material}\n`;
+                if (data.evaluation.value_estimation) evalString += `Value: ${data.evaluation.value_estimation}\n`;
+                
+                // If the object has other fields or is just a general evaluation
+                if (evalString === '') {
+                    evalString = JSON.stringify(data.evaluation, null, 2);
+                }
+                formData.value.evaluation = evalString.trim();
+            } else {
+                formData.value.evaluation = data.evaluation;
+            }
+        }
+
         if (data.tags) {
             const newTags = Array.isArray(data.tags) ? data.tags.join(', ') : data.tags;
             formData.value.tags = newTags;
