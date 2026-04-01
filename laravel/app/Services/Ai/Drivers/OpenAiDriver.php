@@ -6,11 +6,34 @@ use App\Contracts\AiProvider;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 
+/**
+ * OpenAI driver implementation.
+ * 
+ * Uses ChatGPT Vision API for image analysis.
+ */
 class OpenAiDriver implements AiProvider
 {
+    /**
+     * OpenAI API key.
+     *
+     * @var string
+     */
     protected string $apiKey;
+
+    /**
+     * OpenAI model name.
+     *
+     * @var string
+     */
     protected string $model;
 
+    /**
+     * Create a new OpenAI driver instance.
+     *
+     * @param  string  $apiKey
+     * @param  string  $model
+     * @return void
+     */
     public function __construct(string $apiKey, string $model)
     {
         $this->apiKey = $apiKey;
@@ -150,16 +173,37 @@ class OpenAiDriver implements AiProvider
         return json_decode($content, true) ?? [];
     }
 
+    /**
+     * Perform general market analysis (Not implemented).
+     *
+     * @param  \Illuminate\Http\UploadedFile|string  $image
+     * @return array
+     * @throws \RuntimeException
+     */
     public function marketAnalysis(UploadedFile|string $image): array
     {
         throw new \RuntimeException('Market analysis is not yet implemented for the OpenAI driver.');
     }
 
+    /**
+     * Perform Facebook Marketplace specific analysis (Not implemented).
+     *
+     * @param  \Illuminate\Http\UploadedFile|string  $image
+     * @return array
+     * @throws \RuntimeException
+     */
     public function facebookAnalysis(UploadedFile|string $image): array
     {
         throw new \RuntimeException('Facebook analysis is not yet implemented for the OpenAI driver.');
     }
 
+    /**
+     * Perform Etsy specific analysis (Not implemented).
+     *
+     * @param  \Illuminate\Http\UploadedFile|string  $image
+     * @return array
+     * @throws \RuntimeException
+     */
     public function etsyAnalysis(UploadedFile|string $image): array
     {
         throw new \RuntimeException('Etsy analysis is not yet implemented for the OpenAI driver.');

@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 
+/**
+ * Controller for managing customers and tracking sales metrics.
+ */
 class CustomerController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of customers with revenue metrics.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Pagination\LengthAwarePaginator
@@ -30,7 +33,7 @@ class CustomerController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created customer in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -54,7 +57,7 @@ class CustomerController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified customer with sales history.
      *
      * @param  string  $id
      * @return \Illuminate\Http\JsonResponse
@@ -65,7 +68,7 @@ class CustomerController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified customer in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  string  $id
@@ -90,7 +93,7 @@ class CustomerController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified customer from storage (Soft Delete).
      *
      * @param  string  $id
      * @return \Illuminate\Http\JsonResponse

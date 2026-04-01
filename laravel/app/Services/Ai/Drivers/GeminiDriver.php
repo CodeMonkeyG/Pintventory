@@ -6,6 +6,11 @@ use App\Contracts\AiProvider;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 
+/**
+ * Google Gemini AI driver implementation.
+ * 
+ * Handles multi-modal content generation for image identification and market research.
+ */
 class GeminiDriver implements AiProvider
 {
     /**

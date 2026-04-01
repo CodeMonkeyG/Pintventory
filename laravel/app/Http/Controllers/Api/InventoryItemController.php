@@ -7,10 +7,13 @@ use App\Models\InventoryItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Controller for managing the central inventory items ledger.
+ */
 class InventoryItemController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of inventory items with filtering and pagination.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Pagination\LengthAwarePaginator
@@ -35,7 +38,7 @@ class InventoryItemController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created inventory item in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -77,7 +80,7 @@ class InventoryItemController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified inventory item with relationships.
      *
      * @param  string  $id
      * @return \Illuminate\Http\JsonResponse
@@ -88,7 +91,7 @@ class InventoryItemController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified inventory item in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  string  $id
@@ -126,7 +129,10 @@ class InventoryItemController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Archive the specified inventory item.
+     *
+     * @param  string  $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(string $id)
     {

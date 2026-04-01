@@ -7,10 +7,15 @@ use App\Models\StorageLocation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Controller for managing physical storage locations for inventory items.
+ */
 class StorageLocationController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of storage locations for the authenticated user.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function index()
     {
@@ -20,7 +25,10 @@ class StorageLocationController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created storage location in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
@@ -39,7 +47,10 @@ class StorageLocationController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified storage location.
+     *
+     * @param  \App\Models\StorageLocation  $storageLocation
+     * @return \Illuminate\Http\JsonResponse|\App\Models\StorageLocation
      */
     public function show(StorageLocation $storageLocation)
     {
@@ -51,7 +62,11 @@ class StorageLocationController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified storage location in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\StorageLocation  $storageLocation
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, StorageLocation $storageLocation)
     {
@@ -70,7 +85,10 @@ class StorageLocationController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified storage location from storage.
+     *
+     * @param  \App\Models\StorageLocation  $storageLocation
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(StorageLocation $storageLocation)
     {

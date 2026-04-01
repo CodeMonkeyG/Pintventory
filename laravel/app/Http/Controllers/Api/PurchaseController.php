@@ -8,10 +8,16 @@ use App\Models\InventoryItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Controller for managing inventory purchases from vendors.
+ */
 class PurchaseController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of purchases.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Pagination\LengthAwarePaginator
      */
     public function index(Request $request)
     {
@@ -25,7 +31,10 @@ class PurchaseController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created purchase and update inventory.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
@@ -55,7 +64,10 @@ class PurchaseController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified purchase.
+     *
+     * @param  string  $id
+     * @return \App\Models\Purchase
      */
     public function show(string $id)
     {
@@ -63,7 +75,11 @@ class PurchaseController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified purchase and adjust inventory quantity.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string  $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, string $id)
     {
@@ -96,7 +112,10 @@ class PurchaseController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified purchase and revert inventory quantity.
+     *
+     * @param  string  $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(string $id)
     {

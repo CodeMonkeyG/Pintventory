@@ -8,15 +8,35 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Controller for handling AI-powered image analysis and market research.
+ */
 class AiController extends Controller
 {
+    /**
+     * The AI provider instance.
+     *
+     * @var \App\Contracts\AiProvider
+     */
     protected $ai;
 
+    /**
+     * Create a new controller instance.
+     *
+     * @param  \App\Contracts\AiProvider  $ai
+     * @return void
+     */
     public function __construct(AiProvider $ai)
     {
         $this->ai = $ai;
     }
 
+    /**
+     * Identify an item from an uploaded image.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function identify(Request $request)
     {
         $request->validate([
@@ -33,6 +53,12 @@ class AiController extends Controller
         }
     }
 
+    /**
+     * Perform general market analysis for an item image.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function marketAnalyze(Request $request)
     {
         $request->validate([
@@ -48,6 +74,12 @@ class AiController extends Controller
         }
     }
 
+    /**
+     * Perform Facebook Marketplace specific analysis.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function facebookAnalyze(Request $request)
     {
         $request->validate([
@@ -63,6 +95,12 @@ class AiController extends Controller
         }
     }
 
+    /**
+     * Perform Etsy specific analysis.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function etsyAnalyze(Request $request)
     {
         $request->validate([

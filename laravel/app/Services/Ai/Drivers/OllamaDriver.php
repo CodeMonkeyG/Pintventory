@@ -6,6 +6,11 @@ use App\Contracts\AiProvider;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 
+/**
+ * Ollama driver implementation.
+ * 
+ * Uses local Ollama instance for image analysis.
+ */
 class OllamaDriver implements AiProvider
 {
     /**
@@ -84,16 +89,37 @@ class OllamaDriver implements AiProvider
         }
     }
 
+    /**
+     * Perform general market analysis (Not implemented).
+     *
+     * @param  \Illuminate\Http\UploadedFile|string  $image
+     * @return array
+     * @throws \RuntimeException
+     */
     public function marketAnalysis(UploadedFile|string $image): array
     {
         throw new \RuntimeException('Market analysis is not yet implemented for the Ollama driver.');
     }
 
+    /**
+     * Perform Facebook Marketplace specific analysis (Not implemented).
+     *
+     * @param  \Illuminate\Http\UploadedFile|string  $image
+     * @return array
+     * @throws \RuntimeException
+     */
     public function facebookAnalysis(UploadedFile|string $image): array
     {
         throw new \RuntimeException('Facebook analysis is not yet implemented for the Ollama driver.');
     }
 
+    /**
+     * Perform Etsy specific analysis (Not implemented).
+     *
+     * @param  \Illuminate\Http\UploadedFile|string  $image
+     * @return array
+     * @throws \RuntimeException
+     */
     public function etsyAnalysis(UploadedFile|string $image): array
     {
         throw new \RuntimeException('Etsy analysis is not yet implemented for the Ollama driver.');

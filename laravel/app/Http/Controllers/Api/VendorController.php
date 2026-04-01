@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Vendor;
 use Illuminate\Http\Request;
 
+/**
+ * Controller for managing vendors and tracking procurement.
+ */
 class VendorController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of vendors with spend metrics.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Pagination\LengthAwarePaginator
@@ -34,7 +37,7 @@ class VendorController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created vendor in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -59,10 +62,10 @@ class VendorController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified vendor with purchase history.
      *
      * @param  string  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return \App\Models\Vendor
      */
     public function show(string $id)
     {
@@ -70,7 +73,7 @@ class VendorController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified vendor in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  string  $id
@@ -96,7 +99,7 @@ class VendorController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified vendor from storage (Soft Delete).
      *
      * @param  string  $id
      * @return \Illuminate\Http\JsonResponse

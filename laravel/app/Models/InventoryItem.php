@@ -9,12 +9,58 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Scopes\UserScope;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 
+/**
+ * App\Models\InventoryItem
+ *
+ * @property string $id
+ * @property string $sku
+ * @property string $title
+ * @property string|null $description
+ * @property string $status
+ * @property string $item_type
+ * @property int $quantity_on_hand
+ * @property int $reorder_point
+ * @property string|null $unit
+ * @property array|null $tags
+ * @property string|null $location
+ * @property int|null $storage_location_id
+ * @property string|null $evaluation
+ * @property array|null $market_analysis
+ * @property array|null $facebook_analysis
+ * @property array|null $etsy_analysis
+ * @property array|null $source_links
+ * @property string|null $ebay_listing_url
+ * @property string|null $facebook_listing_url
+ * @property string|null $etsy_listing_url
+ * @property int $created_by_user_id
+ * @property \Illuminate\Support\Carbon|null $archived_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\User $creator
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Photo[] $photos
+ * @property-read int|null $photos_count
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Purchase[] $purchases
+ * @property-read int|null $purchases_count
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Sale[] $sales
+ * @property-read int|null $sales_count
+ * @property-read \App\Models\StorageLocation|null $storageLocation
+ * @method static \Illuminate\Database\Eloquent\Builder|InventoryItem byStatus($status)
+ * @method static \Illuminate\Database\Eloquent\Builder|InventoryItem byTag($tag)
+ * @method static \Illuminate\Database\Eloquent\Builder|InventoryItem lowStock()
+ * @method static \Illuminate\Database\Eloquent\Builder|InventoryItem notArchived()
+ * @method static \Illuminate\Database\Eloquent\Builder|InventoryItem search($search)
+ */
 #[ScopedBy([UserScope::class])]
 class InventoryItem extends Model
 {
     /** @use HasFactory<\Database\Factories\InventoryItemFactory> */
     use HasFactory, HasUuids;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'sku',
         'title',
@@ -39,6 +85,11 @@ class InventoryItem extends Model
         'archived_at',
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'tags' => 'array',
         'market_analysis' => 'array',
@@ -50,26 +101,51 @@ class InventoryItem extends Model
         'reorder_point' => 'integer',
     ];
 
+    /**
+     * Get the photos for the inventory item.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function photos()
     {
         return $this->hasMany(Photo::class)->orderBy('sort_order');
     }
 
+    /**
+     * Get the purchases for the inventory item.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function purchases()
     {
         return $this->hasMany(Purchase::class);
     }
 
+    /**
+     * Get the sales for the inventory item.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function sales()
     {
         return $this->hasMany(Sale::class);
     }
 
+    /**
+     * Get the user who created the inventory item.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
     }
 
+    /**
+     * Get the storage location for the inventory item.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
     public function storageLocation()
     {
         return $this->belongsTo(StorageLocation::class);

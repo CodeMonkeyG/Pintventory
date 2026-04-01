@@ -8,10 +8,17 @@ use App\Models\Photo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Controller for managing photos attached to inventory items.
+ */
 class PhotoController extends Controller
 {
     /**
-     * Store a newly created resource in storage.
+     * Store a newly uploaded photo for a specific inventory item.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string  $inventoryItemId
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request, string $inventoryItemId)
     {
@@ -40,7 +47,10 @@ class PhotoController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified photo from storage and database.
+     *
+     * @param  string  $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(string $id)
     {

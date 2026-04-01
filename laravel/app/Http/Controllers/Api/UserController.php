@@ -7,10 +7,16 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Controller for managing user profiles and preferences.
+ */
 class UserController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of users (Admin only).
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Pagination\LengthAwarePaginator
      */
     public function index(Request $request)
     {
@@ -23,7 +29,10 @@ class UserController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display the authenticated user's information.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \App\Models\User
      */
     public function show(Request $request)
     {
@@ -31,7 +40,10 @@ class UserController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the authenticated user's profile and preferences.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request)
     {

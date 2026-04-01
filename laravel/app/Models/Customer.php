@@ -13,12 +13,37 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Scopes\UserScope;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 
+/**
+ * App\Models\Customer
+ *
+ * @property int $id
+ * @property string $name
+ * @property string|null $contact_name
+ * @property string|null $email
+ * @property string|null $phone
+ * @property string|null $address
+ * @property string|null $notes
+ * @property int $created_by_user_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read \App\Models\User $creator
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Sale[] $sales
+ * @property-read int|null $sales_count
+ * @method static \Illuminate\Database\Eloquent\Builder|Customer search($search)
+ * @method static \Illuminate\Database\Eloquent\Builder|Customer withRevenueMetrics()
+ */
 #[ScopedBy([UserScope::class])]
 class Customer extends Model
 {
     /** @use HasFactory<\Database\Factories\CustomerFactory> */
     use HasFactory, SoftDeletes;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'contact_name',
@@ -29,11 +54,21 @@ class Customer extends Model
         'created_by_user_id',
     ];
 
+    /**
+     * Get the sales associated with the customer.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function sales()
     {
         return $this->hasMany(Sale::class);
     }
 
+    /**
+     * Get the user who created the customer record.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by_user_id');

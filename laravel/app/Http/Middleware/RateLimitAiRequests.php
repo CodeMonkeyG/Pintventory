@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Cache\RateLimiter;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Middleware to protect expensive AI endpoints from abuse.
+ * 
+ * Implements a per-user rate limit for requests directed to AI analysis drivers.
+ */
 class RateLimitAiRequests
 {
     /**

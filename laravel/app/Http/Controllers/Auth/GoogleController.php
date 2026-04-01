@@ -9,14 +9,27 @@ use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * Controller for handling Google OAuth 2.0 authentication.
+ */
 class GoogleController extends Controller
 {
+    /**
+     * Redirect the user to the Google authentication page.
+     *
+     * @return \Symfony\Component\HttpFoundation\Response
+     */
     public function redirect()
     {
         error_log('Redirecting to Google for authentication');
         return Socialite::driver('google')->redirect();
     }
 
+    /**
+     * Obtain the user information from Google and log the user in.
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function callback()
     {
         error_log('Callback to Google for authentication');
