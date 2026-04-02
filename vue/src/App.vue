@@ -27,3 +27,10 @@ onMounted(async () => {
     <RouterView />
   </v-app>
 </template>
+
+<style>
+/* Ensure Vuetify components respect the base font size where possible */
+.v-application {
+  font-family: 'Roboto', sans-serif !important;
+}
+</style>
