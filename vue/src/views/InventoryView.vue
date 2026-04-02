@@ -90,6 +90,15 @@ const openEditModal = async (item) => {
   router.push({ name: 'inventory-edit', params: { id: item.id } });
 };
 
+const handleDelete = async (id) => {
+  if (!confirm('Are you sure you want to delete this item?')) return;
+  try {
+    await store.deleteItem(id);
+  } catch (error) {
+    alert('Failed to delete item: ' + (error.response?.data?.message || error.message));
+  }
+};
+
 const handleSave = async (itemData, newPhotos = []) => {
   // Transaction save (itemData is null)
   if (!itemData) {
@@ -242,9 +251,12 @@ const getStatusColor = (status) => {
               <div class="flex-grow-1 min-width-0">
                 <div class="d-flex justify-space-between align-start">
                   <div class="font-weight-bold text-truncate pr-2">{{ item.title }}</div>
-                  <v-chip :color="getStatusColor(item.status)" size="x-small">
-                    {{ item.status.replace('_', ' ') }}
-                  </v-chip>
+                  <div class="d-flex align-center gap-1">
+                    <v-chip :color="getStatusColor(item.status)" size="x-small">
+                        {{ item.status.replace('_', ' ') }}
+                    </v-chip>
+                    <v-btn icon="mdi-delete" size="x-small" variant="text" color="error" @click.stop="handleDelete(item.id)"></v-btn>
+                  </div>
                 </div>
                 <div class="text-caption text-grey">{{ item.sku }}</div>
                 <div class="mt-1 font-weight-medium">
@@ -317,6 +329,7 @@ const getStatusColor = (status) => {
               <td>{{ formatDate(item.updated_at) }}</td>
               <td>
                 <v-btn size="small" variant="text" icon="mdi-pencil" @click="openEditModal(item)"></v-btn>
+                <v-btn size="small" variant="text" icon="mdi-delete" color="error" @click="handleDelete(item.id)"></v-btn>
               </td>
             </tr>
           </tbody>

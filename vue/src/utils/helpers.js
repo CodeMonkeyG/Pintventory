@@ -43,6 +43,12 @@ export function revokeBlobUrls(urls) {
 const DB_NAME = 'pintventory_db';
 const STORE_NAME = 'photo_drafts';
 
+/**
+ * Opens and initializes the IndexedDB database for draft persistence.
+ * 
+ * @private
+ * @returns {Promise<IDBDatabase>}
+ */
 function openDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, 1);
@@ -59,8 +65,10 @@ function openDB() {
 
 /**
  * Save pending photos to IndexedDB
+ * 
  * @param {string} key - Unique key for the draft (e.g. 'inventory_new' or item ID)
  * @param {File[]} files - Array of File objects
+ * @returns {Promise<void>}
  */
 export async function saveDraftPhotos(key, files) {
   try {
@@ -80,6 +88,7 @@ export async function saveDraftPhotos(key, files) {
 
 /**
  * Load pending photos from IndexedDB
+ * 
  * @param {string} key - Unique key for the draft
  * @returns {Promise<File[]>}
  */
@@ -101,7 +110,9 @@ export async function loadDraftPhotos(key) {
 
 /**
  * Clear photo drafts from IndexedDB
- * @param {string} key 
+ * 
+ * @param {string} key - Unique key for the draft to clear
+ * @returns {Promise<void>}
  */
 export async function clearDraftPhotos(key) {
   try {

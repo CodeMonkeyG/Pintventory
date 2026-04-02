@@ -22,6 +22,7 @@ const emit = defineEmits(['close', 'save', 'delete-photo', 'update:show']);
 
 const activeTab = ref('details');
 const fileInput = ref(null);
+const cameraInput = ref(null);
 const isAnalyzing = ref(false);
 const isMarketAnalyzing = ref(false);
 const isFacebookAnalyzing = ref(false);
@@ -29,9 +30,6 @@ const isEtsyAnalyzing = ref(false);
 const isUploading = ref(false);
 const pendingPhotos = ref([]);
 const localPhotos = ref([]);
-
-const vendors = ref([]);
-const customers = ref([]);
 
 const formData = ref({
     title: '',
@@ -84,9 +82,81 @@ const newSale = ref({
 const isEdit = computed(() => !!props.item);
 const draftKey = computed(() => isEdit.value ? `inventory_edit_${props.item.id}` : 'inventory_new');
 
+const restoreDraft = () => {
+    const savedForm = localStorage.getItem(`pintventory_draft_${draftKey.value}`);
+    if (savedForm) {
+        try {
+            const parsed = JSON.parse(savedForm);
+            // Merge draft with current formData (preserving any item-specific fields if it's an edit)
+            formData.value = { ...formData.value, ...parsed };
+        } catch (e) { 
+            console.error('Draft restore failed', e); 
+        }
+    }
+};
+
+watch(() => props.item, (newItem) => {
+    // Reset to defaults first
+    formData.value = {
+        title: '',
+        sku: '',
+        status: 'in_stock',
+        item_type: 'standard',
+        quantity_on_hand: 0,
+        reorder_point: 0,
+        unit: '',
+        location: '',
+        storage_location_id: null,
+        tags: '',
+        description: '',
+        evaluation: '',
+        market_analysis: null,
+        facebook_analysis: null,
+        etsy_analysis: null,
+        source_links: [],
+        ebay_listing_url: '',
+        facebook_listing_url: '',
+        etsy_listing_url: ''
+    };
+    localPhotos.value = [];
+
+    if (newItem) {
+        // Map newItem to formData
+        formData.value = {
+            title: newItem.title || '',
+            sku: newItem.sku || '',
+            status: newItem.status || 'in_stock',
+            item_type: newItem.item_type || 'standard',
+            quantity_on_hand: newItem.quantity_on_hand || 0,
+            reorder_point: newItem.reorder_point || 0,
+            unit: newItem.unit || '',
+            location: newItem.location || '',
+            storage_location_id: newItem.storage_location_id || null,
+            tags: Array.isArray(newItem.tags) ? newItem.tags.join(', ') : (newItem.tags || ''),
+            description: newItem.description || '',
+            evaluation: newItem.evaluation || '',
+            market_analysis: newItem.market_analysis || null,
+            facebook_analysis: newItem.facebook_analysis || null,
+            etsy_analysis: newItem.etsy_analysis || null,
+            source_links: newItem.source_links || [],
+            ebay_listing_url: newItem.ebay_listing_url || '',
+            facebook_listing_url: newItem.facebook_listing_url || '',
+            etsy_listing_url: newItem.etsy_listing_url || ''
+        };
+        if (newItem.photos) {
+            localPhotos.value = [...newItem.photos];
+        }
+    }
+
+    // After populating from item (or defaults), check for drafts
+    if (props.show) {
+        restoreDraft();
+    }
+}, { immediate: true });
+
 // Persistence: Save text state to localStorage
-watch([formData, () => props.show], ([newForm, show]) => {
-    if (show) {
+watch(formData, (newForm) => {
+    if (props.show) {
         localStorage.setItem(`pintventory_draft_${draftKey.value}`, JSON.stringify(newForm));
     }
 }, { deep: true });
@@ -98,23 +168,6 @@ watch(pendingPhotos, async (newPhotos) => {
         await saveDraftPhotos(draftKey.value, files);
     }
 }, { deep: true });
-
-// Persistence: Load state
-onMounted(async () => {
-    const savedForm = localStorage.getItem(`pintventory_draft_${draftKey.value}`);
-    if (savedForm) { 
-        try {
-            const parsed = JSON.parse(savedForm);
-            // Merge saved draft into current form
-            formData.value = { ...formData.value, ...parsed };
-        } catch (e) { console.error('Draft restore failed', e); }
-    }
-
-    // Always check for photos if the modal is currently showing (or about to show)
-    if (props.show) {
-        loadPhotosFromDraft();
-    }
-});
 
 const loadPhotosFromDraft = async () => {
     const savedPhotos = await loadDraftPhotos(draftKey.value);
@@ -130,6 +183,9 @@ const loadPhotosFromDraft = async () => {
 watch(() => props.show, (val) => {
     if (val) {
         locationStore.fetchItems();
+        vendorStore.fetchAllVendors();
+        customerStore.fetchAllCustomers();
+        restoreDraft(); // Ensure draft is restored when modal opens
         loadPhotosFromDraft();
     }
     if (!val) {
@@ -137,29 +193,7 @@ watch(() => props.show, (val) => {
         revokeBlobUrls(urls);
         pendingPhotos.value = [];
         
-        // Reset form data and state when modal closes
-        formData.value = {
-            title: '',
-            sku: '',
-            status: 'in_stock',
-            item_type: 'standard',
-            quantity_on_hand: 0,
-            reorder_point: 0,
-            unit: '',
-            location: '',
-            storage_location_id: null,
-            tags: '',
-            description: '',
-            evaluation: '',
-            market_analysis: null,
-            facebook_analysis: null,
-            etsy_analysis: null,
-            source_links: [],
-            ebay_listing_url: '',
-            facebook_listing_url: '',
-            etsy_listing_url: ''
-        };
-        localPhotos.value = [];
+        // Reset state when modal closes
         showPurchaseForm.value = false;
         showSaleForm.value = false;
         showFullEvaluation.value = false;
@@ -440,20 +474,23 @@ const save = async () => {
 };
 
 const triggerUpload = () => fileInput.value.click();
+const triggerCamera = () => cameraInput.value.click();
 
 const handleFileUpload = async (event) => {
-    let file = event.target.files[0];
-    if (!file) return;
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
     
     isUploading.value = true;
     try {
-        // Resize image immediately to save memory on mobile
-        file = await resizeImage(file);
-        const previewUrl = URL.createObjectURL(file);
-        pendingPhotos.value.push({ file, url: previewUrl });
+        for (const file of files) {
+            // Resize image immediately to save memory on mobile
+            const processedFile = await resizeImage(file);
+            const previewUrl = URL.createObjectURL(processedFile);
+            pendingPhotos.value.push({ file: processedFile, url: previewUrl });
+        }
     } catch (e) {
         console.error("Image processing failed", e);
-        alert("Failed to process image.");
+        alert("Failed to process image(s).");
     } finally {
         isUploading.value = false;
         event.target.value = null;
@@ -548,12 +585,20 @@ const closeModal = () => {
         <v-btn icon @click="$emit('close')">
           <v-icon>mdi-close</v-icon>
         </v-btn>
-        <v-toolbar-title>{{ isEdit ? 'Edit Item' : 'Add Item' }}</v-toolbar-title>
+        <v-toolbar-title>{{ isEdit ? (activeTab === 'details' ? 'Edit Item' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)) : 'Add Item' }}</v-toolbar-title>
         <v-spacer></v-spacer>
-        <v-btn variant="text" @click="save">Save</v-btn>
+        <v-btn variant="text" @click="save" v-if="activeTab === 'details'">Save</v-btn>
+        
+        <template v-slot:extension v-if="isEdit">
+          <v-tabs v-model="activeTab" grow color="white">
+            <v-tab value="details">Details</v-tab>
+            <v-tab value="purchases">Purchases</v-tab>
+            <v-tab value="sales">Sales</v-tab>
+          </v-tabs>
+        </template>
       </v-toolbar>
 
-      <v-card-title class="d-flex justify-space-between align-center px-6 pt-6 pb-2" v-else>
+      <v-card-title class="d-flex justify-space-between align-center px-6 pt-4 pb-0" v-else>
         <span class="text-h5">{{ isEdit ? 'Edit Inventory Item' : 'Add New Inventory Item' }}</span>
         <v-btn icon variant="text" @click="$emit('close')">
           <v-icon>mdi-close</v-icon>
@@ -567,7 +612,7 @@ const closeModal = () => {
         height="2"
       ></v-progress-linear>
 
-      <v-tabs v-model="activeTab" v-if="isEdit" color="primary" grow>
+      <v-tabs v-model="activeTab" v-if="isEdit && !mobile" color="primary" grow class="mt-2">
         <v-tab value="details">Details</v-tab>
         <v-tab value="purchases">Purchases</v-tab>
         <v-tab value="sales">Sales</v-tab>
@@ -867,19 +912,33 @@ const closeModal = () => {
                       </v-list-item>
                     </v-list>
                   </v-menu>
-                  <v-btn
-                    variant="tonal"
-                    size="small"
-                    color="primary"
-                    prepend-icon="mdi-camera"
-                    @click="triggerUpload"
-                    :loading="isUploading"
-                  >
-                    Add Photo
-                  </v-btn>
+
+                  <v-menu>
+                    <template v-slot:activator="{ props }">
+                      <v-btn
+                        variant="tonal"
+                        size="small"
+                        color="primary"
+                        prepend-icon="mdi-plus"
+                        v-bind="props"
+                        :loading="isUploading"
+                      >
+                        Add Photo
+                      </v-btn>
+                    </template>
+                    <v-list density="comfortable">
+                      <v-list-item @click="triggerCamera" prepend-icon="mdi-camera">
+                        <v-list-item-title>Take Photo</v-list-item-title>
+                      </v-list-item>
+                      <v-list-item @click="triggerUpload" prepend-icon="mdi-image-multiple">
+                        <v-list-item-title>Choose from Gallery</v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
                 </div>
               </div>
-              <input type="file" ref="fileInput" @change="handleFileUpload" accept="image/*" capture="environment" hidden />
+              <input type="file" ref="fileInput" @change="handleFileUpload" accept="image/*" multiple hidden />
+              <input type="file" ref="cameraInput" @change="handleFileUpload" accept="image/*" capture="environment" hidden />
 
               <div class="d-flex flex-nowrap gap-3 pb-2 overflow-x-auto" style="min-height: 100px;">
                 <div v-if="localPhotos.length === 0 && pendingPhotos.length === 0" class="w-100 d-flex flex-column align-center justify-center border-dashed rounded-lg py-8 text-grey">
@@ -1125,7 +1184,7 @@ const closeModal = () => {
                   <v-select
                     v-model="newPurchase.vendor_id"
                     label="Vendor *"
-                    :items="vendors"
+                    :items="vendorStore.allVendors"
                     item-title="name"
                     item-value="id"
                     variant="outlined"
@@ -1213,7 +1272,7 @@ const closeModal = () => {
                   <v-select
                     v-model="newSale.customer_id"
                     label="Customer *"
-                    :items="customers"
+                    :items="customerStore.allCustomers"
                     item-title="name"
                     item-value="id"
                     variant="outlined"
