@@ -187,6 +187,22 @@ class InventoryItem extends Model
     }
 
     /**
+     * Scope: Filter by storage location
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  int|string|null  $locationId
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeByLocation($query, $locationId)
+    {
+        if (!$locationId) {
+            return $query;
+        }
+
+        return $query->where('storage_location_id', $locationId);
+    }
+
+    /**
      * Scope: Filter by tag
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $query

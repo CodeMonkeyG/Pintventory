@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue';
 import { useInventoryStore } from '../stores/inventory';
+import { useLocationStore } from '../stores/locations';
 import MainLayout from '../layouts/MainLayout.vue';
 import InventoryModal from '../components/InventoryModal.vue';
 import PhotoGallery from '../components/PhotoGallery.vue';
@@ -10,6 +11,7 @@ import { useDisplay } from 'vuetify';
 import { useRouter, useRoute } from 'vue-router';
 
 const store = useInventoryStore();
+const locationStore = useLocationStore();
 const router = useRouter();
 const route = useRoute();
 const { mobile, smAndDown } = useDisplay();
@@ -43,6 +45,7 @@ const checkRouteForModal = async () => {
 
 onMounted(async () => {
   await store.fetchItems();
+  locationStore.fetchItems();
   checkRouteForModal();
 });
 
@@ -70,6 +73,16 @@ watch(searchInput, (val) => {
 const statusFilter = computed({
   get: () => store.filters.status,
   set: (val) => store.setFilter('status', val)
+});
+
+const tagFilter = computed({
+  get: () => store.filters.tag,
+  set: (val) => store.setFilter('tag', val)
+});
+
+const locationFilter = computed({
+  get: () => store.filters.storage_location_id,
+  set: (val) => store.setFilter('storage_location_id', val)
 });
 
 const lowStockFilter = computed({
@@ -163,6 +176,20 @@ const getStatusColor = (status) => {
     default: return 'primary';
   }
 };
+
+const toggleSort = (field) => {
+  if (store.filters.sort_by === field) {
+    store.setFilter('sort_dir', store.filters.sort_dir === 'asc' ? 'desc' : 'asc');
+  } else {
+    store.setFilter('sort_by', field);
+    store.setFilter('sort_dir', 'asc');
+  }
+};
+
+const getSortIcon = (field) => {
+  if (store.filters.sort_by !== field) return 'mdi-sort';
+  return store.filters.sort_dir === 'asc' ? 'mdi-sort-ascending' : 'mdi-sort-descending';
+};
 </script>
 
 <template>
@@ -178,10 +205,10 @@ const getStatusColor = (status) => {
     <v-card class="mb-6">
       <v-card-text>
         <v-row dense align="center">
-          <v-col cols="12" md="4">
+          <v-col cols="12" md="3">
             <v-text-field
               v-model="searchInput"
-              placeholder="Search by title or SKU..."
+              placeholder="Search Title or SKU..."
               prepend-inner-icon="mdi-magnify"
               hide-details
               density="compact"
@@ -189,7 +216,7 @@ const getStatusColor = (status) => {
             />
           </v-col>
           
-          <v-col cols="12" sm="6" md="3">
+          <v-col cols="12" sm="6" md="2">
             <v-select
               v-model="statusFilter"
               label="Status"
@@ -205,6 +232,31 @@ const getStatusColor = (status) => {
               variant="outlined"
             />
           </v-col>
+
+          <v-col cols="12" sm="6" md="2">
+            <v-select
+              v-model="locationFilter"
+              label="Location"
+              :items="[{ name: 'All Locations', id: '' }, ...locationStore.items]"
+              item-title="name"
+              item-value="id"
+              hide-details
+              density="compact"
+              variant="outlined"
+            />
+          </v-col>
+
+          <v-col cols="12" sm="6" md="2">
+            <v-text-field
+              v-model="tagFilter"
+              placeholder="Filter by Tag"
+              prepend-inner-icon="mdi-tag-outline"
+              hide-details
+              density="compact"
+              variant="outlined"
+              clearable
+            />
+          </v-col>
           
           <v-col cols="12" sm="6" md="3">
             <v-checkbox
@@ -212,6 +264,7 @@ const getStatusColor = (status) => {
               label="Low Stock Only"
               hide-details
               density="compact"
+              color="primary"
             />
           </v-col>
         </v-row>
@@ -258,6 +311,11 @@ const getStatusColor = (status) => {
                     <v-btn icon="mdi-delete" size="x-small" variant="text" color="error" @click.stop="handleDelete(item.id)"></v-btn>
                   </div>
                 </div>
+                <div class="d-flex flex-wrap gap-1 mt-1 mb-1" v-if="item.tags && item.tags.length">
+                  <v-chip v-for="tag in item.tags" :key="tag" size="x-small" variant="tonal" color="grey">
+                    {{ tag }}
+                  </v-chip>
+                </div>
                 <div class="text-caption text-grey">{{ item.sku }}</div>
                 <div class="mt-1 font-weight-medium">
                   {{ item.quantity_on_hand }} {{ item.unit }}
@@ -277,22 +335,41 @@ const getStatusColor = (status) => {
 
       <!-- Desktop View: Table -->
       <v-card v-else>
-        <v-table>
+        <v-table hover>
           <thead>
             <tr>
-              <th>Photo</th>
-              <th>Title / SKU</th>
-              <th>Location</th>
-              <th>Status</th>
-              <th>On Hand</th>
-              <th>Updated</th>
-              <th>Actions</th>
+              <th class="text-left" style="width: 60px">Photo</th>
+              <th class="text-left sortable-header" @click="toggleSort('title')">
+                Title
+                <v-icon size="14" class="ml-1">{{ getSortIcon('title') }}</v-icon>
+              </th>
+              <th class="text-left sortable-header" @click="toggleSort('sku')">
+                SKU
+                <v-icon size="14" class="ml-1">{{ getSortIcon('sku') }}</v-icon>
+              </th>
+              <th class="text-left sortable-header" @click="toggleSort('storage_location_name')">
+                Location
+                <v-icon size="14" class="ml-1">{{ getSortIcon('storage_location_name') }}</v-icon>
+              </th>
+              <th class="text-left sortable-header" @click="toggleSort('status')">
+                Status
+                <v-icon size="14" class="ml-1">{{ getSortIcon('status') }}</v-icon>
+              </th>
+              <th class="text-left sortable-header" @click="toggleSort('quantity_on_hand')">
+                On Hand
+                <v-icon size="14" class="ml-1">{{ getSortIcon('quantity_on_hand') }}</v-icon>
+              </th>
+              <th class="text-left sortable-header" @click="toggleSort('updated_at')">
+                Updated
+                <v-icon size="14" class="ml-1">{{ getSortIcon('updated_at') }}</v-icon>
+              </th>
+              <th class="text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in store.items" :key="item.id">
+            <tr v-for="item in store.items" :key="item.id" style="cursor: pointer" @click="openEditModal(item)">
               <td>
-                <v-avatar size="40" rounded="sm" style="cursor: pointer" @click="openGallery(item)">
+                <v-avatar size="40" rounded="sm" @click.stop="openGallery(item)">
                   <v-img 
                     v-if="item.photos && item.photos.length > 0" 
                     :src="item.photos[0].url" 
@@ -305,9 +382,14 @@ const getStatusColor = (status) => {
                 </v-avatar>
               </td>
               <td>
-                <div class="font-weight-bold">{{ item.title }}</div>
-                <div class="text-caption text-grey">{{ item.sku }}</div>
+                <div class="font-weight-bold text-truncate" style="max-width: 250px;">{{ item.title }}</div>
+                <div class="d-flex flex-wrap gap-1 mt-1" v-if="item.tags && item.tags.length">
+                  <v-chip v-for="tag in item.tags" :key="tag" size="x-small" variant="tonal" color="grey" style="font-size: 8px !important; height: 16px;">
+                    {{ tag }}
+                  </v-chip>
+                </div>
               </td>
+              <td class="text-caption font-mono">{{ item.sku }}</td>
               <td>
                 <div v-if="item.storage_location" class="text-body-2">
                   <v-icon size="14" color="primary" class="mr-1">mdi-map-marker</v-icon>
@@ -324,12 +406,12 @@ const getStatusColor = (status) => {
                 </v-chip>
               </td>
               <td>
-                {{ item.quantity_on_hand }} {{ item.unit }}
+                <div class="font-weight-medium">{{ item.quantity_on_hand }} {{ item.unit }}</div>
               </td>
-              <td>{{ formatDate(item.updated_at) }}</td>
-              <td>
-                <v-btn size="small" variant="text" icon="mdi-pencil" @click="openEditModal(item)"></v-btn>
-                <v-btn size="small" variant="text" icon="mdi-delete" color="error" @click="handleDelete(item.id)"></v-btn>
+              <td class="text-caption">{{ formatDate(item.updated_at) }}</td>
+              <td class="text-right">
+                <v-btn size="small" variant="text" icon="mdi-pencil" @click.stop="openEditModal(item)"></v-btn>
+                <v-btn size="small" variant="text" icon="mdi-delete" color="error" @click.stop="handleDelete(item.id)"></v-btn>
               </td>
             </tr>
           </tbody>
@@ -380,5 +462,15 @@ const getStatusColor = (status) => {
 <style scoped>
 .min-width-0 {
   min-width: 0;
+}
+.sortable-header {
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sortable-header:hover {
+  background: rgba(0,0,0,0.03);
+}
+.font-mono {
+  font-family: monospace;
 }
 </style>

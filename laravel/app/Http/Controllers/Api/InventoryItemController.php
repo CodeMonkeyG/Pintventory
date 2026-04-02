@@ -24,7 +24,8 @@ class InventoryItemController extends Controller
             ->with(['photos', 'storageLocation'])
             ->search($request->input('search'))
             ->byStatus($request->input('status'))
-            ->byTag($request->input('tag'));
+            ->byTag($request->input('tag'))
+            ->byLocation($request->input('storage_location_id'));
 
         // Exclude archived unless specifically searching for 'archived' status
         if ($request->input('status') !== 'archived') {
@@ -37,7 +38,14 @@ class InventoryItemController extends Controller
 
         $sortField = $request->input('sort_by', 'updated_at');
         $sortDirection = $request->input('sort_dir', 'desc');
-        $query->orderBy($sortField, $sortDirection);
+
+        if ($sortField === 'storage_location_name') {
+            $query->leftJoin('storage_locations', 'inventory_items.storage_location_id', '=', 'storage_locations.id')
+                  ->select('inventory_items.*') // Avoid column name collisions
+                  ->orderBy('storage_locations.name', $sortDirection);
+        } else {
+            $query->orderBy($sortField, $sortDirection);
+        }
 
         return $query->paginate($request->input('per_page', 25));
     }

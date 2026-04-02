@@ -26,6 +26,7 @@ export const useInventoryStore = defineStore('inventory', {
             search: '',
             status: '',
             tag: '',
+            storage_location_id: '',
             low_stock: false,
             sort_by: 'updated_at',
             sort_dir: 'desc',
