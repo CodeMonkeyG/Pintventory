@@ -32,6 +32,23 @@ class PhotoController extends Controller
         if ($request->hasFile('photo')) {
             $file = $request->file('photo');
             $path = $file->store('inventory-photos', 'public');
+            
+            if (!$path) {
+                \Illuminate\Support\Facades\Log::error('Photo Storage Failed', [
+                   'inventory_item_id' => $inventoryItemId,
+                   'original_name' => $file->getClientOriginalName()
+                ]);
+                return response()->json(['message' => 'Failed to save photo to disk'], 500);
+            }
+
+            \Illuminate\Support\Facades\Log::debug('Photo Upload Debug', [
+                'has_file' => $request->hasFile('photo'),
+                'is_valid' => $file->isValid(),
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getClientMimeType(),
+                'size' => $file->getSize(),
+                'path_returned_by_store' => $path,
+            ]);
 
             $photo = $item->photos()->create([
                 'storage_key' => $path,

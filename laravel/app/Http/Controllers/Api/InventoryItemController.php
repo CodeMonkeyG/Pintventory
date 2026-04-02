@@ -26,6 +26,11 @@ class InventoryItemController extends Controller
             ->byStatus($request->input('status'))
             ->byTag($request->input('tag'));
 
+        // Exclude archived unless specifically searching for 'archived' status
+        if ($request->input('status') !== 'archived') {
+            $query->notArchived();
+        }
+
         if ($request->boolean('low_stock')) {
             $query->lowStock();
         }
