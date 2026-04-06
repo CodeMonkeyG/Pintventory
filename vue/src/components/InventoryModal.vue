@@ -151,17 +151,10 @@ watch(() => props.item, (newItem) => {
         if (newItem.photos) {
             localPhotos.value = [...newItem.photos];
         }
-        
-        // After populating from item, check for drafts
-        if (props.show) {
-            restoreDraft();
-        }
-    } else {
-        // For new items, we want it CLEAR as per feedback
-        if (props.show) {
-            clearDraft();
-        }
     }
+    
+    // Draft restoration is now handled in the 'show' watch to prevent race conditions
+    // and accidental clearing on mount.
 }, { immediate: true });
 
 // Persistence: Save text state to localStorage
@@ -196,10 +189,9 @@ watch(() => props.show, async (val) => {
         vendorStore.fetchAllVendors();
         customerStore.fetchAllCustomers();
         
-        if (isEdit.value) {
-            restoreDraft(); // Ensure draft is restored when modal opens for edits
-            await loadPhotosFromDraft();
-        }
+        // Always attempt to restore draft when modal opens
+        restoreDraft();
+        await loadPhotosFromDraft();
     }
     if (!val) {
         const urls = pendingPhotos.value.map(p => p.url);
@@ -240,6 +232,8 @@ watch(() => props.show, async (val) => {
 
         if (!isEdit.value) {
             // Clear persistence on close for new items as per feedback
+            // This ensures next time "Add Item" is clicked it starts fresh
+            // unless the browser crashed while it was open.
             await clearDraft();
         }
     }
@@ -482,9 +476,8 @@ const handleFileUpload = async (event) => {
     isUploading.value = true;
     try {
         for (const file of files) {
-            // Resize image immediately to save memory on mobile
-            // const processedFile = await resizeImage(file);
-            const processedFile = file;
+            // Resize image (currently returns original file as per helpers.js)
+            const processedFile = await resizeImage(file);
             const previewUrl = URL.createObjectURL(processedFile);
             pendingPhotos.value.push({ file: processedFile, url: previewUrl });
         }
@@ -502,6 +495,8 @@ const deletePhoto = (photo) => {
         emit('delete-photo', photo.id);
         localPhotos.value = localPhotos.value.filter(p => p.id !== photo.id);
     } else {
+        // Revoke the blob URL to free memory
+        if (photo.url) URL.revokeObjectURL(photo.url);
         pendingPhotos.value = pendingPhotos.value.filter(p => p.url !== photo.url);
     }
 };

@@ -129,52 +129,54 @@ export async function clearDraftPhotos(key) {
  * Resize an image file if it exceeds a maximum pixel count.
  * 
  * @param {File} file - The image file to resize
- * @param {number} [maxPixels=16000000] - Maximum allowed total pixels (default 16MP)
+ * @param {number} [maxPixels=4194304] - Maximum allowed total pixels (default 4MP)
  * @returns {Promise<File>} A promise that resolves with the (potentially) resized File object
  */
-export function resizeImage(file, maxPixels = 16000000) {
-  // Temporary early return for debugging: bypass resizing
+export function resizeImage(file, maxPixels = 4194304) {
+  // Bypassed as per user request: return original file
   return Promise.resolve(file);
 
-  /*
+  /* Future optimized implementation:
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target.result;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        const currentPixels = width * height;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.src = url;
 
-        if (currentPixels > maxPixels) {
-          const ratio = Math.sqrt(maxPixels / currentPixels);
-          width = Math.floor(width * ratio);
-          height = Math.floor(height * ratio);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const width = img.width;
+      const height = img.height;
+      const currentPixels = width * height;
+
+      if (currentPixels <= maxPixels) {
+        return resolve(file);
+      }
+
+      const ratio = Math.sqrt(maxPixels / currentPixels);
+      const newWidth = Math.floor(width * ratio);
+      const newHeight = Math.floor(height * ratio);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return reject(new Error('Canvas context failed'));
+
+      ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
+        } else {
+          reject(new Error('Blob conversion failed'));
         }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const resizedFile = new File([blob], file.name, {
-              type: 'image/jpeg',
-              lastModified: Date.now()
-            });
-            resolve(resizedFile);
-          } else {
-            reject(new Error('Canvas to Blob conversion failed'));
-          }
-        }, 'image/jpeg', 0.85); // 0.85 quality to stay under 5MB for 8MP
-      };
-      img.onerror = (err) => reject(err);
+      }, 'image/jpeg', 0.85);
     };
-    reader.onerror = (err) => reject(err);
+
+    img.onerror = (err) => {
+      URL.revokeObjectURL(url);
+      reject(err);
+    };
   });
   */
 }
