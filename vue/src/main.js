@@ -20,7 +20,7 @@ const vuetify = createVuetify({
     defaultSet: 'mdi',
   },
   theme: {
-    defaultTheme: 'dark',
+    defaultTheme: 'gruvbox-light',
     themes: {
       light: {
         colors: {
@@ -70,6 +70,45 @@ const vuetify = createVuetify({
           info: '#076678',       // Blue
           success: '#79740e',    // Green
           warning: '#b57614',    // Yellow
+        }
+      },
+      'everforest-light-soft': {
+        dark: false,
+        colors: {
+          primary: '#8da101',    // Green
+          secondary: '#939f91',  // Gray
+          surface: '#f3efda',    // Background soft
+          background: '#f8f5e4', // Background soft (lighter)
+          error: '#f85552',      // Red
+          info: '#3a94c5',       // Blue
+          success: '#8da101',    // Green
+          warning: '#dfa000',    // Yellow
+        }
+      },
+      'paper': {
+        dark: false,
+        colors: {
+          primary: '#444444',    // Dark Gray
+          secondary: '#777777',  // Medium Gray
+          surface: '#fcfcfc',    // Pure White-ish
+          background: '#f5f5f5', // Soft Paper Gray
+          error: '#d32f2f',      
+          info: '#1976d2',
+          success: '#388e3c',
+          warning: '#fbc02d',
+        }
+      },
+      'tempest-dawn': {
+        dark: false,
+        colors: {
+          primary: '#4c566a',    // Nord Dark Blue-Gray
+          secondary: '#94a3b8',  // Slate
+          surface: '#e5e9f0',    // Lightest Blue-Gray
+          background: '#eceff4', // Snow White Blue
+          error: '#bf616a',      // Red
+          info: '#81a1c1',       // Blue
+          success: '#a3be8c',    // Green
+          warning: '#ebcb8b',    // Yellow
         }
       },
       'solarized-dark': {

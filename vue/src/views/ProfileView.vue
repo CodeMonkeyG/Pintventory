@@ -19,7 +19,7 @@ const profile = ref({
     currency: 'USD',
     date_format: 'en-US',
     tax_handling: 'exclude_tax',
-    theme: 'dark',
+    theme: 'gruvbox-light',
     low_stock_notification: false,
   }
 });
@@ -130,13 +130,16 @@ const saveProfile = async () => {
                     { value: 'light', title: 'Classic Light' },
                     { value: 'dark', title: 'Deep Slate (Dark)' },
                     { value: 'dracula', title: 'Dracula' },
+                    { value: 'everforest-light-soft', title: 'Everforest Light Soft' },
                     { value: 'gruvbox-dark', title: 'Gruvbox Dark' },
                     { value: 'gruvbox-light', title: 'Gruvbox Light' },
                     { value: 'material', title: 'Material Design' },
                     { value: 'mono-amber', title: 'Mono Amber (Retro)' },
                     { value: 'mono-green', title: 'Mono Green (Retro)' },
                     { value: 'monokai', title: 'Monokai' },
-                    { value: 'solarized-dark', title: 'Solarized Dark' }
+                    { value: 'paper', title: 'Paper' },
+                    { value: 'solarized-dark', title: 'Solarized Dark' },
+                    { value: 'tempest-dawn', title: 'Tempest Dawn' }
                   ]"
                   variant="outlined"
                   density="compact"
