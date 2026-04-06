@@ -67,7 +67,12 @@ PROMPT;
         - 'description': a short description (1-2 sentences).
         - 'item_type': 'unique' if it's a one-of-a-kind, vintage, or rare item that will likely only have 1 in stock and not be reordered. 'standard' if it's a modern, mass-produced item that could have quantity and be reordered.
         - 'evaluation': a detailed evaluation including era, material, and value estimation as a plain text block.
-        - 'tags': an array of 3-10 tags.";
+        - 'tags': an array of 3-10 tags.
+        - 'market_analysis': an object containing price ranges and ideal search queries for:
+            - 'ebay': { 'range': string, 'query': string }
+            - 'facebook': { 'range': string, 'query': string }
+            - 'offerup': { 'range': string, 'query': string }
+            - 'etsy': { 'range': string, 'query': string }";
 
             return $this->callGemini($url, $prompt, $base64Image, $mimeType, [
                 'type' => 'object',
@@ -82,9 +87,47 @@ PROMPT;
                     'tags' => [
                         'type' => 'array',
                         'items' => ['type' => 'string']
+                    ],
+                    'market_analysis' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'ebay' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'range' => ['type' => 'string'],
+                                    'query' => ['type' => 'string']
+                                ],
+                                'required' => ['range', 'query']
+                            ],
+                            'facebook' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'range' => ['type' => 'string'],
+                                    'query' => ['type' => 'string']
+                                ],
+                                'required' => ['range', 'query']
+                            ],
+                            'offerup' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'range' => ['type' => 'string'],
+                                    'query' => ['type' => 'string']
+                                ],
+                                'required' => ['range', 'query']
+                            ],
+                            'etsy' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'range' => ['type' => 'string'],
+                                    'query' => ['type' => 'string']
+                                ],
+                                'required' => ['range', 'query']
+                            ]
+                        ],
+                        'required' => ['ebay', 'facebook', 'offerup', 'etsy']
                     ]
                 ],
-                'required' => ['title', 'description', 'item_type', 'evaluation', 'tags']
+                'required' => ['title', 'description', 'item_type', 'evaluation', 'tags', 'market_analysis']
             ]);
         } catch (\Exception $e) {
             throw new \RuntimeException("Image identification failed: {$e->getMessage()}");

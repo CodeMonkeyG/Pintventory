@@ -565,6 +565,18 @@ const copyToClipboard = (text) => {
     });
 };
 
+const getMarketUrl = (platform, query) => {
+    if (!query) return '#';
+    const encodedQuery = encodeURIComponent(query);
+    switch (platform) {
+        case 'ebay': return `https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}`;
+        case 'facebook': return `https://www.facebook.com/marketplace/search/?query=${encodedQuery}`;
+        case 'offerup': return `https://offerup.com/search?q=${encodedQuery}`;
+        case 'etsy': return `https://www.etsy.com/search?q=${encodedQuery}`;
+        default: return '#';
+    }
+};
+
 const closeModal = () => {
   emit('close');
   emit('update:show', false);
@@ -658,54 +670,90 @@ const closeModal = () => {
                   class="mt-3 mb-6"
                 >
                   <v-card-text class="pa-3">
-                    <div class="d-flex align-center mb-1 cursor-pointer" @click="showFullMarketAnalysis = !showFullMarketAnalysis">
-                      <v-icon size="16" class="mr-2">mdi-chart-line</v-icon>
-                      <span class="text-caption font-weight-bold uppercase">eBay Market Analysis</span>
-                      <v-spacer />
-                      <v-icon :icon="showFullMarketAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="16" />
-                    </div>
-                    
-                    <div class="d-flex flex-wrap gap-2 mb-2 cursor-pointer" @click="showFullMarketAnalysis = !showFullMarketAnalysis">
-                      <v-chip size="x-small" color="amber-darken-4">List: {{ formData.market_analysis.listing_price_range }}</v-chip>
-                      <v-chip size="x-small" color="success">Sold: {{ formData.market_analysis.sold_price_range }}</v-chip>
-                      <v-chip size="x-small" color="primary">STR: {{ formData.market_analysis.sell_through_rate }}</v-chip>
-                      <v-btn 
-                        v-if="formData.market_analysis.market_url"
-                        :href="formData.market_analysis.market_url" 
-                        target="_blank" 
-                        variant="text" 
-                        size="x-small" 
-                        color="primary"
-                        prepend-icon="mdi-launch"
-                        @click.stop
-                        class="ml-auto"
-                      >
-                        View Live Listings
-                      </v-btn>
-                    </div>
-
-                    <div v-if="showFullMarketAnalysis">
-                      <div class="text-caption font-weight-bold mt-2">Suggested Title:</div>
-                      <div class="text-body-2 mb-2">{{ formData.market_analysis.suggested_ebay_title }}</div>
+                    <!-- Legacy eBay Analysis -->
+                    <template v-if="formData.market_analysis.listing_price_range || formData.market_analysis.sold_price_range">
+                      <div class="d-flex align-center mb-1 cursor-pointer" @click="showFullMarketAnalysis = !showFullMarketAnalysis">
+                        <v-icon size="16" class="mr-2">mdi-chart-line</v-icon>
+                        <span class="text-caption font-weight-bold uppercase">eBay Market Analysis</span>
+                        <v-spacer />
+                        <v-icon :icon="showFullMarketAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="16" />
+                      </div>
                       
-                      <div class="text-caption font-weight-bold mt-2">Flipping Advice:</div>
-                      <div class="text-body-2 mb-2 white-space-pre-wrap">{{ formData.market_analysis.flipping_advice }}</div>
+                      <div class="d-flex flex-wrap gap-2 mb-2 cursor-pointer" @click="showFullMarketAnalysis = !showFullMarketAnalysis">
+                        <v-chip v-if="formData.market_analysis.listing_price_range" size="x-small" color="amber-darken-4">List: {{ formData.market_analysis.listing_price_range }}</v-chip>
+                        <v-chip v-if="formData.market_analysis.sold_price_range" size="x-small" color="success">Sold: {{ formData.market_analysis.sold_price_range }}</v-chip>
+                        <v-chip v-if="formData.market_analysis.sell_through_rate" size="x-small" color="primary">STR: {{ formData.market_analysis.sell_through_rate }}</v-chip>
+                        <v-btn 
+                          v-if="formData.market_analysis.market_url"
+                          :href="formData.market_analysis.market_url" 
+                          target="_blank" 
+                          variant="text" 
+                          size="x-small" 
+                          color="primary"
+                          prepend-icon="mdi-launch"
+                          @click.stop
+                          class="ml-auto"
+                        >
+                          View Live Listings
+                        </v-btn>
+                      </div>
 
-                      <div class="mt-4 p-3 bg-grey-darken-4 rounded-lg position-relative" v-if="formData.market_analysis.listing_copy">
-                        <div class="text-caption font-weight-bold mb-1 d-flex align-center">
-                          <v-icon size="14" class="mr-1">mdi-content-copy</v-icon>
-                          Listing Template
-                          <v-spacer />
-                          <v-btn icon="mdi-content-copy" variant="text" size="x-small" @click.stop="copyToClipboard(formData.market_analysis.listing_copy)" title="Copy to clipboard" />
-                        </div>
-                        <div class="text-body-2 white-space-pre-wrap font-italic text-grey-lighten-1">
-                          {{ formData.market_analysis.listing_copy }}
+                      <div v-if="showFullMarketAnalysis">
+                        <div v-if="formData.market_analysis.suggested_ebay_title" class="text-caption font-weight-bold mt-2">Suggested Title:</div>
+                        <div v-if="formData.market_analysis.suggested_ebay_title" class="text-body-2 mb-2">{{ formData.market_analysis.suggested_ebay_title }}</div>
+                        
+                        <div v-if="formData.market_analysis.flipping_advice" class="text-caption font-weight-bold mt-2">Flipping Advice:</div>
+                        <div v-if="formData.market_analysis.flipping_advice" class="text-body-2 mb-2 white-space-pre-wrap">{{ formData.market_analysis.flipping_advice }}</div>
+
+                        <div class="mt-4 p-3 bg-grey-darken-4 rounded-lg position-relative" v-if="formData.market_analysis.listing_copy">
+                          <div class="text-caption font-weight-bold mb-1 d-flex align-center">
+                            <v-icon size="14" class="mr-1">mdi-content-copy</v-icon>
+                            Listing Template
+                            <v-spacer />
+                            <v-btn icon="mdi-content-copy" variant="text" size="x-small" @click.stop="copyToClipboard(formData.market_analysis.listing_copy)" title="Copy to clipboard" />
+                          </div>
+                          <div class="text-body-2 white-space-pre-wrap font-italic text-grey-lighten-1">
+                            {{ formData.market_analysis.listing_copy }}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div v-else class="text-center text-caption mt-1 font-italic opacity-70">
-                      Click to expand strategy
-                    </div>
+                    </template>
+
+                    <!-- New Multi-Market Analysis (eBay, FB, OfferUp, Etsy) -->
+                    <template v-else-if="formData.market_analysis.ebay || formData.market_analysis.facebook">
+                      <div class="d-flex align-center mb-2">
+                        <v-icon size="16" class="mr-2">mdi-chart-line</v-icon>
+                        <span class="text-caption font-weight-bold uppercase">Multi-Market Evaluation</span>
+                        <v-spacer />
+                        <v-btn
+                          variant="text"
+                          size="x-small"
+                          :append-icon="showFullMarketAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                          @click="showFullMarketAnalysis = !showFullMarketAnalysis"
+                        >
+                          Details
+                        </v-btn>
+                      </div>
+
+                      <v-row dense>
+                        <v-col v-for="(data, platform) in formData.market_analysis" :key="platform" cols="6" sm="3">
+                          <v-card variant="tonal" class="pa-2 fill-height" :color="platform === 'ebay' ? 'blue-lighten-4' : (platform === 'etsy' ? 'orange-lighten-4' : 'grey-lighten-4')">
+                            <div class="d-flex justify-space-between align-center mb-1">
+                                <span class="text-caption font-weight-bold text-uppercase">{{ platform }}</span>
+                                <v-btn
+                                    icon="mdi-open-in-new"
+                                    size="x-small"
+                                    variant="text"
+                                    :href="getMarketUrl(platform, data.query)"
+                                    target="_blank"
+                                    @click.stop
+                                ></v-btn>
+                            </div>
+                            <div class="text-body-2 font-weight-black">{{ data.range }}</div>
+                          </v-card>
+                        </v-col>
+                      </v-row>
+                    </template>
                   </v-card-text>
                 </v-card>
               </v-expand-transition>

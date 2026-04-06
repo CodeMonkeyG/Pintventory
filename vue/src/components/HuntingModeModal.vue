@@ -23,8 +23,21 @@ const analysisResult = ref({
     quantity_on_hand: 1,
     unit: 'pcs',
     tags: '',
-    evaluation: ''
+    evaluation: '',
+    market_analysis: null
 });
+
+const getMarketUrl = (platform, query) => {
+    if (!query) return '#';
+    const encodedQuery = encodeURIComponent(query);
+    switch (platform) {
+        case 'ebay': return `https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}`;
+        case 'facebook': return `https://www.facebook.com/marketplace/search/?query=${encodedQuery}`;
+        case 'offerup': return `https://offerup.com/search?q=${encodedQuery}`;
+        case 'etsy': return `https://www.etsy.com/search?q=${encodedQuery}`;
+        default: return '#';
+    }
+};
 
 const triggerCamera = () => {
     if (cameraInput.value) {
@@ -60,7 +73,8 @@ const handlePhotoCapture = async (event) => {
             quantity_on_hand: data.item_type === 'unique' ? 1 : 1,
             unit: 'pcs',
             tags: Array.isArray(data.tags) ? data.tags.join(', ') : (data.tags || ''),
-            evaluation: typeof data.evaluation === 'object' ? JSON.stringify(data.evaluation, null, 2) : (data.evaluation || '')
+            evaluation: typeof data.evaluation === 'object' ? JSON.stringify(data.evaluation, null, 2) : (data.evaluation || ''),
+            market_analysis: data.market_analysis || null
         };
     } catch (error) {
         console.error('Analysis failed', error);
@@ -83,7 +97,8 @@ const reset = () => {
         quantity_on_hand: 1,
         unit: 'pcs',
         tags: '',
-        evaluation: ''
+        evaluation: '',
+        market_analysis: null
     };
     isAnalyzing.value = false;
     isSaving.value = false;
@@ -171,16 +186,37 @@ onUnmounted(() => {
             
             <v-text-field
                 v-model="analysisResult.title"
-                label="Suggested Title"
+                label="Item Name"
                 variant="outlined"
                 density="compact"
                 hide-details
-                class="mb-3"
+                class="mb-4 font-weight-bold"
             />
+
+            <div v-if="analysisResult.market_analysis" class="mb-6">
+                <div class="text-subtitle-2 font-weight-bold mb-2 text-grey">ESTIMATED MARKET VALUE</div>
+                <v-row dense>
+                    <v-col v-for="(data, platform) in analysisResult.market_analysis" :key="platform" cols="6">
+                        <v-card variant="tonal" class="pa-2" :color="platform === 'ebay' ? 'blue-lighten-4' : (platform === 'etsy' ? 'orange-lighten-4' : 'grey-lighten-4')">
+                            <div class="d-flex justify-space-between align-center mb-1">
+                                <span class="text-caption font-weight-bold text-uppercase">{{ platform }}</span>
+                                <v-btn
+                                    icon="mdi-open-in-new"
+                                    size="x-small"
+                                    variant="text"
+                                    :href="getMarketUrl(platform, data.query)"
+                                    target="_blank"
+                                ></v-btn>
+                            </div>
+                            <div class="text-body-1 font-weight-black">{{ data.range }}</div>
+                        </v-card>
+                    </v-col>
+                </v-row>
+            </div>
 
             <v-textarea
                 v-model="analysisResult.description"
-                label="Description"
+                label="Detailed Description"
                 variant="outlined"
                 density="compact"
                 rows="3"
@@ -227,11 +263,11 @@ onUnmounted(() => {
             <v-alert
                 v-if="analysisResult.evaluation"
                 variant="tonal"
-                color="success"
+                color="info"
                 icon="mdi-information-outline"
                 class="mb-4"
             >
-                <div class="text-caption font-weight-bold uppercase mb-1">AI Evaluation</div>
+                <div class="text-caption font-weight-bold uppercase mb-1">AI Evaluation & Details</div>
                 <div class="text-body-2" style="white-space: pre-wrap;">{{ analysisResult.evaluation }}</div>
             </v-alert>
         </div>
