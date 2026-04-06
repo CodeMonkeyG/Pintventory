@@ -2,7 +2,7 @@
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import api from '../axios';
 import PhotoGallery from './PhotoGallery.vue';
-import { revokeBlobUrls, saveDraftPhotos, loadDraftPhotos, clearDraftPhotos } from '../utils/helpers';
+import { revokeBlobUrls, saveDraftPhotos, loadDraftPhotos, clearDraftPhotos, resizeImage } from '../utils/helpers';
 import { useVendorStore } from '../stores/vendors';
 import { useCustomerStore } from '../stores/customers';
 import { useLocationStore } from '../stores/locations';
@@ -38,7 +38,7 @@ const formData = ref({
     item_type: 'standard',
     quantity_on_hand: 0,
     reorder_point: 0,
-    unit: '',
+    unit: 'pcs',
     location: '',
     storage_location_id: null,
     tags: '',
@@ -82,6 +82,11 @@ const newSale = ref({
 const isEdit = computed(() => !!props.item);
 const draftKey = computed(() => isEdit.value ? `inventory_edit_${props.item.id}` : 'inventory_new');
 
+const clearDraft = async () => {
+    localStorage.removeItem(`pintventory_draft_${draftKey.value}`);
+    await clearDraftPhotos(draftKey.value);
+};
+
 const restoreDraft = () => {
     const savedForm = localStorage.getItem(`pintventory_draft_${draftKey.value}`);
     if (savedForm) {
@@ -104,7 +109,7 @@ watch(() => props.item, (newItem) => {
         item_type: 'standard',
         quantity_on_hand: 0,
         reorder_point: 0,
-        unit: '',
+        unit: 'pcs',
         location: '',
         storage_location_id: null,
         tags: '',
@@ -129,7 +134,7 @@ watch(() => props.item, (newItem) => {
             item_type: newItem.item_type || 'standard',
             quantity_on_hand: newItem.quantity_on_hand || 0,
             reorder_point: newItem.reorder_point || 0,
-            unit: newItem.unit || '',
+            unit: newItem.unit || 'pcs',
             location: newItem.location || '',
             storage_location_id: newItem.storage_location_id || null,
             tags: Array.isArray(newItem.tags) ? newItem.tags.join(', ') : (newItem.tags || ''),
@@ -146,11 +151,16 @@ watch(() => props.item, (newItem) => {
         if (newItem.photos) {
             localPhotos.value = [...newItem.photos];
         }
-    }
-
-    // After populating from item (or defaults), check for drafts
-    if (props.show) {
-        restoreDraft();
+        
+        // After populating from item, check for drafts
+        if (props.show) {
+            restoreDraft();
+        }
+    } else {
+        // For new items, we want it CLEAR as per feedback
+        if (props.show) {
+            clearDraft();
+        }
     }
 }, { immediate: true });
 
@@ -180,20 +190,46 @@ const loadPhotosFromDraft = async () => {
 };
 
 // Add a watch to load photos when 'show' becomes true (if not already mounted)
-watch(() => props.show, (val) => {
+watch(() => props.show, async (val) => {
     if (val) {
         locationStore.fetchItems();
         vendorStore.fetchAllVendors();
         customerStore.fetchAllCustomers();
-        restoreDraft(); // Ensure draft is restored when modal opens
-        loadPhotosFromDraft();
+        
+        if (isEdit.value) {
+            restoreDraft(); // Ensure draft is restored when modal opens for edits
+            await loadPhotosFromDraft();
+        }
     }
     if (!val) {
         const urls = pendingPhotos.value.map(p => p.url);
         revokeBlobUrls(urls);
         pendingPhotos.value = [];
+        localPhotos.value = [];
         
-        // Reset state when modal closes
+        // Reset state when modal closes to prevent flashing next time
+        formData.value = {
+            title: '',
+            sku: '',
+            status: 'in_stock',
+            item_type: 'standard',
+            quantity_on_hand: 0,
+            reorder_point: 0,
+            unit: 'pcs',
+            location: '',
+            storage_location_id: null,
+            tags: '',
+            description: '',
+            evaluation: '',
+            market_analysis: null,
+            facebook_analysis: null,
+            etsy_analysis: null,
+            source_links: [],
+            ebay_listing_url: '',
+            facebook_listing_url: '',
+            etsy_listing_url: ''
+        };
+
         showPurchaseForm.value = false;
         showSaleForm.value = false;
         showFullEvaluation.value = false;
@@ -201,50 +237,13 @@ watch(() => props.show, (val) => {
         showFullFacebookAnalysis.value = false;
         showFullEtsyAnalysis.value = false;
         activeTab.value = 'details';
+
+        if (!isEdit.value) {
+            // Clear persistence on close for new items as per feedback
+            await clearDraft();
+        }
     }
 });
-
-const resizeImage = (file, maxPixels = 8000000) => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                const currentPixels = width * height;
-
-                if (currentPixels > maxPixels) {
-                    const ratio = Math.sqrt(maxPixels / currentPixels);
-                    width = Math.floor(width * ratio);
-                    height = Math.floor(height * ratio);
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-
-                canvas.toBlob((blob) => {
-                    if (blob) {
-                        const resizedFile = new File([blob], file.name, {
-                            type: 'image/jpeg',
-                            lastModified: Date.now()
-                        });
-                        resolve(resizedFile);
-                    } else {
-                        reject(new Error('Canvas to Blob conversion failed'));
-                    }
-                }, 'image/jpeg', 0.85); // 0.85 quality to stay under 5MB for 8MP
-            };
-            img.onerror = (err) => reject(err);
-        };
-        reader.onerror = (err) => reject(err);
-    });
-};
 
 const handleAiAutoFill = async () => {
     let file = null;
@@ -270,7 +269,7 @@ const handleAiAutoFill = async () => {
     isAnalyzing.value = true;
     try {
         // Resize image if it's too large
-        file = await resizeImage(file);
+        // file = await resizeImage(file);
 
         const formDataPayload = new FormData();
         formDataPayload.append('image', file);
@@ -349,7 +348,7 @@ const handleMarketAnalysis = async () => {
 
     isMarketAnalyzing.value = true;
     try {
-        file = await resizeImage(file);
+        // file = await resizeImage(file);
 
         const formDataPayload = new FormData();
         formDataPayload.append('image', file);
@@ -393,7 +392,7 @@ const handleFacebookAnalysis = async () => {
 
     isFacebookAnalyzing.value = true;
     try {
-        file = await resizeImage(file);
+        // file = await resizeImage(file);
 
         const formDataPayload = new FormData();
         formDataPayload.append('image', file);
@@ -437,7 +436,7 @@ const handleEtsyAnalysis = async () => {
 
     isEtsyAnalyzing.value = true;
     try {
-        file = await resizeImage(file);
+        // file = await resizeImage(file);
 
         const formDataPayload = new FormData();
         formDataPayload.append('image', file);
@@ -484,7 +483,8 @@ const handleFileUpload = async (event) => {
     try {
         for (const file of files) {
             // Resize image immediately to save memory on mobile
-            const processedFile = await resizeImage(file);
+            // const processedFile = await resizeImage(file);
+            const processedFile = file;
             const previewUrl = URL.createObjectURL(processedFile);
             pendingPhotos.value.push({ file: processedFile, url: previewUrl });
         }
@@ -913,7 +913,7 @@ const closeModal = () => {
                     </v-list>
                   </v-menu>
 
-                  <v-menu>
+                  <v-menu v-if="!mobile">
                     <template v-slot:activator="{ props }">
                       <v-btn
                         variant="tonal"
@@ -940,8 +940,31 @@ const closeModal = () => {
               <input type="file" ref="fileInput" @change="handleFileUpload" accept="image/*" multiple hidden />
               <input type="file" ref="cameraInput" @change="handleFileUpload" accept="image/*" capture="environment" hidden />
 
-              <div class="d-flex flex-nowrap gap-3 pb-2 overflow-x-auto" style="min-height: 100px;">
-                <div v-if="localPhotos.length === 0 && pendingPhotos.length === 0" class="w-100 d-flex flex-column align-center justify-center border-dashed rounded-lg py-8 text-grey">
+              <div v-if="mobile" :class="(localPhotos.length > 0 || pendingPhotos.length > 0) ? 'd-flex gap-2 mb-4' : 'd-flex flex-column gap-3 mb-6'">
+                <v-btn
+                  color="primary"
+                  :size="(localPhotos.length > 0 || pendingPhotos.length > 0) ? 'default' : 'large'"
+                  prepend-icon="mdi-camera"
+                  @click="triggerCamera"
+                  class="text-none flex-grow-1"
+                  elevation="2"
+                >
+                  {{ (localPhotos.length > 0 || pendingPhotos.length > 0) ? 'Take' : 'Take Photo' }}
+                </v-btn>
+                <v-btn
+                  color="primary"
+                  variant="tonal"
+                  :size="(localPhotos.length > 0 || pendingPhotos.length > 0) ? 'default' : 'large'"
+                  prepend-icon="mdi-image-multiple"
+                  @click="triggerUpload"
+                  class="text-none flex-grow-1"
+                >
+                  {{ (localPhotos.length > 0 || pendingPhotos.length > 0) ? 'Gallery' : 'Choose from Gallery' }}
+                </v-btn>
+              </div>
+
+              <div class="d-flex flex-nowrap gap-3 pb-2 overflow-x-auto" :style="(!mobile || localPhotos.length > 0 || pendingPhotos.length > 0) ? 'min-height: 100px;' : ''">
+                <div v-if="!mobile && localPhotos.length === 0 && pendingPhotos.length === 0" class="w-100 d-flex flex-column align-center justify-center border-dashed rounded-lg py-8 text-grey">
                   <v-icon size="32" class="mb-2">mdi-image-plus</v-icon>
                   <span class="text-caption">No photos uploaded</span>
                 </div>

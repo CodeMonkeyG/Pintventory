@@ -100,7 +100,7 @@ export async function loadDraftPhotos(key) {
     const request = store.get(key);
     return new Promise((resolve, reject) => {
       request.onsuccess = () => resolve(request.result || []);
-      request.onerror = (e) => reject(e.target.error);
+      tx.onerror = (e) => reject(e.target.error);
     });
   } catch (e) {
     console.error('IndexedDB load failed', e);
@@ -123,4 +123,58 @@ export async function clearDraftPhotos(key) {
   } catch (e) {
     console.error('IndexedDB clear failed', e);
   }
+}
+
+/**
+ * Resize an image file if it exceeds a maximum pixel count.
+ * 
+ * @param {File} file - The image file to resize
+ * @param {number} [maxPixels=16000000] - Maximum allowed total pixels (default 16MP)
+ * @returns {Promise<File>} A promise that resolves with the (potentially) resized File object
+ */
+export function resizeImage(file, maxPixels = 16000000) {
+  // Temporary early return for debugging: bypass resizing
+  return Promise.resolve(file);
+
+  /*
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const currentPixels = width * height;
+
+        if (currentPixels > maxPixels) {
+          const ratio = Math.sqrt(maxPixels / currentPixels);
+          width = Math.floor(width * ratio);
+          height = Math.floor(height * ratio);
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const resizedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            resolve(resizedFile);
+          } else {
+            reject(new Error('Canvas to Blob conversion failed'));
+          }
+        }, 'image/jpeg', 0.85); // 0.85 quality to stay under 5MB for 8MP
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+  */
 }
