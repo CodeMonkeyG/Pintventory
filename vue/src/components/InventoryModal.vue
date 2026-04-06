@@ -665,24 +665,24 @@ const closeModal = () => {
               <v-expand-transition>
                 <v-card
                   v-if="formData.market_analysis"
-                  variant="tonal"
-                  color="amber-darken-3"
-                  class="mt-3 mb-6"
+                  variant="outlined"
+                  class="mt-3 mb-6 bg-surface"
+                  style="border-color: rgba(var(--v-border-color), 0.25) !important;"
                 >
                   <v-card-text class="pa-3">
                     <!-- Legacy eBay Analysis -->
                     <template v-if="formData.market_analysis.listing_price_range || formData.market_analysis.sold_price_range">
-                      <div class="d-flex align-center mb-1 cursor-pointer" @click="showFullMarketAnalysis = !showFullMarketAnalysis">
-                        <v-icon size="16" class="mr-2">mdi-chart-line</v-icon>
-                        <span class="text-caption font-weight-bold uppercase">eBay Market Analysis</span>
+                      <div class="d-flex align-center mb-3 cursor-pointer" @click="showFullMarketAnalysis = !showFullMarketAnalysis">
+                        <v-icon size="18" class="mr-2" color="primary">mdi-chart-line</v-icon>
+                        <span class="text-caption font-weight-bold uppercase text-grey-darken-1">eBay Market Analysis</span>
                         <v-spacer />
-                        <v-icon :icon="showFullMarketAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="16" />
+                        <v-icon :icon="showFullMarketAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="16" color="grey" />
                       </div>
                       
                       <div class="d-flex flex-wrap gap-2 mb-2 cursor-pointer" @click="showFullMarketAnalysis = !showFullMarketAnalysis">
-                        <v-chip v-if="formData.market_analysis.listing_price_range" size="x-small" color="amber-darken-4">List: {{ formData.market_analysis.listing_price_range }}</v-chip>
-                        <v-chip v-if="formData.market_analysis.sold_price_range" size="x-small" color="success">Sold: {{ formData.market_analysis.sold_price_range }}</v-chip>
-                        <v-chip v-if="formData.market_analysis.sell_through_rate" size="x-small" color="primary">STR: {{ formData.market_analysis.sell_through_rate }}</v-chip>
+                        <v-chip v-if="formData.market_analysis.listing_price_range" size="x-small" variant="flat" color="secondary" class="text-caption">List: {{ formData.market_analysis.listing_price_range }}</v-chip>
+                        <v-chip v-if="formData.market_analysis.sold_price_range" size="x-small" variant="flat" color="success" class="text-caption">Sold: {{ formData.market_analysis.sold_price_range }}</v-chip>
+                        <v-chip v-if="formData.market_analysis.sell_through_rate" size="x-small" variant="flat" color="primary" class="text-caption">STR: {{ formData.market_analysis.sell_through_rate }}</v-chip>
                         <v-btn 
                           v-if="formData.market_analysis.market_url"
                           :href="formData.market_analysis.market_url" 
@@ -694,7 +694,7 @@ const closeModal = () => {
                           @click.stop
                           class="ml-auto"
                         >
-                          View Live Listings
+                          View Live
                         </v-btn>
                       </div>
 
@@ -721,13 +721,14 @@ const closeModal = () => {
 
                     <!-- New Multi-Market Analysis (eBay, FB, OfferUp, Etsy) -->
                     <template v-else-if="formData.market_analysis.ebay || formData.market_analysis.facebook">
-                      <div class="d-flex align-center mb-2">
-                        <v-icon size="16" class="mr-2">mdi-chart-line</v-icon>
-                        <span class="text-caption font-weight-bold uppercase">Multi-Market Evaluation</span>
+                      <div class="d-flex align-center mb-3">
+                        <v-icon size="18" class="mr-2" color="grey-darken-1">mdi-chart-line</v-icon>
+                        <span class="text-caption font-weight-bold uppercase text-grey-darken-1">Multi-Market Evaluation</span>
                         <v-spacer />
                         <v-btn
                           variant="text"
                           size="x-small"
+                          color="primary"
                           :append-icon="showFullMarketAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'"
                           @click="showFullMarketAnalysis = !showFullMarketAnalysis"
                         >
@@ -737,16 +738,18 @@ const closeModal = () => {
 
                       <v-row dense>
                         <v-col v-for="(data, platform) in formData.market_analysis" :key="platform" cols="6" sm="3">
-                          <v-card variant="tonal" class="pa-2 fill-height" :color="platform === 'ebay' ? 'blue-lighten-4' : (platform === 'etsy' ? 'orange-lighten-4' : 'grey-lighten-4')">
+                          <v-card variant="outlined" class="pa-2 fill-height bg-surface" style="border-color: rgba(var(--v-border-color), 0.15) !important;">
                             <div class="d-flex justify-space-between align-center mb-1">
-                                <span class="text-caption font-weight-bold text-uppercase">{{ platform }}</span>
+                                <span class="text-caption font-weight-bold text-grey text-uppercase">{{ platform }}</span>
                                 <v-btn
                                     icon="mdi-open-in-new"
                                     size="x-small"
                                     variant="text"
+                                    color="primary"
                                     :href="getMarketUrl(platform, data.query)"
                                     target="_blank"
                                     @click.stop
+                                    density="compact"
                                 ></v-btn>
                             </div>
                             <div class="text-body-2 font-weight-black">{{ data.range }}</div>

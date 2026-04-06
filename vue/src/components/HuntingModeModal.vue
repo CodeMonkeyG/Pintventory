@@ -194,18 +194,23 @@ onUnmounted(() => {
             />
 
             <div v-if="analysisResult.market_analysis" class="mb-6">
-                <div class="text-subtitle-2 font-weight-bold mb-2 text-grey">ESTIMATED MARKET VALUE</div>
+                <div class="text-subtitle-2 font-weight-bold mb-3 text-grey-darken-1 d-flex align-center">
+                    <v-icon size="18" class="mr-2">mdi-chart-line</v-icon>
+                    ESTIMATED MARKET VALUE
+                </div>
                 <v-row dense>
-                    <v-col v-for="(data, platform) in analysisResult.market_analysis" :key="platform" cols="6">
-                        <v-card variant="tonal" class="pa-2" :color="platform === 'ebay' ? 'blue-lighten-4' : (platform === 'etsy' ? 'orange-lighten-4' : 'grey-lighten-4')">
+                    <v-col v-for="(data, platform) in analysisResult.market_analysis" :key="platform" cols="6" sm="3">
+                        <v-card variant="outlined" class="pa-2 fill-height bg-surface" style="border-color: rgba(var(--v-border-color), 0.15) !important;">
                             <div class="d-flex justify-space-between align-center mb-1">
-                                <span class="text-caption font-weight-bold text-uppercase">{{ platform }}</span>
+                                <span class="text-caption font-weight-bold text-grey text-uppercase">{{ platform }}</span>
                                 <v-btn
                                     icon="mdi-open-in-new"
                                     size="x-small"
                                     variant="text"
+                                    color="primary"
                                     :href="getMarketUrl(platform, data.query)"
                                     target="_blank"
+                                    density="compact"
                                 ></v-btn>
                             </div>
                             <div class="text-body-1 font-weight-black">{{ data.range }}</div>
