@@ -4,6 +4,7 @@ import { useInventoryStore } from '../stores/inventory';
 import { useLocationStore } from '../stores/locations';
 import MainLayout from '../layouts/MainLayout.vue';
 import InventoryModal from '../components/InventoryModal.vue';
+import HuntingModeModal from '../components/HuntingModeModal.vue';
 import PhotoGallery from '../components/PhotoGallery.vue';
 import api from '../axios';
 import { debounce } from '../utils/helpers';
@@ -16,6 +17,7 @@ const router = useRouter();
 const route = useRoute();
 const { mobile, smAndDown } = useDisplay();
 const showModal = ref(false);
+const showHuntingModal = ref(false);
 const selectedItem = ref(null);
 
 // Gallery State
@@ -196,10 +198,16 @@ const getSortIcon = (field) => {
   <MainLayout>
     <div :class="mobile ? 'd-flex flex-column gap-4' : 'd-flex justify-space-between align-center'" class="mb-6">
       <h1 :class="mobile ? 'text-h4' : 'text-h3'">Inventory</h1>
-      <v-btn color="primary" @click="openCreateModal" :block="mobile">
-        <v-icon left>mdi-plus</v-icon>
-        Add Item
-      </v-btn>
+      <div class="d-flex gap-2" :class="mobile ? 'flex-column' : ''">
+        <v-btn color="secondary" variant="tonal" @click="showHuntingModal = true" :block="mobile">
+          <v-icon left>mdi-camera-outline</v-icon>
+          Hunting Mode
+        </v-btn>
+        <v-btn color="primary" @click="openCreateModal" :block="mobile">
+          <v-icon left>mdi-plus</v-icon>
+          Add Item
+        </v-btn>
+      </div>
     </div>
 
     <v-card class="mb-6">
@@ -450,6 +458,11 @@ const getSortIcon = (field) => {
       @delete-photo="handleDeletePhoto"
     />
 
+    <HuntingModeModal
+      v-model:show="showHuntingModal"
+      @save="handleSave"
+    />
+
     <PhotoGallery
       :show="showGallery"
       :photos="galleryPhotos"
@@ -460,6 +473,9 @@ const getSortIcon = (field) => {
 </template>
 
 <style scoped>
+.gap-2 {
+  gap: 8px;
+}
 .min-width-0 {
   min-width: 0;
 }
