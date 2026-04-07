@@ -4,7 +4,8 @@ import { useInventoryStore } from '../stores/inventory';
 import { useLocationStore } from '../stores/locations';
 import MainLayout from '../layouts/MainLayout.vue';
 import InventoryModal from '../components/InventoryModal.vue';
-import HuntingModeModal from '../components/HuntingModeModal.vue';
+import SingleItemModal from '../components/SingleItemModal.vue';
+import MultiItemModal from '../components/MultiItemModal.vue';
 import PhotoGallery from '../components/PhotoGallery.vue';
 import api from '../axios';
 import { debounce } from '../utils/helpers';
@@ -17,7 +18,8 @@ const router = useRouter();
 const route = useRoute();
 const { mobile, smAndDown } = useDisplay();
 const showModal = ref(false);
-const showHuntingModal = ref(false);
+const showSingleItemModal = ref(false);
+const showMultiItemModal = ref(false);
 const selectedItem = ref(null);
 
 // Gallery State
@@ -199,9 +201,13 @@ const getSortIcon = (field) => {
     <div :class="mobile ? 'd-flex flex-column gap-4' : 'd-flex justify-space-between align-center'" class="mb-6">
       <h1 :class="mobile ? 'text-h4' : 'text-h3'">Inventory</h1>
       <div class="d-flex gap-2" :class="mobile ? 'flex-column' : ''">
-        <v-btn color="secondary" variant="tonal" @click="showHuntingModal = true" :block="mobile">
+        <v-btn color="deep-purple" variant="tonal" @click="showMultiItemModal = true" :block="mobile">
+          <v-icon left>mdi-ImageFilterCenterFocusStrongOutline</v-icon>
+          Multi Item
+        </v-btn>
+        <v-btn color="secondary" variant="tonal" @click="showSingleItemModal = true" :block="mobile">
           <v-icon left>mdi-camera-outline</v-icon>
-          Hunting Mode
+          Single Item
         </v-btn>
         <v-btn color="primary" @click="openCreateModal" :block="mobile">
           <v-icon left>mdi-plus</v-icon>
@@ -458,9 +464,13 @@ const getSortIcon = (field) => {
       @delete-photo="handleDeletePhoto"
     />
 
-    <HuntingModeModal
-      v-model:show="showHuntingModal"
+    <SingleItemModal
+      v-model:show="showSingleItemModal"
       @save="handleSave"
+    />
+
+    <MultiItemModal
+      v-model:show="showMultiItemModal"
     />
 
     <PhotoGallery

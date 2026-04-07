@@ -160,7 +160,7 @@ onUnmounted(() => {
         <v-btn icon @click="$emit('update:show', false)">
           <v-icon>mdi-close</v-icon>
         </v-btn>
-        <v-toolbar-title>Hunting Mode</v-toolbar-title>
+        <v-toolbar-title>Single Item</v-toolbar-title>
       </v-toolbar>
 
       <v-card-text :class="mobile ? 'pa-4' : 'pa-6'">
@@ -168,10 +168,10 @@ onUnmounted(() => {
 
         <div v-if="!capturedPhoto && !isAnalyzing" class="text-center py-12">
             <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-camera-plus</v-icon>
-            <div class="text-h6 text-grey">Ready to hunt?</div>
+            <div class="text-h6 text-grey">Ready to scan?</div>
             <div class="text-body-2 text-grey mb-6">Snap a photo to identify an item instantly.</div>
             <v-btn color="primary" size="large" @click="triggerCamera" prepend-icon="mdi-camera">
-                Snap Picture
+                Snap Item
             </v-btn>
         </div>
 
