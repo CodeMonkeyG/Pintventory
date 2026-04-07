@@ -5,8 +5,9 @@ Hewwo!! *nuzzles youw wittwe data stwuctuwes* U^U Are you weady to embark on a s
 ## ✨ Why Pintventowy is so SUGOI!! ✨
 
 *   **📦 SKU-wuu Twacking:** Keep twack of aww youw pwecious goodies! Whethew they are "standard-kun" ow "unique-chan," we have a wittwe home fow them in ouw database-wase! *wags taiw*
-*   **📸 P-Pottogwaphs!:** Take big, pwetty pictuwes of youw items! You can add up to twewve (12!!) p-pottos so you nevew fowget what youw tweasuwes wook wike! *sparkles*
+*   **📸 P-Pottogwaphs!:** Take big, pwetty pictuwes of youw items! You can add up to twewve (12!!) p-pottos and even **ZOOM-WOOMY** into them to see evewy wittwe detaiw! *sparkles*
 *   **🤝 Fwiendship Bi-Bi-Business:** Manage youw Vendow-sans and Customew-chans! Keep a wecowd of evewy single p-puwchase and s-sawe so youw pwofits go "up-py wup-py" to the moon!! 🌙✨
+
 *   **✨ Single Item-kun:** Snap a quick potto of one thingy and AI-chan will teww you what it is, give it tags, and even find p-pwices on eBay and Etsy!! *hooray*
 *   **🌟 Multi Item-chan:** Have a big piwe of tweasuwes? Snap one big "shotgun" potto and Multi Item-chan will find EVERY SINGLE one of them for you!! It's so efficient!! (｡♥‿♥｡)
 *   **🧠 B-Big Bwain AI-chan:** O-omg!! We use big, smawt AI-chan (Gemini-senpai and Ollama-kun) to wook at youw p-pottos and suggest names and tags! It even knows the best way to s-seww things on Facebook Marketplace! *mind bwown*

@@ -36,7 +36,8 @@ Pintventory is a containerized inventory management system built with a Laravel 
 
 ### Frontend
 - **Consolidated "Add Items" UI:** Merged Single Scan, Multi Scan, and Manual entry into a single tabbed dialog with swipe support.
-- **Workflow Simplification:** Removed redundant individual scan buttons for a cleaner header experience.
+- **Intentional Scanning:** Removed automatic camera triggers on scanner tabs to ensure a more controlled, user-initiated experience.
+- **Advanced Photo Gallery:** Implemented comprehensive zoom (up to 500%), drag-to-pan, and double-click toggle functionality for detailed photo inspection.
 - **Marketplace Integration:** Real-time generation of platform-specific search links (eBay, FB, Etsy) within scan results.
 - **Theme Neutralization:** Shifted AI scanning UIs to a neutral theme palette that adapts to the user's active theme.
 - **Performance Caching:** Implemented store-level caching for vendors, customers, and item details to reduce redundant API calls.
