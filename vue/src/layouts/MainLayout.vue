@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import { useDisplay } from 'vuetify';
+import WorkspaceSelector from '../components/WorkspaceSelector.vue';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -36,6 +37,10 @@ const logout = async () => {
           :subtitle="authStore.user.email"
           class="mb-2"
         ></v-list-item>
+
+        <div class="px-4 mb-4" v-if="authStore.loggedIn">
+            <WorkspaceSelector class="w-100" />
+        </div>
         
         <v-divider></v-divider>
         
@@ -82,6 +87,11 @@ const logout = async () => {
       </div>
 
       <v-spacer v-if="!mobile" />
+
+      <!-- Workspace Selector (Desktop) -->
+      <div v-if="!mobile" class="mr-2">
+          <WorkspaceSelector />
+      </div>
 
       <!-- User Profile & Logout (Desktop) -->
       <div v-if="!mobile" class="d-flex align-center gap-3 mr-2">

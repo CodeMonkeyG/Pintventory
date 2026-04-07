@@ -18,10 +18,6 @@ export const useAuthStore = defineStore('auth', {
     actions: {
         /**
          * Fetch current authenticated user from server
-         * 
-         * Updates user state and login status. On error, clears user data.
-         * 
-         * @returns {Promise<void>}
          */
         async fetchUser() {
             try {
@@ -36,11 +32,24 @@ export const useAuthStore = defineStore('auth', {
         },
 
         /**
+         * Switch active workspace
+         */
+        async switchWorkspace(workspaceId) {
+            try {
+                const response = await api.put('/user', {
+                    current_workspace_id: workspaceId
+                });
+                this.user = response.data;
+                // Force reload of other stores to clear cached data from previous workspace
+                window.location.reload(); 
+            } catch (error) {
+                console.error('Failed to switch workspace:', error);
+                alert('Failed to switch workspace');
+            }
+        },
+
+        /**
          * Log out the current user
-         * 
-         * Calls the logout endpoint and clears all user data from state.
-         * 
-         * @returns {Promise<void>}
          */
         async logout() {
             try {
@@ -54,6 +63,16 @@ export const useAuthStore = defineStore('auth', {
         },
     },
     getters: {
+        /**
+         * Get the current active workspace
+         */
+        currentWorkspace: (state) => state.user ? state.user.current_workspace : null,
+
+        /**
+         * Get all workspaces the user belongs to
+         */
+        workspaces: (state) => state.user ? state.user.workspaces : [],
+
         /**
          * Check if the current user has admin role
          * 
