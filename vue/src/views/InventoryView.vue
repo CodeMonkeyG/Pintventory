@@ -4,8 +4,7 @@ import { useInventoryStore } from '../stores/inventory';
 import { useLocationStore } from '../stores/locations';
 import MainLayout from '../layouts/MainLayout.vue';
 import InventoryModal from '../components/InventoryModal.vue';
-import SingleItemModal from '../components/SingleItemModal.vue';
-import MultiItemModal from '../components/MultiItemModal.vue';
+import AddItemsModal from '../components/AddItemsModal.vue';
 import PhotoGallery from '../components/PhotoGallery.vue';
 import api from '../axios';
 import { debounce } from '../utils/helpers';
@@ -18,8 +17,7 @@ const router = useRouter();
 const route = useRoute();
 const { mobile, smAndDown } = useDisplay();
 const showModal = ref(false);
-const showSingleItemModal = ref(false);
-const showMultiItemModal = ref(false);
+const showAddItemsModal = ref(false);
 const selectedItem = ref(null);
 
 // Gallery State
@@ -194,6 +192,11 @@ const getSortIcon = (field) => {
   if (store.filters.sort_by !== field) return 'mdi-sort';
   return store.filters.sort_dir === 'asc' ? 'mdi-sort-ascending' : 'mdi-sort-descending';
 };
+
+const handleManualEntry = () => {
+    showAddItemsModal.value = false;
+    openCreateModal();
+};
 </script>
 
 <template>
@@ -201,17 +204,9 @@ const getSortIcon = (field) => {
     <div :class="mobile ? 'd-flex flex-column gap-4' : 'd-flex justify-space-between align-center'" class="mb-6">
       <h1 :class="mobile ? 'text-h4' : 'text-h3'">Inventory</h1>
       <div class="d-flex gap-2" :class="mobile ? 'flex-column' : ''">
-        <v-btn color="deep-purple" variant="tonal" @click="showMultiItemModal = true" :block="mobile">
-          <v-icon left>mdi-ImageFilterCenterFocusStrongOutline</v-icon>
-          Multi Item
-        </v-btn>
-        <v-btn color="secondary" variant="tonal" @click="showSingleItemModal = true" :block="mobile">
-          <v-icon left>mdi-camera-outline</v-icon>
-          Single Item
-        </v-btn>
-        <v-btn color="primary" @click="openCreateModal" :block="mobile">
+        <v-btn color="primary" @click="showAddItemsModal = true" :block="mobile" size="large">
           <v-icon left>mdi-plus</v-icon>
-          Add Item
+          Add Items
         </v-btn>
       </div>
     </div>
@@ -464,13 +459,10 @@ const getSortIcon = (field) => {
       @delete-photo="handleDeletePhoto"
     />
 
-    <SingleItemModal
-      v-model:show="showSingleItemModal"
+    <AddItemsModal
+      v-model:show="showAddItemsModal"
       @save="handleSave"
-    />
-
-    <MultiItemModal
-      v-model:show="showMultiItemModal"
+      @manual-entry="handleManualEntry"
     />
 
     <PhotoGallery
