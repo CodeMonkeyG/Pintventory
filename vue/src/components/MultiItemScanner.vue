@@ -135,12 +135,6 @@ const saveSelected = async () => {
     }
 };
 
-watch(() => props.active, (val) => {
-    if (val && !capturedPhoto.value && !isAnalyzing.value) {
-        setTimeout(triggerCamera, 300);
-    }
-});
-
 onUnmounted(() => {
     reset();
 });
