@@ -69,7 +69,7 @@ This is SKU-style inventory (not unique physical objects, though "unique" type i
 
 - **Inventory Page**
 	- **Purpose:** find items fast, see on-hand, and act (purchase/sell/edit) without leaving the page.
-	- **Primary actions:** Add Item, Edit, Quick Purchase, Quick Sale, Archive, Single Item Scan, Multi Item Scan
+	- **Primary actions:** Add Items (Scan/Manual), Edit, Quick Purchase, Quick Sale, Archive
 	- **List columns:** Photo thumbnail, Title (with SKU), Status, Type, Qty on hand, Location, Actions
 	- **Filters:** Status, Item Type, Tag, Storage Location, Vendor, Customer, Low stock toggle (qty <= reorder_point), Updated date range
 	- **Item detail:** separate route `/inventory/:id` for deep history and sharing links
@@ -94,13 +94,19 @@ This is SKU-style inventory (not unique physical objects, though "unique" type i
 	- **Columns:** Name, Contact, Last Purchase, Total POs, Total Spend (optional)
 	- **Detail:** purchase ledger (filterable), preferred flag, notes
 
-6. Add / Edit Inventory Modal (expanded)
+6. Add Items Modal (Consolidated)
 
-The Inventory modal is a key UI surface and has been extended with the following behavior and UX:
+The primary entry point for adding inventory is a tabbed modal that supports multiple workflows:
 
-- **Modal modes:** Create | Edit
-- **Tabs:** Details (default), Photos, Purchases, Sales — Purchases/Sales show only in Edit mode
-- **Save behavior:** Save, Save & Add Another (Create flow), Save (Edit)
+- **Single Scan (AI):** Capture one photo to auto-generate metadata and market analysis.
+- **Multi Scan (AI):** Capture one "shotgun" photo to identify multiple objects at once for batch import.
+- **Manual:** Direct link to the classic manual entry form for precise control.
+
+---
+
+7. Edit Inventory Modal (Standard)
+
+The standard inventory modal is used for editing existing items or detailed manual creation:
 
 - **Photos**
 	- Camera support on mobile (where available) and file upload on desktop
