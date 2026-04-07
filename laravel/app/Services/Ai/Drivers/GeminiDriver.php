@@ -319,11 +319,110 @@ PROMPT;
     }
 
     /**
+     * Scan an image for multiple items and extract metadata using Gemini API
+     *
+     * @param  \Illuminate\Http\UploadedFile|string  $image
+     * @return array  Array of item objects
+     * @throws \RuntimeException
+     */
+    public function shotgunScan(UploadedFile|string $image): array
+    {
+        $imageData = $this->processImage($image);
+        $base64Image = $imageData['base64'];
+        $mimeType = $imageData['mimeType'];
+
+        try {
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}";
+
+            $systemPrompt = <<<'PROMPT'
+You are a rapid-response inventory scanner and valuation expert.
+Your goal is to perform a "Shotgun Scan" of an image containing MULTIPLE objects.
+You must identify EVERY distinct valuable or noteworthy item in the image.
+Focus on items that would be suitable for resale or have significant design clout.
+PROMPT;
+
+            $prompt = $systemPrompt . "\n\nAnalyze this image and identify all individual items. Return a JSON object with a 'items' key containing an array of objects. Each object should have:
+        - 'title': a concise name (3-10 words).
+        - 'description': a short description (1-2 sentences).
+        - 'item_type': 'unique' or 'standard'.
+        - 'evaluation': a brief evaluation of the item's condition and appeal.
+        - 'estimated_value': a string representing the estimated resale value (e.g. '$20 - $50').
+        - 'tags': an array of 3-5 tags.
+        - 'market_analysis': an object containing price ranges and ideal search queries for:
+            - 'ebay': { 'range': string, 'query': string }
+            - 'facebook': { 'range': string, 'query': string }
+            - 'etsy': { 'range': string, 'query': string }";
+
+            $result = $this->callGemini($url, $prompt, $base64Image, $mimeType, [
+                'type' => 'object',
+                'properties' => [
+                    'items' => [
+                        'type' => 'array',
+                        'items' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'title' => ['type' => 'string'],
+                                'description' => ['type' => 'string'],
+                                'item_type' => [
+                                    'type' => 'string',
+                                    'enum' => ['unique', 'standard']
+                                ],
+                                'evaluation' => ['type' => 'string'],
+                                'estimated_value' => ['type' => 'string'],
+                                'tags' => [
+                                    'type' => 'array',
+                                    'items' => ['type' => 'string']
+                                ],
+                                'market_analysis' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'ebay' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'range' => ['type' => 'string'],
+                                                'query' => ['type' => 'string']
+                                            ],
+                                            'required' => ['range', 'query']
+                                        ],
+                                        'facebook' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'range' => ['type' => 'string'],
+                                                'query' => ['type' => 'string']
+                                            ],
+                                            'required' => ['range', 'query']
+                                        ],
+                                        'etsy' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'range' => ['type' => 'string'],
+                                                'query' => ['type' => 'string']
+                                            ],
+                                            'required' => ['range', 'query']
+                                        ]
+                                    ],
+                                    'required' => ['ebay', 'facebook', 'etsy']
+                                ]
+                            ],
+                            'required' => ['title', 'description', 'item_type', 'evaluation', 'estimated_value', 'tags', 'market_analysis']
+                        ]
+                    ]
+                ],
+                'required' => ['items']
+            ]);
+
+            return $result['items'] ?? [];
+        } catch (\Exception $e) {
+            throw new \RuntimeException("Shotgun scan failed: {$e->getMessage()}");
+        }
+    }
+
+    /**
      * Common method to call Gemini API
      */
     private function callGemini(string $url, string $prompt, string $base64Image, string $mimeType, array $schema): array
     {
-        $response = Http::timeout(30)->post($url, [
+        $response = Http::timeout(60)->post($url, [
             'contents' => [
                 [
                     'parts' => [

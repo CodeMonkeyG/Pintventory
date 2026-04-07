@@ -101,4 +101,15 @@ class AiManager extends Manager implements AiProvider
     {
         return $this->driver()->etsyAnalysis($image);
     }
+
+    /**
+     * Perform a shotgun scan of an image containing multiple items using the default driver.
+     *
+     * @param  \Illuminate\Http\UploadedFile|string  $image
+     * @return array
+     */
+    public function shotgunScan(\Illuminate\Http\UploadedFile|string $image): array
+    {
+        return $this->driver()->shotgunScan($image);
+    }
 }

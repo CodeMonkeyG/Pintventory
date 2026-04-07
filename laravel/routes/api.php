@@ -32,6 +32,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/ai/market-analyze', [App\Http\Controllers\Api\AiController::class, 'marketAnalyze']);
         Route::post('/ai/facebook-analyze', [App\Http\Controllers\Api\AiController::class, 'facebookAnalyze']);
         Route::post('/ai/etsy-analyze', [App\Http\Controllers\Api\AiController::class, 'etsyAnalyze']);
+        Route::post('/ai/shotgun-scan', [App\Http\Controllers\Api\AiController::class, 'shotgunScan']);
     });
 });
 

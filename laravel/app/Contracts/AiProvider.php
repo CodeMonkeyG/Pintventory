@@ -40,4 +40,12 @@ interface AiProvider
      * @return array  Array containing Etsy price estimates, SEO tags, and curation strategy.
      */
     public function etsyAnalysis(UploadedFile|string $image): array;
+
+    /**
+     * Scan an image for multiple items and extract metadata for each.
+     *
+     * @param  \Illuminate\Http\UploadedFile|string  $image
+     * @return array  An array of item metadata objects.
+     */
+    public function shotgunScan(UploadedFile|string $image): array;
 }

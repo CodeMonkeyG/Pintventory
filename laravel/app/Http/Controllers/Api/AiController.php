@@ -115,4 +115,25 @@ class AiController extends Controller
             return response()->json(['message' => 'Etsy analysis failed: ' . $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Perform a shotgun scan of an image containing multiple items.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function shotgunScan(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|max:10240', // 10MB
+        ]);
+
+        try {
+            $file = $request->file('image');
+            $result = $this->ai->shotgunScan($file);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Shotgun scan failed: ' . $e->getMessage()], 500);
+        }
+    }
 }

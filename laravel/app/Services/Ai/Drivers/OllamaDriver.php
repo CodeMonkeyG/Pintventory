@@ -124,4 +124,16 @@ class OllamaDriver implements AiProvider
     {
         throw new \RuntimeException('Etsy analysis is not yet implemented for the Ollama driver.');
     }
+
+    /**
+     * Scan image for multiple items (Not implemented).
+     *
+     * @param  \Illuminate\Http\UploadedFile|string  $image
+     * @return array
+     * @throws \RuntimeException
+     */
+    public function shotgunScan(UploadedFile|string $image): array
+    {
+        throw new \RuntimeException('Shotgun scan is not yet implemented for the Ollama driver.');
+    }
 }
