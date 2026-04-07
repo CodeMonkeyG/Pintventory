@@ -69,7 +69,7 @@ This is SKU-style inventory (not unique physical objects, though "unique" type i
 
 - **Inventory Page**
 	- **Purpose:** find items fast, see on-hand, and act (purchase/sell/edit) without leaving the page.
-	- **Primary actions:** Add Item, Edit, Quick Purchase, Quick Sale, Archive
+	- **Primary actions:** Add Item, Edit, Quick Purchase, Quick Sale, Archive, Single Item Scan, Multi Item Scan
 	- **List columns:** Photo thumbnail, Title (with SKU), Status, Type, Qty on hand, Location, Actions
 	- **Filters:** Status, Item Type, Tag, Storage Location, Vendor, Customer, Low stock toggle (qty <= reorder_point), Updated date range
 	- **Item detail:** separate route `/inventory/:id` for deep history and sharing links
@@ -214,21 +214,46 @@ Security & Auth
 	- Inputs and outputs are strictly typed JSON (or multipart for file uploads).
 	- Rate limiting and audit logging apply.
 
-- **Initial function: Image Identify (LLM-assisted)**
+- **Initial function: Single Item Scan (LLM-assisted)**
 	- **Route:** `POST /ai/image-identify`
 	- **Auth:** cookie session + CSRF; staff+ or admin only (configurable)
-	- **Payload:** multipart/form-data with `file` (image); optional JSON field `model` (string) and `options` (object)
+	- **Payload:** multipart/form-data with `image` (file)
 	- **Behavior:**
-		1. Server accepts the image and stores it temporarily (or uploads to configured storage).
-		2. Server sends the image (or a signed URL) to a configurable LLM/image-analysis pipeline (could be a multimodal LLM or an image-tagging service) with a deterministic prompt template.
-		3. The LLM returns structured output which the server normalizes to JSON: `{ title: string, description: string, tags?: string[], confidence?: number }`.
-		4. Server returns the normalized JSON to the client and optionally persists the suggested title/description as a `suggestion` record for review.
+		1. Server accepts the image.
+		2. Server sends the image to an LLM with a detailed identification and market analysis prompt.
+		3. The LLM returns structured JSON including title, description, evaluation, and market analysis for eBay, Facebook, and Etsy.
 	- **Response (200):**
 		{
 			"title": "Suggested title",
 			"description": "Suggested description",
+			"item_type": "standard|unique",
+			"evaluation": "Detailed text block...",
 			"tags": ["tag1","tag2"],
-			"confidence": 0.87
+			"market_analysis": {
+				"ebay": { "range": "$20-$40", "query": "..." },
+				"facebook": { "range": "$15-$30", "query": "..." },
+				"etsy": { "range": "$25-$50", "query": "..." }
+			}
+		}
+
+- **Initial function: Multi-Item Scan (Shotgun Mode)**
+	- **Route:** `POST /ai/shotgun-scan`
+	- **Auth:** cookie session + CSRF; staff+ or admin only
+	- **Payload:** multipart/form-data with `image` (file)
+	- **Behavior:**
+		1. Server accepts a single photo containing multiple distinct objects.
+		2. Server sends the image to an LLM with a "shotgun scan" prompt.
+		3. The LLM identifies all noteworthy objects and returns a JSON array of item metadata objects.
+	- **Response (200):**
+		{
+			"items": [
+				{
+					"title": "Item 1",
+					"estimated_value": "$50",
+					"market_analysis": { ... }
+				},
+				...
+			]
 		}
 	- **Errors:** 4xx for bad input/auth; 5xx for external LLM failures with safe error messaging.
 

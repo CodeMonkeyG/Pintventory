@@ -7,9 +7,12 @@ Pintventory is a containerized inventory management system built with a Laravel 
 - **Inventory Tracking:** Manage items with SKUs, descriptions, quantities, reorder points, and storage locations.
 - **Transaction Ledger:** Complete history of purchases (from vendors) and sales (to customers) with automatic quantity adjustments.
 - **Media Management:** Support for up to 12 photos per item with drag-and-drop reordering and mobile camera support.
-- **AI Integration:** Automated image identification using LLMs (Gemini, Ollama) to suggest titles, descriptions, and tags.
+- **AI-Powered Workflows:**
+    - **Single Item Scan:** Rapid identification and metadata extraction for a single object.
+    - **Multi Item Scan:** High-throughput "shotgun" scanning of collections to identify multiple gems from one photo.
+- **Deep Market Analysis:** Automated price estimation and listing strategy for eBay, Facebook Marketplace, and Etsy.
 - **Google OAuth 2.0:** Secure authentication using Google OIDC.
-- **Responsive UI:** Modern, Material Design interface built with Vuetify 3.
+- **Responsive UI:** Modern, Material Design interface built with Vuetify 3 with support for multiple "Neutral" and "High-Contrast" themes.
 - **Role-Based Access:** Support for Admin, Staff, and Read-only roles.
 
 ## 🛠 Technical Architecture
@@ -18,21 +21,24 @@ Pintventory is a containerized inventory management system built with a Laravel 
 - **Frontend:** Vue.js 3 with Vuetify 3
 - **Database:** PostgreSQL
 - **Orchestration:** Docker Compose (All services run in separate containers)
+- **AI Engines:** Gemini 2.0/2.5 Flash, Ollama (Llava/Bakllava), OpenAI GPT-4o
 - **Web Server:** NGINX
 - **Storage:** Local storage with S3-compatibility readiness
 
 ## 📈 Recent Improvements & Optimizations
 
 ### Backend
+- **Multi-Item Scan Endpoint:** Added `shotgunScan` to AI providers and `AiManager` for batch object detection.
+- **Extended AI Timeouts:** Increased API and cURL timeouts to 60s to support deep multi-item analysis.
 - **Database Indexing:** Optimized frequently queried columns for sales, purchases, and inventory items.
 - **Query Scopes:** Centralized filtering and metric logic (e.g., `withRevenueMetrics`, `lowStock`) in Eloquent models.
 - **Rate Limiting:** Implemented `RateLimitAiRequests` middleware to protect expensive AI endpoints.
-- **Error Handling:** Enhanced AI drivers with robust try-catch wrappers and timeout configurations.
 
 ### Frontend
-- **Vuetify 3 Migration:** Fully refactored the UI from custom CSS to Vuetify components for better accessibility and responsiveness.
+- **Workflow Simplification:** Refactored "Hunting" and "Shotgun" modes into "Single Item" and "Multi Item" for better clarity.
+- **Marketplace Integration:** Real-time generation of platform-specific search links (eBay, FB, Etsy) within scan results.
+- **Theme Neutralization:** Shifted AI scanning UIs to a neutral theme palette that adapts to the user's active theme.
 - **Performance Caching:** Implemented store-level caching for vendors, customers, and item details to reduce redundant API calls.
-- **Search Debouncing:** Added 300ms delays to search inputs to optimize server load.
 - **Memory Management:** Automated Blob URL revocation in the photo gallery to prevent browser memory leaks.
 
 ## 📂 Core Data Model
