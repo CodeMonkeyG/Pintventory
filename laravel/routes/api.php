@@ -10,11 +10,19 @@ use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\UserController; // Import UserController
 use App\Http\Controllers\Auth\GoogleController; // Import GoogleController
 use App\Http\Controllers\Api\StorageLocationController;
+use App\Http\Controllers\Api\WorkspaceController;
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', [UserController::class, 'show']);
     Route::put('/user', [UserController::class, 'update']);
     Route::post('/logout', [UserController::class, 'logout']);
+    
+    // Workspace Routes
+    Route::get('/workspaces', [WorkspaceController::class, 'index']);
+    Route::post('/workspaces', [WorkspaceController::class, 'store']);
+    Route::put('/workspaces/{workspace}', [WorkspaceController::class, 'update']);
+    Route::post('/workspaces/switch', [WorkspaceController::class, 'switch']);
+
     Route::apiResource('users', UserController::class)->only(['index', 'show']); // Admin routes, limited for now
 
     Route::apiResource('inventory-items', InventoryItemController::class);

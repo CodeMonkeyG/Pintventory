@@ -12,6 +12,12 @@
 	- Always know on-hand quantity and last-known unit cost/price for any item.
 	- Export clean CSV for accounting/taxes without manual cleanup.
 
+- **Workspace Management:**
+	- Multiple isolated workspaces per user.
+	- Automatic data isolation via `WorkspaceScope`.
+	- Role-based access within workspaces (owner, editor, viewer).
+	- Quick switching between workspaces.
+
 2. Authentication
 
 - **Login:** Google OAuth 2.0 (OIDC)

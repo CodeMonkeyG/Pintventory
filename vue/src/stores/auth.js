@@ -32,6 +32,21 @@ export const useAuthStore = defineStore('auth', {
         },
 
         /**
+         * Create a new workspace
+         */
+        async createWorkspace(name) {
+            try {
+                const response = await api.post('/workspaces', { name });
+                this.user = await this.fetchUser(); // Refresh user data to get updated workspaces list
+                // Force reload of other stores to clear cached data from previous workspace
+                window.location.reload(); 
+            } catch (error) {
+                console.error('Failed to create workspace:', error);
+                alert('Failed to create workspace');
+            }
+        },
+
+        /**
          * Switch active workspace
          */
         async switchWorkspace(workspaceId) {

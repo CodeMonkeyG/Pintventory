@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Scopes\WorkspaceScope;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 
+use App\Traits\BelongsToWorkspace;
+
 #[ScopedBy([WorkspaceScope::class])]
 class Customer extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, BelongsToWorkspace;
 
     protected $fillable = [
         'name',

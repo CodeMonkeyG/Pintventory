@@ -9,11 +9,13 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Scopes\WorkspaceScope;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 
+use App\Traits\BelongsToWorkspace;
+
 #[ScopedBy([WorkspaceScope::class])]
 class InventoryItem extends Model
 {
     /** @use HasFactory<\Database\Factories\InventoryItemFactory> */
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, BelongsToWorkspace;
 
     /**
      * The attributes that are mass assignable.

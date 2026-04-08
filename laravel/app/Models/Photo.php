@@ -8,10 +8,12 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Scopes\WorkspaceScope;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 
+use App\Traits\BelongsToWorkspace;
+
 #[ScopedBy([WorkspaceScope::class])]
 class Photo extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToWorkspace;
 
     protected $fillable = [
         'inventory_item_id',
