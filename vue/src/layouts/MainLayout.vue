@@ -16,7 +16,6 @@ const navItems = [
   { title: 'Customers', to: '/customers', icon: 'mdi-account-group' },
   { title: 'Vendors', to: '/vendors', icon: 'mdi-truck-delivery' },
   { title: 'Locations', to: '/storage-locations', icon: 'mdi-map-marker' },
-  { title: 'Profile', to: '/profile', icon: 'mdi-account' },
 ];
 
 const logout = async () => {
@@ -52,15 +51,22 @@ const logout = async () => {
           :title="item.title"
           color="primary"
         ></v-list-item>
+
+        <v-divider class="my-2"></v-divider>
+
+        <v-list-item
+          to="/profile"
+          prepend-icon="mdi-account-cog-outline"
+          title="Profile Settings"
+        ></v-list-item>
+
+        <v-list-item
+          @click="logout"
+          prepend-icon="mdi-logout"
+          title="Logout"
+          color="error"
+        ></v-list-item>
       </v-list>
-      
-      <template v-slot:append>
-        <div class="pa-4">
-          <v-btn block color="error" variant="tonal" @click="logout" prepend-icon="mdi-logout">
-            Logout
-          </v-btn>
-        </div>
-      </template>
     </v-navigation-drawer>
 
     <!-- App Bar -->
@@ -88,24 +94,62 @@ const logout = async () => {
 
       <v-spacer v-if="!mobile" />
 
-      <!-- Workspace Selector (Desktop) -->
-      <div v-if="!mobile" class="mr-2">
-          <WorkspaceSelector />
-      </div>
+      <!-- User & Workspace Menu -->
+      <v-menu v-if="authStore.user" :close-on-content-click="false" min-width="240px">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" variant="text" class="text-none px-2 ml-2">
+            <div class="d-flex align-center gap-2">
+              <v-avatar size="32" color="primary-lighten-4">
+                <v-img v-if="authStore.user.avatar" :src="authStore.user.avatar"></v-img>
+                <v-icon v-else color="primary">mdi-account</v-icon>
+              </v-avatar>
+              <span v-if="!mobile" class="text-body-2 font-weight-medium">{{ authStore.user.name }}</span>
+              <v-icon size="small">mdi-chevron-down</v-icon>
+            </div>
+          </v-btn>
+        </template>
 
-      <!-- User Profile & Logout (Desktop) -->
-      <div v-if="!mobile" class="d-flex align-center gap-3 mr-2">
-        <div v-if="authStore.user" class="d-flex align-center gap-2">
-          <v-avatar size="32">
-            <v-img v-if="authStore.user.avatar" :src="authStore.user.avatar" alt="Avatar"></v-img>
-            <v-icon v-else>mdi-account</v-icon>
-          </v-avatar>
-          <span class="text-body-2 font-weight-medium">{{ authStore.user.name }}</span>
-        </div>
-        <v-btn variant="outlined" size="small" @click="logout" class="text-none">
-          Logout
-        </v-btn>
-      </div>
+        <v-list elevation="10" border rounded="lg" class="pa-2">
+          <v-list-item
+            :prepend-avatar="authStore.user.avatar"
+            :title="authStore.user.name"
+            :subtitle="authStore.user.email"
+            class="mb-2"
+          >
+            <template v-slot:prepend v-if="!authStore.user.avatar">
+              <v-avatar color="primary-lighten-4">
+                <v-icon color="primary">mdi-account</v-icon>
+              </v-avatar>
+            </template>
+          </v-list-item>
+
+          <v-divider class="mb-2"></v-divider>
+
+          <div class="px-2 mb-2">
+            <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis mb-1 ml-1">
+              Active Workspace
+            </div>
+            <WorkspaceSelector class="w-100" />
+          </div>
+
+          <v-divider class="my-2"></v-divider>
+
+          <v-list-item
+            to="/profile"
+            prepend-icon="mdi-account-cog-outline"
+            title="Profile Settings"
+            density="compact"
+          ></v-list-item>
+
+          <v-list-item
+            @click="logout"
+            prepend-icon="mdi-logout"
+            title="Logout"
+            color="error"
+            density="compact"
+          ></v-list-item>
+        </v-list>
+      </v-menu>
     </v-app-bar>
     
     <v-main :class="(mobile ? 'pa-4' : 'pa-8 pa-md-16') + ' pt-16'" style="overflow-y: auto; overflow-x: hidden;">
