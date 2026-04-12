@@ -21,6 +21,10 @@ export const useInventoryStore = defineStore('inventory', {
         },
         /** @type {boolean} Loading state */
         loading: false,
+        /** @type {boolean} Bulk action loading state */
+        bulkLoading: false,
+        /** @type {boolean} Import loading state */
+        importing: false,
         /** @type {Object} Active filters and sort options */
         filters: {
             search: '',
@@ -173,6 +177,72 @@ export const useInventoryStore = defineStore('inventory', {
                 this.itemDetails = {};
             } catch (error) {
                 throw error;
+            }
+        },
+
+        /**
+         * Store multiple inventory items at once (Import)
+         * 
+         * @param {Object[]} items - Array of item data objects
+         * @returns {Promise<Object>} The server response
+         */
+        async bulkStore(items) {
+            this.importing = true;
+            try {
+                const response = await api.post('/inventory-items/bulk-store', { items });
+                await this.fetchItems(1);
+                return response.data;
+            } catch (error) {
+                console.error('Failed to import items:', error);
+                throw error;
+            } finally {
+                this.importing = false;
+            }
+        },
+
+        /**
+         * Update multiple inventory items at once
+         * 
+         * @param {string[]} ids - Array of item IDs to update
+         * @param {Object} data - Updated data to apply to all selected items
+         * @returns {Promise<Object>} The server response
+         */
+        async bulkUpdate(ids, data) {
+            this.bulkLoading = true;
+            try {
+                const response = await api.post('/inventory-items/bulk-update', { ids, data });
+                // Invalidate all caches for safety
+                this.itemDetails = {};
+                await this.fetchItems(this.pagination.current_page);
+                return response.data;
+            } catch (error) {
+                console.error('Failed to update items in bulk:', error);
+                throw error;
+            } finally {
+                this.bulkLoading = false;
+            }
+        },
+
+        /**
+         * Delete or archive multiple inventory items at once
+         * 
+         * @param {string[]} ids - Array of item IDs to delete or archive
+         * @param {boolean} [permanent=false] - Whether to hard delete or just archive
+         * @returns {Promise<Object>} The server response
+         */
+        async bulkDelete(ids, permanent = false) {
+            this.bulkLoading = true;
+            try {
+                const response = await api.post('/inventory-items/bulk-delete', { ids, permanent });
+                // Invalidate all caches for safety
+                this.itemDetails = {};
+                await this.fetchItems(this.pagination.current_page);
+                return response.data;
+            } catch (error) {
+                console.error('Failed to delete items in bulk:', error);
+                throw error;
+            } finally {
+                this.bulkLoading = false;
             }
         },
 

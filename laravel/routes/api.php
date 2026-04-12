@@ -25,6 +25,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::apiResource('users', UserController::class)->only(['index', 'show']); // Admin routes, limited for now
 
+    Route::post('inventory-items/bulk-update', [InventoryItemController::class, 'bulkUpdate']);
+    Route::post('inventory-items/bulk-delete', [InventoryItemController::class, 'bulkDelete']);
+    Route::post('inventory-items/bulk-store', [InventoryItemController::class, 'bulkStore']);
     Route::apiResource('inventory-items', InventoryItemController::class);
     Route::post('inventory-items/{inventory_item}/photos', [App\Http\Controllers\Api\PhotoController::class, 'store']);
     Route::delete('photos/{photo}', [App\Http\Controllers\Api\PhotoController::class, 'destroy']);

@@ -20,6 +20,58 @@ const showModal = ref(false);
 const showAddItemsModal = ref(false);
 const selectedItem = ref(null);
 
+// Bulk Actions State
+const selectedIds = ref(new Set());
+const showBulkUpdateDialog = ref(false);
+const bulkUpdateData = ref({
+    status: null,
+    storage_location_id: null,
+    item_type: null
+});
+
+const isAllSelected = computed(() => {
+    return store.items.length > 0 && selectedIds.value.size === store.items.length;
+});
+
+const toggleSelectAll = () => {
+    if (isAllSelected.value) {
+        selectedIds.value.clear();
+    } else {
+        store.items.forEach(item => selectedIds.value.add(item.id));
+    }
+};
+
+const toggleSelection = (id) => {
+    if (selectedIds.value.has(id)) {
+        selectedIds.value.delete(id);
+    } else {
+        selectedIds.value.add(id);
+    }
+};
+
+const handleBulkDelete = async (permanent = false) => {
+    const action = permanent ? 'delete' : 'archive';
+    if (!confirm(`Are you sure you want to ${action} ${selectedIds.value.size} items?`)) return;
+    
+    try {
+        await store.bulkDelete(Array.from(selectedIds.value), permanent);
+        selectedIds.value.clear();
+    } catch (error) {
+        alert('Bulk action failed: ' + error.message);
+    }
+};
+
+const handleBulkUpdate = async () => {
+    try {
+        await store.bulkUpdate(Array.from(selectedIds.value), bulkUpdateData.value);
+        showBulkUpdateDialog.value = false;
+        selectedIds.value.clear();
+        bulkUpdateData.value = { status: null, storage_location_id: null, item_type: null };
+    } catch (error) {
+        alert('Bulk update failed: ' + error.message);
+    }
+};
+
 // Gallery State
 const showGallery = ref(false);
 const galleryPhotos = ref([]);
@@ -211,6 +263,35 @@ const handleManualEntry = () => {
       </div>
     </div>
 
+    <!-- Bulk Actions Toolbar -->
+    <v-expand-transition>
+      <v-card v-if="selectedIds.size > 0" color="primary-lighten-5" class="mb-6 border-primary border-opacity-25" elevation="0">
+        <v-card-text class="d-flex align-center py-2 px-4">
+          <div class="text-subtitle-2 font-weight-bold text-primary mr-4">
+            {{ selectedIds.size }} items selected
+          </div>
+          
+          <v-btn variant="text" color="primary" size="small" prepend-icon="mdi-pencil" class="mr-2" @click="showBulkUpdateDialog = true">
+            Bulk Update
+          </v-btn>
+          
+          <v-btn variant="text" color="primary" size="small" prepend-icon="mdi-archive-outline" class="mr-2" @click="handleBulkDelete(false)">
+            Archive
+          </v-btn>
+
+          <v-btn variant="text" color="error" size="small" prepend-icon="mdi-delete-outline" @click="handleBulkDelete(true)">
+            Delete
+          </v-btn>
+          
+          <v-spacer />
+          
+          <v-btn variant="text" size="small" @click="selectedIds.clear()">
+            Clear
+          </v-btn>
+        </v-card-text>
+      </v-card>
+    </v-expand-transition>
+
     <v-card class="mb-6">
       <v-card-text>
         <v-row dense align="center">
@@ -293,9 +374,21 @@ const handleManualEntry = () => {
       <!-- Mobile View: Cards -->
       <v-row v-if="smAndDown">
         <v-col v-for="item in store.items" :key="item.id" cols="12">
-          <v-card variant="outlined" @click="openEditModal(item)">
+          <v-card 
+            variant="outlined" 
+            :color="selectedIds.has(item.id) ? 'primary' : ''"
+            :class="{ 'border-opacity-100': selectedIds.has(item.id) }"
+            @click="toggleSelection(item.id)"
+          >
             <div class="d-flex pa-3">
-              <v-avatar size="80" rounded="lg" class="mr-4">
+              <v-checkbox-btn
+                :model-value="selectedIds.has(item.id)"
+                color="primary"
+                class="mr-2 mt-n1"
+                @click.stop="toggleSelection(item.id)"
+              ></v-checkbox-btn>
+              
+              <v-avatar size="80" rounded="lg" class="mr-4" @click.stop="openEditModal(item)">
                 <v-img 
                   v-if="item.photos && item.photos.length > 0" 
                   :src="item.photos[0].url" 
@@ -347,6 +440,14 @@ const handleManualEntry = () => {
         <v-table hover>
           <thead>
             <tr>
+              <th style="width: 48px">
+                <v-checkbox-btn
+                  :model-value="isAllSelected"
+                  :indeterminate="selectedIds.size > 0 && !isAllSelected"
+                  color="primary"
+                  @click.stop="toggleSelectAll"
+                ></v-checkbox-btn>
+              </th>
               <th class="text-left" style="width: 60px">Photo</th>
               <th class="text-left sortable-header" @click="toggleSort('title')">
                 Title
@@ -376,7 +477,20 @@ const handleManualEntry = () => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in store.items" :key="item.id" style="cursor: pointer" @click="openEditModal(item)">
+            <tr 
+              v-for="item in store.items" 
+              :key="item.id" 
+              style="cursor: pointer" 
+              @click="toggleSelection(item.id)"
+              :class="{ 'bg-primary-lighten-5': selectedIds.has(item.id) }"
+            >
+              <td>
+                <v-checkbox-btn
+                  :model-value="selectedIds.has(item.id)"
+                  color="primary"
+                  @click.stop="toggleSelection(item.id)"
+                ></v-checkbox-btn>
+              </td>
               <td>
                 <v-avatar size="40" rounded="sm" @click.stop="openGallery(item)">
                   <v-img 
@@ -471,6 +585,76 @@ const handleManualEntry = () => {
       :startIndex="galleryIndex"
       @close="showGallery = false"
     />
+
+    <!-- Bulk Update Dialog -->
+    <v-dialog v-model="showBulkUpdateDialog" max-width="500">
+      <v-card>
+        <v-card-title class="pa-4 bg-primary text-white">
+          Bulk Update {{ selectedIds.size }} Items
+        </v-card-title>
+        <v-card-text class="pa-4 pt-6">
+          <v-row dense>
+            <v-col cols="12">
+              <v-select
+                v-model="bulkUpdateData.status"
+                label="Status"
+                :items="[
+                  { title: 'Keep Existing', value: null },
+                  { title: 'In Stock', value: 'in_stock' },
+                  { title: 'Low Stock', value: 'low_stock' },
+                  { title: 'Out of Stock', value: 'out_of_stock' },
+                  { title: 'Archived', value: 'archived' }
+                ]"
+                variant="outlined"
+              />
+            </v-col>
+            <v-col cols="12">
+              <v-select
+                v-model="bulkUpdateData.item_type"
+                label="Item Type"
+                :items="[
+                  { title: 'Keep Existing', value: null },
+                  { title: 'Standard', value: 'standard' },
+                  { title: 'Unique', value: 'unique' }
+                ]"
+                variant="outlined"
+              />
+            </v-col>
+            <v-col cols="12">
+              <v-select
+                v-model="bulkUpdateData.storage_location_id"
+                label="Storage Location"
+                :items="[{ name: 'Keep Existing', id: null }, ...locationStore.items]"
+                item-title="name"
+                item-value="id"
+                variant="outlined"
+              />
+            </v-col>
+          </v-row>
+          
+          <v-alert
+            type="info"
+            variant="tonal"
+            class="mt-2"
+            density="compact"
+          >
+            Only selected fields will be updated. Others will remain unchanged.
+          </v-alert>
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer />
+          <v-btn variant="text" @click="showBulkUpdateDialog = false">Cancel</v-btn>
+          <v-btn 
+            color="primary" 
+            variant="elevated" 
+            @click="handleBulkUpdate"
+            :loading="store.bulkLoading"
+          >
+            Update Items
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </MainLayout>
 </template>
 

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
 import { useDisplay } from 'vuetify';
+import QrLabel from './QrLabel.vue';
 
 const { mobile } = useDisplay();
 
@@ -15,6 +16,8 @@ const formData = ref({
   name: '',
   description: ''
 });
+
+const showQrModal = ref(false);
 
 const isEdit = computed(() => !!props.item);
 
@@ -45,6 +48,21 @@ const save = () => {
   if (!formData.value.name) return alert('Name is required');
   emit('save', formData.value);
 };
+
+const printLabel = () => {
+    const printable = document.getElementById('qr-printable-loc');
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write('<html><head><title>Print Location Label</title>');
+    printWindow.document.write('<style>body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; } @page { margin: 0; size: auto; }</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write(printable.innerHTML);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 250);
+};
 </script>
 
 <template>
@@ -63,14 +81,20 @@ const save = () => {
         </v-btn>
         <v-toolbar-title>{{ isEdit ? 'Edit Location' : 'Add Location' }}</v-toolbar-title>
         <v-spacer></v-spacer>
+        <v-btn variant="text" v-if="isEdit" icon="mdi-qrcode" @click="showQrModal = true"></v-btn>
         <v-btn variant="text" @click="save">Save</v-btn>
       </v-toolbar>
 
       <v-card-title class="d-flex justify-space-between align-center px-6 pt-6 pb-2" v-else>
         <span class="text-h5">{{ isEdit ? 'Edit Storage Location' : 'Add New Storage Location' }}</span>
-        <v-btn icon variant="text" @click="$emit('close')">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
+        <div class="d-flex align-center gap-2">
+            <v-btn v-if="isEdit" variant="tonal" size="small" color="primary" prepend-icon="mdi-qrcode" @click="showQrModal = true">
+                Print Label
+            </v-btn>
+            <v-btn icon variant="text" @click="$emit('close')">
+                <v-icon>mdi-close</v-icon>
+            </v-btn>
+        </div>
       </v-card-title>
       
       <v-card-text :class="mobile ? 'pa-4' : 'pa-6'">
@@ -109,4 +133,40 @@ const save = () => {
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+  <!-- QR Code Print Dialog -->
+  <v-dialog v-model="showQrModal" max-width="350">
+    <v-card>
+      <v-card-title class="d-flex align-center">
+          Location Label
+          <v-spacer />
+          <v-btn icon="mdi-close" variant="text" size="small" @click="showQrModal = false"></v-btn>
+      </v-card-title>
+      <v-card-text class="d-flex flex-column align-center">
+          <div id="qr-printable-loc" class="bg-white pa-4 rounded border">
+              <QrLabel 
+                  v-if="item" 
+                  :id="item.id" 
+                  type="location" 
+                  :title="formData.name" 
+                  :size="200"
+              />
+          </div>
+          <div class="text-caption text-grey mt-4 text-center">
+              Scan this label to see all items currently stored in this location.
+          </div>
+      </v-card-text>
+      <v-card-actions class="pa-4">
+          <v-btn block color="primary" @click="printLabel" prepend-icon="mdi-printer">
+              Print Label
+          </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
+
+<style scoped>
+.gap-2 {
+    gap: 8px;
+}
+</style>

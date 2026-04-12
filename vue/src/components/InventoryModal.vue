@@ -7,11 +7,14 @@ import { useVendorStore } from '../stores/vendors';
 import { useCustomerStore } from '../stores/customers';
 import { useLocationStore } from '../stores/locations';
 import { useDisplay } from 'vuetify';
+import QrLabel from './QrLabel.vue';
 
 const vendorStore = useVendorStore();
 const customerStore = useCustomerStore();
 const locationStore = useLocationStore();
 const { mobile } = useDisplay();
+
+const showQrModal = ref(false);
 
 const props = defineProps({
   show: Boolean,
@@ -78,6 +81,22 @@ const newSale = ref({
     sold_at: new Date().toISOString().split('T')[0],
     notes: ''
 });
+
+const printLabel = () => {
+    const printable = document.getElementById('qr-printable');
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write('<html><head><title>Print Label</title>');
+    printWindow.document.write('<style>body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; } @page { margin: 0; size: auto; }</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write(printable.innerHTML);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    // Wait for content to load for potential images
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 250);
+};
 
 const isEdit = computed(() => !!props.item);
 const draftKey = computed(() => isEdit.value ? `inventory_edit_${props.item.id}` : 'inventory_new');
@@ -895,6 +914,17 @@ const closeModal = () => {
               <div class="d-flex justify-space-between align-center mb-3">
                 <h3 class="text-subtitle-1 font-weight-bold">Photos</h3>
                 <div class="d-flex align-center gap-2">
+                  <v-btn
+                    v-if="isEdit"
+                    variant="tonal"
+                    size="small"
+                    color="primary"
+                    prepend-icon="mdi-qrcode"
+                    @click="showQrModal = true"
+                  >
+                    Print Label
+                  </v-btn>
+
                   <v-menu v-if="pendingPhotos.length > 0 || localPhotos.length > 0" :close-on-content-click="false">
                     <template v-slot:activator="{ props }">
                       <v-btn
@@ -1428,6 +1458,37 @@ const closeModal = () => {
     :startIndex="galleryIndex"
     @close="showGallery = false"
   />
+
+  <!-- QR Code Print Dialog -->
+  <v-dialog v-model="showQrModal" max-width="350">
+    <v-card>
+      <v-card-title class="d-flex align-center">
+          Label Preview
+          <v-spacer />
+          <v-btn icon="mdi-close" variant="text" size="small" @click="showQrModal = false"></v-btn>
+      </v-card-title>
+      <v-card-text class="d-flex flex-column align-center">
+          <div id="qr-printable" class="bg-white pa-4 rounded border">
+              <QrLabel 
+                  v-if="item" 
+                  :id="item.id" 
+                  type="item" 
+                  :title="formData.title" 
+                  :sku="formData.sku" 
+                  :size="200"
+              />
+          </div>
+          <div class="text-caption text-grey mt-4 text-center">
+              This label can be scanned by the Pintventory app to quickly open this item.
+          </div>
+      </v-card-text>
+      <v-card-actions class="pa-4">
+          <v-btn block color="primary" @click="printLabel" prepend-icon="mdi-printer">
+              Print Label
+          </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <style scoped>

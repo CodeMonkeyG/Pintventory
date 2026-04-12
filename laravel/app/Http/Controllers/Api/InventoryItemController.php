@@ -162,4 +162,91 @@ class InventoryItemController extends Controller
 
         return response()->json(['message' => 'Item archived']);
     }
+
+    /**
+     * Update multiple inventory items at once.
+     */
+    public function bulkUpdate(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:inventory_items,id',
+            'data' => 'required|array',
+            'data.status' => 'nullable|in:in_stock,low_stock,out_of_stock,archived',
+            'data.storage_location_id' => 'nullable|exists:storage_locations,id',
+            'data.item_type' => 'nullable|in:unique,standard',
+            'data.tags' => 'nullable|array',
+        ]);
+
+        $items = InventoryItem::whereIn('id', $validated['ids'])->get();
+        $updateData = array_filter($validated['data'], function ($value) {
+            return $value !== null;
+        });
+
+        foreach ($items as $item) {
+            $item->update($updateData);
+        }
+
+        return response()->json(['message' => count($items) . ' items updated']);
+    }
+
+    /**
+     * Store multiple inventory items at once (Import).
+     */
+    public function bulkStore(Request $request)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array',
+            'items.*.title' => 'required|string|max:255',
+            'items.*.sku' => 'nullable|string|max:255',
+            'items.*.description' => 'nullable|string',
+            'items.*.status' => 'nullable|in:in_stock,low_stock,out_of_stock,archived',
+            'items.*.item_type' => 'nullable|in:unique,standard',
+            'items.*.quantity_on_hand' => 'nullable|integer|min:0',
+            'items.*.reorder_point' => 'nullable|integer|min:0',
+            'items.*.unit' => 'nullable|string|max:50',
+            'items.*.tags' => 'nullable|array',
+            'items.*.storage_location_id' => 'nullable|exists:storage_locations,id',
+        ]);
+
+        $createdItems = [];
+        foreach ($validated['items'] as $itemData) {
+            if (empty($itemData['sku'])) {
+                $itemData['sku'] = 'INV-' . date('Y') . '-' . strtoupper(uniqid());
+            }
+            $itemData['created_by_user_id'] = Auth::id();
+            $createdItems[] = InventoryItem::create($itemData);
+        }
+
+        return response()->json([
+            'message' => count($createdItems) . ' items imported successfully',
+            'count' => count($createdItems)
+        ], 201);
+    }
+
+    /**
+     * Delete/Archive multiple inventory items at once.
+     */
+    public function bulkDelete(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:inventory_items,id',
+            'permanent' => 'nullable|boolean'
+        ]);
+
+        $items = InventoryItem::whereIn('id', $validated['ids'])->get();
+        
+        foreach ($items as $item) {
+            if ($validated['permanent'] ?? false) {
+                $item->delete();
+            } else {
+                $item->status = 'archived';
+                $item->archived_at = now();
+                $item->save();
+            }
+        }
+
+        return response()->json(['message' => count($items) . ' items ' . (($validated['permanent'] ?? false) ? 'deleted' : 'archived')]);
+    }
 }

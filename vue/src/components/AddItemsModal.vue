@@ -1,18 +1,22 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { useDisplay } from 'vuetify';
+import { useRouter } from 'vue-router';
 import SingleItemScanner from './SingleItemScanner.vue';
 import MultiItemScanner from './MultiItemScanner.vue';
+import CsvImportModal from './CsvImportModal.vue';
+import UnifiedScanner from './UnifiedScanner.vue';
 import InventoryModal from './InventoryModal.vue'; // We can reuse the content or wrap it
 
 const props = defineProps({
   show: Boolean
 });
 
-const emit = defineEmits(['update:show', 'save']);
+const emit = defineEmits(['update:show', 'save', 'manual-entry']);
 
+const router = useRouter();
 const { mobile } = useDisplay();
-const tab = ref('single');
+const tab = ref('scan'); // Default to scan now
 
 const handleSave = (itemData, newPhotos) => {
     emit('save', itemData, newPhotos);
@@ -25,9 +29,22 @@ const close = () => {
 // Reset tab when opening
 watch(() => props.show, (val) => {
     if (val) {
-        tab.value = 'single';
+        tab.value = 'scan';
     }
 });
+
+const handleFoundItem = (id) => {
+    emit('update:show', false);
+    router.push({ name: 'inventory-edit', params: { id } });
+};
+
+const handleFoundLocation = (locationId) => {
+    emit('update:show', false);
+    // Ideally we'd set the filter here, but for now we'll go to inventory
+    // and let the router handle it if we add query params later.
+    // For now just go to inventory and maybe show a toast.
+    router.push({ path: '/inventory', query: { storage_location_id: locationId } });
+};
 </script>
 
 <template>
@@ -53,20 +70,35 @@ watch(() => props.show, (val) => {
         grow
         align-tabs="center"
       >
+        <v-tab value="scan" prepend-icon="mdi-qrcode-scan">Scan</v-tab>
         <v-tab value="single" prepend-icon="mdi-camera">Single Scan</v-tab>
         <v-tab value="multi" prepend-icon="mdi-ImageFilterCenterFocusStrongOutline">Multi Scan</v-tab>
+        <v-tab value="import" prepend-icon="mdi-file-import">Import CSV</v-tab>
         <v-tab value="manual" prepend-icon="mdi-form-select">Manual</v-tab>
       </v-tabs>
 
       <v-divider></v-divider>
 
       <v-window v-model="tab" touch>
+        <v-window-item value="scan">
+            <UnifiedScanner 
+                :active="tab === 'scan' && show" 
+                @close="close" 
+                @found-item="handleFoundItem"
+                @found-location="handleFoundLocation"
+            />
+        </v-window-item>
+
         <v-window-item value="single">
           <SingleItemScanner :active="tab === 'single' && show" @save="handleSave" />
         </v-window-item>
 
         <v-window-item value="multi">
           <MultiItemScanner :active="tab === 'multi' && show" @close="close" />
+        </v-window-item>
+
+        <v-window-item value="import">
+          <CsvImportModal :active="tab === 'import' && show" @success="close" />
         </v-window-item>
 
         <v-window-item value="manual">
