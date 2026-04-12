@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { useAuthStore } from '../stores/auth';
 
 const auth = useAuthStore();
@@ -12,26 +12,13 @@ const selectWorkspace = (workspaceId) => {
     auth.switchWorkspace(workspaceId);
 };
 
-const showCreateDialog = ref(false);
-const newWorkspaceName = ref('');
-const loading = ref(false);
-
-const createWorkspace = async () => {
-    if (!newWorkspaceName.value) return;
-    
-    loading.value = true;
-    try {
-        await auth.createWorkspace(newWorkspaceName.value);
-        showCreateDialog.value = false;
-        newWorkspaceName.value = '';
-    } finally {
-        loading.value = false;
-    }
+const triggerCreateWorkspace = () => {
+    auth.showCreateWorkspaceDialog = true;
 };
 </script>
 
 <template>
-  <v-menu v-if="auth.loggedIn">
+  <v-menu v-if="auth.loggedIn" :close-on-content-click="false">
     <template v-slot:activator="{ props }">
       <v-btn
         variant="tonal"
@@ -70,35 +57,9 @@ const createWorkspace = async () => {
       <v-list-item 
         prepend-icon="mdi-plus" 
         title="Create Workspace" 
-        @click="showCreateDialog = true"
+        @click.stop="triggerCreateWorkspace"
       >
       </v-list-item>
     </v-list>
   </v-menu>
-
-  <v-dialog v-model="showCreateDialog" max-width="400">
-    <v-card title="Create Workspace">
-      <v-card-text>
-        <v-text-field
-          v-model="newWorkspaceName"
-          label="Workspace Name"
-          placeholder="e.g. My Shop, Personal Collection"
-          autofocus
-          @keyup.enter="createWorkspace"
-          :disabled="loading"
-        ></v-text-field>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn text="Cancel" @click="showCreateDialog = false" :disabled="loading"></v-btn>
-        <v-btn 
-          color="primary" 
-          text="Create" 
-          @click="createWorkspace" 
-          :loading="loading"
-          :disabled="!newWorkspaceName"
-        ></v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
 </template>

@@ -14,6 +14,8 @@ export const useAuthStore = defineStore('auth', {
         user: null,
         /** @type {boolean} Whether the user is currently authenticated */
         loggedIn: false,
+        /** @type {boolean} Whether to show the create workspace dialog */
+        showCreateWorkspaceDialog: false,
     }),
     actions: {
         /**

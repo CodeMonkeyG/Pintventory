@@ -10,6 +10,8 @@ const router = useRouter();
 const { mobile } = useDisplay();
 
 const drawer = ref(false);
+const newWorkspaceName = ref('');
+const loading = ref(false);
 
 const navItems = [
   { title: 'Inventory', to: '/inventory', icon: 'mdi-package-variant-closed' },
@@ -21,6 +23,19 @@ const navItems = [
 const logout = async () => {
   await authStore.logout();
   router.push('/login');
+};
+
+const createWorkspace = async () => {
+    if (!newWorkspaceName.value) return;
+    
+    loading.value = true;
+    try {
+        await authStore.createWorkspace(newWorkspaceName.value);
+        authStore.showCreateWorkspaceDialog = false;
+        newWorkspaceName.value = '';
+    } finally {
+        loading.value = false;
+    }
 };
 </script>
 
@@ -73,9 +88,15 @@ const logout = async () => {
     <v-app-bar color="surface" elevation="0" border="b">
       <v-app-bar-nav-icon v-if="mobile" @click="drawer = !drawer"></v-app-bar-nav-icon>
       
-      <v-app-bar-title class="text-h6 text-md-h5 font-weight-bold text-primary">
-        Pintventory
-      </v-app-bar-title>
+      <div class="d-flex flex-column ml-2">
+          <v-app-bar-title class="text-h6 text-md-h5 font-weight-black text-primary line-height-1">
+            Pintventory
+          </v-app-bar-title>
+          <div v-if="authStore.currentWorkspace" class="text-caption font-weight-bold text-grey-darken-1 d-flex align-center mt-n1">
+            <v-icon size="12" class="mr-1">mdi-briefcase-outline</v-icon>
+            {{ authStore.currentWorkspace.name }}
+          </div>
+      </div>
       
       <v-spacer />
       
@@ -157,6 +178,34 @@ const logout = async () => {
         <slot></slot>
       </v-container>
     </v-main>
+
+    <!-- Global Workspace Creation Dialog -->
+    <v-dialog v-model="authStore.showCreateWorkspaceDialog" max-width="400" persistent>
+      <v-card title="Create Workspace">
+        <v-card-text>
+          <v-text-field
+            v-model="newWorkspaceName"
+            label="Workspace Name"
+            placeholder="e.g. My Shop, Personal Collection"
+            autofocus
+            @keyup.enter="createWorkspace"
+            :disabled="loading"
+            variant="outlined"
+          ></v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text="Cancel" @click="authStore.showCreateWorkspaceDialog = false" :disabled="loading"></v-btn>
+          <v-btn 
+            color="primary" 
+            text="Create" 
+            @click="createWorkspace" 
+            :loading="loading"
+            :disabled="!newWorkspaceName"
+          ></v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
