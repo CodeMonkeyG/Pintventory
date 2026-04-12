@@ -79,8 +79,8 @@ const handleDelete = async (id) => {
   <MainLayout>
     <div :class="mobile ? 'd-flex flex-column gap-4' : 'd-flex justify-space-between align-center'" class="mb-6">
       <h1 :class="mobile ? 'text-h4' : 'text-h3'">Customers</h1>
-      <v-btn color="primary" @click="openCreateModal" :block="mobile">
-        <v-icon left>mdi-plus</v-icon>
+      <v-btn color="primary" @click="openCreateModal" :block="mobile" size="large" elevation="2">
+        <v-icon prepend-icon>mdi-plus</v-icon>
         Add Customer
       </v-btn>
     </div>
