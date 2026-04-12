@@ -136,15 +136,21 @@ onUnmounted(() => {
 
 <template>
   <div class="pa-4">
-    <input type="file" ref="cameraInput" @change="handlePhotoCapture" accept="image/*" capture="environment" hidden />
+    <input type="file" ref="cameraInput" @change="handlePhotoCapture" accept="image/*" hidden />
 
     <div v-if="!capturedPhoto && !isAnalyzing" class="text-center py-12">
-        <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-camera-plus</v-icon>
-        <div class="text-h6 text-grey">Ready to scan?</div>
-        <div class="text-body-2 text-grey mb-6">Snap a photo to identify an item instantly.</div>
-        <v-btn color="primary" size="large" @click="triggerCamera" prepend-icon="mdi-camera">
-            Snap Item
-        </v-btn>
+        <v-icon size="80" color="primary" class="mb-6" opacity="0.3">mdi-camera-plus</v-icon>
+        <div class="text-h5 font-weight-bold mb-2">Single Item Scan</div>
+        <div class="text-body-1 text-grey mb-8">Snap a photo to identify an item instantly.</div>
+        
+        <div class="d-flex flex-column gap-3 max-width-300 mx-auto">
+            <v-btn color="primary" size="x-large" @click="triggerCamera" prepend-icon="mdi-camera" elevation="4">
+                Take Photo
+            </v-btn>
+            <v-btn variant="tonal" color="primary" size="large" @click="triggerCamera" prepend-icon="mdi-image-multiple">
+                Open Gallery
+            </v-btn>
+        </div>
     </div>
 
     <div v-if="isAnalyzing" class="text-center py-12">
@@ -277,6 +283,12 @@ onUnmounted(() => {
 <style scoped>
 .gap-2 {
     gap: 8px;
+}
+.gap-3 {
+    gap: 12px;
+}
+.max-width-300 {
+    max-width: 300px;
 }
 .uppercase {
     text-transform: uppercase;

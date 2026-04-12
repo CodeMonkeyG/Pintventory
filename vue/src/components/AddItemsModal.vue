@@ -72,15 +72,24 @@ watch(() => props.show, (val) => {
         <v-window-item value="manual">
             <!-- Reuse manual entry logic from InventoryModal but stripped down or simply use the existing modal logic if possible -->
              <div class="pa-4 text-center py-12">
-                 <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-form-select</v-icon>
-                 <div class="text-h6 text-grey">Manual Entry</div>
-                 <div class="text-body-2 text-grey mb-6">Switch to the standard form to enter details manually.</div>
-                 <v-btn color="primary" variant="outlined" @click="$emit('manual-entry')">
-                     Open Manual Form
-                 </v-btn>
+                 <v-icon size="80" color="primary" class="mb-6" opacity="0.3">mdi-form-select</v-icon>
+                 <div class="text-h5 font-weight-bold mb-2">Manual Entry</div>
+                 <div class="text-body-1 text-grey mb-8">Switch to the standard form to enter details manually.</div>
+                 
+                 <div class="max-width-300 mx-auto">
+                    <v-btn color="primary" variant="outlined" size="large" block @click="$emit('manual-entry')" prepend-icon="mdi-pencil-box-outline">
+                        Open Manual Form
+                    </v-btn>
+                 </div>
              </div>
         </v-window-item>
       </v-window>
     </v-card>
   </v-dialog>
 </template>
+
+<style scoped>
+.max-width-300 {
+    max-width: 300px;
+}
+</style>
