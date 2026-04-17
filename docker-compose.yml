@@ -19,14 +19,7 @@ services:
     volumes:
       - ./laravel:/var/www/html
     environment:
-      DB_CONNECTION: pgsql
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_DATABASE: pintventory
-      DB_USERNAME: pintventory
-      DB_PASSWORD: password
-      APP_URL: https://pintventory.com
-    command: sh -c "composer install && php-fpm"
+      - APP_URL=https://pintventory.com
     depends_on:
       - postgres
 

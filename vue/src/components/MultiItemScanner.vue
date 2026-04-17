@@ -135,6 +135,14 @@ const saveSelected = async () => {
     }
 };
 
+defineExpose({
+    isAnalyzing,
+    isSaving,
+    capturedPhoto,
+    reset,
+    saveSelected
+});
+
 onUnmounted(() => {
     reset();
 });
@@ -167,12 +175,24 @@ onUnmounted(() => {
 
     <div v-if="capturedPhoto && !isAnalyzing">
         <div class="d-flex align-center justify-space-between mb-4">
-            <v-img :src="capturedPhoto.url" height="150" max-width="150" cover rounded="lg" class="border elevation-2" />
+            <v-img 
+                :src="capturedPhoto.url" 
+                height="120" 
+                max-width="120" 
+                cover 
+                rounded="lg" 
+                class="border elevation-2 cursor-pointer" 
+                @click="$emit('open-gallery')"
+            >
+              <div class="fill-height d-flex align-end justify-end pa-1">
+                <v-icon size="16" color="white" class="bg-black-opacity-50 rounded-circle">mdi-magnify-plus</v-icon>
+              </div>
+            </v-img>
             <div class="text-right">
-                <v-btn variant="text" size="small" @click="triggerCamera" prepend-icon="mdi-camera-retake">
+                <v-btn variant="tonal" size="small" color="primary" @click="triggerCamera" prepend-icon="mdi-camera-retake" class="mb-2">
                     Retake
                 </v-btn>
-                <div class="text-h6 font-weight-bold mt-2">Found {{ foundItems.length }} Items</div>
+                <div class="text-h6 font-weight-bold">Found {{ foundItems.length }} Items</div>
                 <div class="text-caption text-grey">{{ selectedIndices.size }} selected</div>
             </div>
         </div>
@@ -197,62 +217,54 @@ onUnmounted(() => {
                         <div class="flex-grow-1">
                             <v-text-field
                                 v-model="item.title"
-                                label="Item Title"
                                 variant="underlined"
                                 density="compact"
                                 hide-details
-                                class="mb-1 font-weight-bold"
+                                class="mb-2 font-weight-bold"
+                                placeholder="Item Title"
                                 @click.stop
                             />
                             
-                            <div class="d-flex gap-2 mb-2">
-                                <v-chip size="x-small" color="success" variant="tonal" class="font-weight-bold">
+                            <div class="d-flex gap-2 mb-3">
+                                <v-chip size="x-small" color="success" variant="flat" class="font-weight-bold">
                                     {{ item.estimated_value }}
                                 </v-chip>
-                                <v-chip size="x-small" color="secondary" variant="tonal">
+                                <v-chip size="x-small" color="secondary" variant="tonal" class="text-uppercase">
                                     {{ item.item_type }}
                                 </v-chip>
                             </div>
 
-                            <div v-if="item.market_analysis" class="mb-2">
-                                <div class="d-flex gap-1 flex-wrap">
-                                    <v-card 
+                            <div v-if="item.market_analysis" class="mb-1">
+                                <v-row dense>
+                                    <v-col 
                                         v-for="(data, platform) in item.market_analysis" 
                                         :key="platform"
-                                        variant="flat" 
-                                        class="pa-1 bg-grey-lighten-4 rounded"
-                                        style="font-size: 10px; min-width: 80px;"
-                                        @click.stop
+                                        cols="4"
                                     >
-                                        <div class="d-flex justify-space-between align-center">
-                                            <span class="font-weight-bold text-uppercase" style="font-size: 8px;">{{ platform }}</span>
-                                            <a :href="getMarketUrl(platform, data.query)" target="_blank" class="text-primary">
-                                                <v-icon size="10">mdi-open-in-new</v-icon>
-                                            </a>
-                                        </div>
-                                        <div class="font-weight-black">{{ data.range }}</div>
-                                    </v-card>
-                                </div>
+					    <v-card variant="outlined" class="pa-2 fill-height bg-surface" style="border-color: rgba(var(--v-border-color), 0.15) !important;">
+                                            <div class="d-flex justify-space-between align-center mb-0">
+						<span class="text-caption font-weight-bold text-grey text-uppercase">{{ platform }}</span>
+                                                <v-btn
+                                                    icon="mdi-open-in-new"
+                                                    size="x-small"
+                                                    variant="text"
+                                                    color="primary"
+                                                    :href="getMarketUrl(platform, data.query)"
+                                                    target="_blank"
+                                                    density="compact"
+                                                    class="mt-n1 mr-n1"
+                                                ></v-btn>
+                                            </div>
+                                            <div class="font-weight-black text-truncate" style="font-size: 10px;">{{ data.range }}</div>
+                                        </v-card>
+                                    </v-col>
+                                </v-row>
                             </div>
                         </div>
                     </div>
                 </v-card>
             </v-col>
         </v-row>
-
-        <v-btn 
-            color="primary" 
-            variant="elevated" 
-            block 
-            size="large" 
-            class="mt-6"
-            @click="saveSelected"
-            :loading="isSaving"
-            :disabled="selectedIndices.size === 0"
-            prepend-icon="mdi-plus-box-multiple"
-        >
-            Import {{ selectedIndices.size }} Items
-        </v-btn>
     </div>
   </div>
 </template>
@@ -267,9 +279,6 @@ onUnmounted(() => {
 .max-width-300 {
     max-width: 300px;
 }
-.gap-1 {
-    gap: 4px;
-}
 .item-card {
     transition: all 0.2s ease;
     cursor: pointer;
@@ -280,5 +289,11 @@ onUnmounted(() => {
 }
 .item-card:hover {
     border-color: rgb(var(--v-theme-primary));
+}
+.cursor-pointer {
+    cursor: pointer;
+}
+.bg-black-opacity-50 {
+    background: rgba(0, 0, 0, 0.5) !important;
 }
 </style>

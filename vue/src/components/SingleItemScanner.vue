@@ -129,6 +129,14 @@ const saveToInventory = async () => {
     }
 };
 
+defineExpose({
+    isAnalyzing,
+    isSaving,
+    capturedPhoto,
+    reset,
+    saveToInventory
+});
+
 onUnmounted(() => {
     reset();
 });
@@ -160,7 +168,29 @@ onUnmounted(() => {
     </div>
 
     <div v-if="capturedPhoto && !isAnalyzing">
-        <v-img :src="capturedPhoto.url" height="200" cover rounded="lg" class="mb-4 border" />
+        <div class="d-flex align-center justify-space-between mb-4">
+            <v-img 
+                :src="capturedPhoto.url" 
+                height="120" 
+                max-width="120" 
+                cover 
+                rounded="lg" 
+                class="border elevation-2 cursor-pointer" 
+                @click="$emit('open-gallery')"
+                title="Click to view full image"
+            >
+              <div class="fill-height d-flex align-end justify-end pa-1">
+                <v-icon size="16" color="white" class="bg-black-opacity-50 rounded-circle">mdi-magnify-plus</v-icon>
+              </div>
+            </v-img>
+            <div class="text-right">
+                <v-btn variant="tonal" size="small" color="primary" @click="triggerCamera" prepend-icon="mdi-camera-retake" class="mb-2">
+                    Retake
+                </v-btn>
+                <div class="text-h6 font-weight-bold">Item Identified</div>
+                <div class="text-caption text-grey">Ready to import</div>
+            </div>
+        </div>
         
         <v-text-field
             v-model="analysisResult.title"
@@ -253,29 +283,6 @@ onUnmounted(() => {
             <div class="text-caption font-weight-bold uppercase mb-1">AI Evaluation & Details</div>
             <div class="text-body-2" style="white-space: pre-wrap;">{{ analysisResult.evaluation }}</div>
         </v-alert>
-
-        <div class="d-flex flex-column gap-2 mt-4">
-            <v-btn 
-                color="primary" 
-                variant="elevated" 
-                block 
-                size="large" 
-                @click="saveToInventory"
-                :loading="isSaving"
-                prepend-icon="mdi-check"
-            >
-                Add to Inventory
-            </v-btn>
-            <v-btn 
-                color="secondary" 
-                variant="tonal" 
-                block 
-                @click="nextItem"
-                prepend-icon="mdi-camera-retake"
-            >
-                Next Item (Discard & Snap)
-            </v-btn>
-        </div>
     </div>
   </div>
 </template>
@@ -292,5 +299,11 @@ onUnmounted(() => {
 }
 .uppercase {
     text-transform: uppercase;
+}
+.cursor-pointer {
+  cursor: pointer;
+}
+.bg-black-opacity-50 {
+    background: rgba(0, 0, 0, 0.5) !important;
 }
 </style>

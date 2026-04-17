@@ -54,6 +54,22 @@ class GoogleController extends Controller
                 }
                 $user->current_workspace_id = $workspace->id;
                 $user->save();
+            } elseif (!$user->workspaces()->where('workspaces.id', $user->current_workspace_id)->exists()) {
+                // If the user has a current_workspace_id but is not linked to it in the pivot table,
+                // link them or reset to a valid workspace.
+                $workspace = $user->workspaces()->first();
+                if ($workspace) {
+                    $user->current_workspace_id = $workspace->id;
+                } else {
+                    // This is an inconsistent state, let's create a new one to be safe
+                    $workspace = Workspace::create([
+                        'name' => 'Personal Workspace',
+                        'created_by_user_id' => $user->id,
+                    ]);
+                    $workspace->users()->attach($user->id, ['role' => 'owner']);
+                    $user->current_workspace_id = $workspace->id;
+                }
+                $user->save();
             }
 
             Auth::login($user, true);

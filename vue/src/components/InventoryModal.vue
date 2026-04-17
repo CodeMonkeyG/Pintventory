@@ -606,14 +606,25 @@ const closeModal = () => {
     :max-width="mobile ? undefined : '800'"
     :transition="mobile ? 'dialog-bottom-transition' : 'dialog-transition'"
   >
-    <v-card :rounded="mobile ? '0' : 'lg'">
-      <v-toolbar color="primary" v-if="mobile">
+    <v-card :rounded="mobile ? '0' : 'lg'" class="d-flex flex-column" :style="mobile ? 'height: 100dvh;' : 'max-height: 90vh;'">
+      <v-toolbar color="primary" :density="mobile ? 'comfortable' : 'default'">
         <v-btn icon @click="$emit('close')">
           <v-icon>mdi-close</v-icon>
         </v-btn>
-        <v-toolbar-title>{{ isEdit ? (activeTab === 'details' ? 'Edit Item' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)) : 'Add Item' }}</v-toolbar-title>
+        <v-toolbar-title>
+          {{ isEdit ? (mobile && activeTab !== 'details' ? activeTab.charAt(0).toUpperCase() + activeTab.slice(1) : (isEdit ? 'Edit Item' : 'Add Item')) : 'Add New Item' }}
+        </v-toolbar-title>
         <v-spacer></v-spacer>
-        <v-btn variant="text" @click="save" v-if="activeTab === 'details'">Save</v-btn>
+        <v-btn 
+          variant="text" 
+          @click="save" 
+          :loading="isUploading"
+          v-if="activeTab === 'details'"
+          prepend-icon="mdi-check"
+          class="px-4"
+        >
+          Save
+        </v-btn>
         
         <template v-slot:extension v-if="isEdit">
           <v-tabs v-model="activeTab" grow color="white">
@@ -624,13 +635,6 @@ const closeModal = () => {
         </template>
       </v-toolbar>
 
-      <v-card-title class="d-flex justify-space-between align-center px-6 pt-4 pb-0" v-else>
-        <span class="text-h5">{{ isEdit ? 'Edit Inventory Item' : 'Add New Inventory Item' }}</span>
-        <v-btn icon variant="text" @click="$emit('close')">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-      </v-card-title>
-
       <v-progress-linear
         v-if="isAnalyzing || isMarketAnalyzing || isFacebookAnalyzing || isEtsyAnalyzing || isUploading"
         indeterminate
@@ -638,13 +642,7 @@ const closeModal = () => {
         height="2"
       ></v-progress-linear>
 
-      <v-tabs v-model="activeTab" v-if="isEdit && !mobile" color="primary" grow class="mt-2">
-        <v-tab value="details">Details</v-tab>
-        <v-tab value="purchases">Purchases</v-tab>
-        <v-tab value="sales">Sales</v-tab>
-      </v-tabs>
-
-      <v-card-text :class="mobile ? 'pa-4' : 'pa-6'">
+      <v-card-text :class="mobile ? 'pa-4' : 'pa-6'" class="flex-grow-1 overflow-y-auto">
         <v-window v-model="activeTab">
           <!-- Details & Photos Tab -->
           <v-window-item value="details">
@@ -1440,15 +1438,6 @@ const closeModal = () => {
           </v-window-item>
         </v-window>
       </v-card-text>
-      
-      <v-divider v-if="!mobile"></v-divider>
-      <v-card-actions class="pa-4" v-if="!mobile">
-        <v-spacer />
-        <v-btn variant="text" @click="$emit('close')">Cancel</v-btn>
-        <v-btn v-if="activeTab === 'details'" color="primary" variant="elevated" @click="save">
-          {{ isEdit ? 'Save Changes' : 'Create Item' }}
-        </v-btn>
-      </v-card-actions>
     </v-card>
   </v-dialog>
 

@@ -3,13 +3,15 @@ import { ref, computed, watch } from 'vue';
 import Papa from 'papaparse';
 import { useInventoryStore } from '../stores/inventory';
 import { useLocationStore } from '../stores/locations';
+import { useDisplay } from 'vuetify';
 
 const props = defineProps({
-    active: Boolean
+    show: Boolean
 });
 
-const emit = defineEmits(['close', 'success']);
+const emit = defineEmits(['update:show', 'success']);
 
+const { mobile } = useDisplay();
 const inventoryStore = useInventoryStore();
 const locationStore = useLocationStore();
 
@@ -112,7 +114,7 @@ const importData = async () => {
         const result = await inventoryStore.bulkStore(processedData.value);
         alert(`Successfully imported ${result.count} items.`);
         emit('success');
-        reset();
+        close();
     } catch (error) {
         alert('Import failed: ' + error.message);
     }
@@ -129,93 +131,116 @@ const reset = () => {
     };
 };
 
-watch(() => props.active, (val) => {
+const close = () => {
+    emit('update:show', false);
+};
+
+watch(() => props.show, (val) => {
     if (!val) reset();
 });
 </script>
 
 <template>
-  <div class="pa-4">
-    <div v-if="step === 1" class="text-center py-12">
-      <v-icon size="80" color="primary" class="mb-6" opacity="0.3">mdi-file-import-outline</v-icon>
-      <div class="text-h5 font-weight-bold mb-2">Import from CSV</div>
-      <div class="text-body-1 text-grey mb-8">Upload a CSV file to bulk add items to your inventory.</div>
-      
-      <v-file-input
-        label="Choose CSV File"
-        accept=".csv"
-        variant="outlined"
-        prepend-icon="mdi-file-csv"
-        class="max-width-400 mx-auto"
-        @change="handleFileChange"
-      ></v-file-input>
-      
-      <div class="text-caption text-grey mt-4">
-        Ensure your CSV has a header row. You'll map columns in the next step.
-      </div>
-    </div>
+  <v-dialog 
+    :modelValue="show" 
+    @update:modelValue="$emit('update:show', $event)" 
+    persistent 
+    :fullscreen="mobile"
+    :max-width="mobile ? undefined : '800'"
+  >
+    <v-card :rounded="mobile ? '0' : 'lg'" class="d-flex flex-column" :style="mobile ? 'height: 100dvh;' : 'max-height: 90vh;'">
+      <v-toolbar color="primary" :density="mobile ? 'comfortable' : 'default'">
+        <v-btn icon @click="close">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+        <v-toolbar-title>Import from CSV</v-toolbar-title>
+      </v-toolbar>
 
-    <div v-if="step === 2">
-      <div class="d-flex align-center justify-space-between mb-4">
-        <div class="text-h6 font-weight-bold">Map CSV Columns</div>
-        <v-btn variant="text" size="small" @click="step = 1">Change File</v-btn>
-      </div>
-
-      <v-alert type="info" variant="tonal" class="mb-4 text-caption" density="compact">
-        Match your CSV columns to Pintventory fields. Only mapped fields will be imported.
-      </v-alert>
-
-      <v-row dense>
-        <v-col v-for="field in availableFields" :key="field.value" cols="12" sm="6">
-          <v-select
-            v-model="mapping[field.value === 'storage_location_id' ? 'storage_location' : field.value]"
-            :label="field.title"
-            :items="csvHeaders"
-            variant="outlined"
-            density="compact"
-            clearable
-            placeholder="Select column..."
-          />
-        </v-col>
-      </v-row>
-
-      <div class="mt-6 border rounded-lg overflow-hidden">
-          <div class="bg-grey-lighten-4 pa-2 text-caption font-weight-bold border-b d-flex justify-space-between align-center">
-              PREVIEW (First 3 items)
-              <v-chip size="x-small" color="primary">{{ processedData.length }} total items found</v-chip>
+      <v-card-text class="pa-0 flex-grow-1 overflow-y-auto">
+        <div class="pa-4">
+          <div v-if="step === 1" class="text-center py-12">
+            <v-icon size="80" color="primary" class="mb-6" opacity="0.3">mdi-file-import-outline</v-icon>
+            <div class="text-h5 font-weight-bold mb-2">Import from CSV</div>
+            <div class="text-body-1 text-grey mb-8">Upload a CSV file to bulk add items to your inventory.</div>
+            
+            <v-file-input
+              label="Choose CSV File"
+              accept=".csv"
+              variant="outlined"
+              prepend-icon="mdi-file-csv"
+              class="max-width-400 mx-auto"
+              @change="handleFileChange"
+            ></v-file-input>
+            
+            <div class="text-caption text-grey mt-4">
+              Ensure your CSV has a header row. You'll map columns in the next step.
+            </div>
           </div>
-          <v-table density="compact">
-              <thead>
-                  <tr>
-                      <th v-for="field in availableFields.filter(f => mapping[f.value === 'storage_location_id' ? 'storage_location' : f.value])" :key="field.value">
-                          {{ field.title.split(' ')[0] }}
-                      </th>
-                  </tr>
-              </thead>
-              <tbody>
-                  <tr v-for="(item, i) in processedData.slice(0, 3)" :key="i">
-                      <td v-for="field in availableFields.filter(f => mapping[f.value === 'storage_location_id' ? 'storage_location' : f.value])" :key="field.value">
-                          <span class="text-caption truncate-cell">{{ item[field.value] }}</span>
-                      </td>
-                  </tr>
-              </tbody>
-          </v-table>
-      </div>
 
-      <v-btn
-        color="primary"
-        block
-        size="large"
-        class="mt-6"
-        @click="importData"
-        :loading="inventoryStore.importing"
-        :disabled="!mapping.title"
-        prepend-icon="mdi-check-all"
-      >
-        Import {{ processedData.length }} Items
-      </v-btn>
-    </div>
-  </div>
+          <div v-if="step === 2">
+            <div class="d-flex align-center justify-space-between mb-4">
+              <div class="text-h6 font-weight-bold">Map CSV Columns</div>
+              <v-btn variant="text" size="small" @click="step = 1">Change File</v-btn>
+            </div>
+
+            <v-alert type="info" variant="tonal" class="mb-4 text-caption" density="compact">
+              Match your CSV columns to Pintventory fields. Only mapped fields will be imported.
+            </v-alert>
+
+            <v-row dense>
+              <v-col v-for="field in availableFields" :key="field.value" cols="12" sm="6">
+                <v-select
+                  v-model="mapping[field.value === 'storage_location_id' ? 'storage_location' : field.value]"
+                  :label="field.title"
+                  :items="csvHeaders"
+                  variant="outlined"
+                  density="compact"
+                  clearable
+                  placeholder="Select column..."
+                />
+              </v-col>
+            </v-row>
+
+            <div class="mt-6 border rounded-lg overflow-hidden">
+                <div class="bg-grey-lighten-4 pa-2 text-caption font-weight-bold border-b d-flex justify-space-between align-center">
+                    PREVIEW (First 3 items)
+                    <v-chip size="x-small" color="primary">{{ processedData.length }} total items found</v-chip>
+                </div>
+                <v-table density="compact">
+                    <thead>
+                        <tr>
+                            <th v-for="field in availableFields.filter(f => mapping[f.value === 'storage_location' ? 'storage_location' : f.value])" :key="field.value">
+                                {{ field.title.split(' ')[0] }}
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(item, i) in processedData.slice(0, 3)" :key="i">
+                            <td v-for="field in availableFields.filter(f => mapping[f.value === 'storage_location' ? 'storage_location' : f.value])" :key="field.value">
+                                <span class="text-caption truncate-cell">{{ item[field.value] }}</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </v-table>
+            </div>
+
+            <v-btn
+              color="primary"
+              block
+              size="large"
+              class="mt-6"
+              @click="importData"
+              :loading="inventoryStore.importing"
+              :disabled="!mapping.title"
+              prepend-icon="mdi-check-all"
+            >
+              Import {{ processedData.length }} Items
+            </v-btn>
+          </div>
+        </div>
+      </v-card-text>
+    </v-card>
+  </v-dialog>
 </template>
 
 <style scoped>

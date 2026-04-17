@@ -73,4 +73,51 @@ describe('Inventory Store', () => {
     expect(api.delete).toHaveBeenCalledWith('/inventory-items/item-1')
     expect(store.itemDetails['item-1']).toBeUndefined()
   })
+
+  it('bulkStore calls API and refetches items', async () => {
+    api.post.mockResolvedValueOnce({ data: { count: 2 } })
+    api.get.mockResolvedValueOnce({ data: { data: [] } })
+
+    const store = useInventoryStore()
+    const items = [{ title: 'Item 1' }, { title: 'Item 2' }]
+
+    const result = await store.bulkStore(items)
+
+    expect(api.post).toHaveBeenCalledWith('/inventory-items/bulk-store', { items })
+    expect(result).toEqual({ count: 2 })
+    expect(store.importing).toBe(false)
+  })
+
+  it('bulkUpdate calls API and invalidates caches', async () => {
+    api.post.mockResolvedValueOnce({ data: { message: '2 items updated' } })
+    api.get.mockResolvedValueOnce({ data: { data: [] } })
+
+    const store = useInventoryStore()
+    store.itemDetails['item-1'] = { id: 'item-1' }
+    const ids = ['item-1', 'item-2']
+    const updateData = { status: 'out_of_stock' }
+
+    const result = await store.bulkUpdate(ids, updateData)
+
+    expect(api.post).toHaveBeenCalledWith('/inventory-items/bulk-update', { ids, data: updateData })
+    expect(store.itemDetails).toEqual({})
+    expect(result).toEqual({ message: '2 items updated' })
+    expect(store.bulkLoading).toBe(false)
+  })
+
+  it('bulkDelete calls API and invalidates caches', async () => {
+    api.post.mockResolvedValueOnce({ data: { message: '2 items deleted' } })
+    api.get.mockResolvedValueOnce({ data: { data: [] } })
+
+    const store = useInventoryStore()
+    store.itemDetails['item-1'] = { id: 'item-1' }
+    const ids = ['item-1', 'item-2']
+
+    const result = await store.bulkDelete(ids, true)
+
+    expect(api.post).toHaveBeenCalledWith('/inventory-items/bulk-delete', { ids, permanent: true })
+    expect(store.itemDetails).toEqual({})
+    expect(result).toEqual({ message: '2 items deleted' })
+    expect(store.bulkLoading).toBe(false)
+  })
 })

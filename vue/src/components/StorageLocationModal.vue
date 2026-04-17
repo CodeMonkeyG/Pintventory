@@ -74,30 +74,28 @@ const printLabel = () => {
     :max-width="mobile ? undefined : '500'"
     :transition="mobile ? 'dialog-bottom-transition' : 'dialog-transition'"
   >
-    <v-card :rounded="mobile ? '0' : 'lg'">
-      <v-toolbar color="primary" v-if="mobile">
+    <v-card :rounded="mobile ? '0' : 'lg'" class="d-flex flex-column" :style="mobile ? 'height: 100dvh;' : 'max-height: 90vh;'">
+      <v-toolbar color="primary" :density="mobile ? 'comfortable' : 'default'">
         <v-btn icon @click="$emit('close')">
           <v-icon>mdi-close</v-icon>
         </v-btn>
         <v-toolbar-title>{{ isEdit ? 'Edit Location' : 'Add Location' }}</v-toolbar-title>
         <v-spacer></v-spacer>
-        <v-btn variant="text" v-if="isEdit" icon="mdi-qrcode" @click="showQrModal = true"></v-btn>
-        <v-btn variant="text" @click="save">Save</v-btn>
+        <v-btn 
+          v-if="isEdit" 
+          variant="text" 
+          :icon="mobile" 
+          :prepend-icon="!mobile ? 'mdi-qrcode' : undefined" 
+          @click="showQrModal = true"
+          class="mr-2"
+        >
+          {{ mobile ? '' : 'Print Label' }}
+          <v-icon v-if="mobile">mdi-qrcode</v-icon>
+        </v-btn>
+        <v-btn variant="text" @click="save" prepend-icon="mdi-check" class="px-4">Save</v-btn>
       </v-toolbar>
-
-      <v-card-title class="d-flex justify-space-between align-center px-6 pt-6 pb-2" v-else>
-        <span class="text-h5">{{ isEdit ? 'Edit Storage Location' : 'Add New Storage Location' }}</span>
-        <div class="d-flex align-center gap-2">
-            <v-btn v-if="isEdit" variant="tonal" size="small" color="primary" prepend-icon="mdi-qrcode" @click="showQrModal = true">
-                Print Label
-            </v-btn>
-            <v-btn icon variant="text" @click="$emit('close')">
-                <v-icon>mdi-close</v-icon>
-            </v-btn>
-        </div>
-      </v-card-title>
       
-      <v-card-text :class="mobile ? 'pa-4' : 'pa-6'">
+      <v-card-text :class="mobile ? 'pa-4' : 'pa-6'" class="flex-grow-1 overflow-y-auto">
         <v-row dense class="mt-2">
           <v-col cols="12">
             <v-text-field
@@ -122,15 +120,6 @@ const printLabel = () => {
           </v-col>
         </v-row>
       </v-card-text>
-      
-      <v-divider v-if="!mobile"></v-divider>
-      <v-card-actions class="pa-4" v-if="!mobile">
-        <v-spacer />
-        <v-btn variant="text" @click="$emit('close')">Cancel</v-btn>
-        <v-btn color="primary" variant="elevated" @click="save">
-          {{ isEdit ? 'Save Changes' : 'Create Location' }}
-        </v-btn>
-      </v-card-actions>
     </v-card>
   </v-dialog>
 

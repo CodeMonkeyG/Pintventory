@@ -180,9 +180,27 @@ const createWorkspace = async () => {
     </v-main>
 
     <!-- Global Workspace Creation Dialog -->
-    <v-dialog v-model="authStore.showCreateWorkspaceDialog" max-width="400" persistent>
-      <v-card title="Create Workspace">
-        <v-card-text>
+    <v-dialog v-model="authStore.showCreateWorkspaceDialog" max-width="400" persistent :fullscreen="mobile">
+      <v-card class="d-flex flex-column" :style="mobile ? 'height: 100dvh;' : 'max-height: 90vh;'">
+        <v-toolbar color="primary" :density="mobile ? 'comfortable' : 'default'">
+          <v-btn icon @click="authStore.showCreateWorkspaceDialog = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+          <v-toolbar-title>Create Workspace</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-btn 
+            variant="text" 
+            @click="createWorkspace" 
+            :loading="loading"
+            :disabled="!newWorkspaceName"
+            prepend-icon="mdi-plus"
+            class="px-4"
+          >
+            Create
+          </v-btn>
+        </v-toolbar>
+
+        <v-card-text class="pa-6 flex-grow-1 overflow-y-auto">
           <v-text-field
             v-model="newWorkspaceName"
             label="Workspace Name"
@@ -193,17 +211,6 @@ const createWorkspace = async () => {
             variant="outlined"
           ></v-text-field>
         </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn text="Cancel" @click="authStore.showCreateWorkspaceDialog = false" :disabled="loading"></v-btn>
-          <v-btn 
-            color="primary" 
-            text="Create" 
-            @click="createWorkspace" 
-            :loading="loading"
-            :disabled="!newWorkspaceName"
-          ></v-btn>
-        </v-card-actions>
       </v-card>
     </v-dialog>
   </v-app>

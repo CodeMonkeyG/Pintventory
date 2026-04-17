@@ -4,7 +4,9 @@ import { useInventoryStore } from '../stores/inventory';
 import { useLocationStore } from '../stores/locations';
 import MainLayout from '../layouts/MainLayout.vue';
 import InventoryModal from '../components/InventoryModal.vue';
-import AddItemsModal from '../components/AddItemsModal.vue';
+import BarcodeScannerDialog from '../components/BarcodeScannerDialog.vue';
+import AiScanDialog from '../components/AiScanDialog.vue';
+import CsvImportModal from '../components/CsvImportModal.vue';
 import PhotoGallery from '../components/PhotoGallery.vue';
 import api from '../axios';
 import { debounce } from '../utils/helpers';
@@ -17,7 +19,9 @@ const router = useRouter();
 const route = useRoute();
 const { mobile, smAndDown } = useDisplay();
 const showModal = ref(false);
-const showAddItemsModal = ref(false);
+const showBarcodeScanner = ref(false);
+const showAiScanner = ref(false);
+const showCsvImport = ref(false);
 const selectedItem = ref(null);
 
 // Bulk Actions State
@@ -245,9 +249,28 @@ const getSortIcon = (field) => {
   return store.filters.sort_dir === 'asc' ? 'mdi-sort-ascending' : 'mdi-sort-descending';
 };
 
-const handleManualEntry = () => {
-    showAddItemsModal.value = false;
-    openCreateModal();
+const handleScanItem = (id) => {
+    showBarcodeScanner.value = false;
+    router.push(`/inventory/${id}`);
+};
+
+const handleScanLocation = (locationId) => {
+    showBarcodeScanner.value = false;
+    store.setFilter('storage_location_id', locationId);
+};
+
+const handleAiSave = async (payload, photos) => {
+  try {
+    const item = await store.createItem(payload);
+    if (photos && photos.length > 0) {
+      for (const photo of photos) {
+        await store.uploadPhoto(item.id, photo);
+      }
+    }
+    showAiScanner.value = false;
+  } catch (error) {
+    console.error('Failed to save AI identified item:', error);
+  }
 };
 </script>
 
@@ -256,10 +279,40 @@ const handleManualEntry = () => {
     <div :class="mobile ? 'd-flex flex-column gap-4' : 'd-flex justify-space-between align-center'" class="mb-6">
       <h1 :class="mobile ? 'text-h4' : 'text-h3'">Inventory</h1>
       <div class="d-flex gap-2" :class="mobile ? 'flex-column' : ''">
-        <v-btn color="primary" @click="showAddItemsModal = true" :block="mobile" size="large" elevation="2">
-          <v-icon prepend-icon>mdi-plus</v-icon>
-          Add Items
-        </v-btn>
+        <v-menu v-if="!mobile">
+          <template v-slot:activator="{ props }">
+            <v-btn color="primary" v-bind="props" size="large" elevation="2" prepend-icon="mdi-plus">
+              Add Items
+              <v-icon end>mdi-chevron-down</v-icon>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item prepend-icon="mdi-creation" title="AI Scan" @click="showAiScanner = true" />
+            <v-list-item prepend-icon="mdi-barcode-scan" title="Barcode / QR" @click="showBarcodeScanner = true" />
+            <v-list-item prepend-icon="mdi-file-import" title="Import CSV" @click="showCsvImport = true" />
+            <v-divider />
+            <v-list-item prepend-icon="mdi-form-select" title="Manual Entry" @click="openCreateModal" />
+          </v-list>
+        </v-menu>
+
+        <div v-else class="d-flex gap-2 w-100">
+          <v-btn color="primary" class="flex-grow-1" height="56" @click="showAiScanner = true" elevation="2">
+            <v-icon size="28">mdi-creation</v-icon>
+            <v-tooltip activator="parent" location="bottom">AI Scan</v-tooltip>
+          </v-btn>
+          <v-btn color="indigo" class="flex-grow-1" height="56" @click="showBarcodeScanner = true" elevation="2">
+            <v-icon size="28">mdi-barcode-scan</v-icon>
+            <v-tooltip activator="parent" location="bottom">Scan QR</v-tooltip>
+          </v-btn>
+          <v-btn color="teal" class="flex-grow-1" height="56" @click="showCsvImport = true" elevation="2">
+            <v-icon size="28">mdi-file-import</v-icon>
+            <v-tooltip activator="parent" location="bottom">Import CSV</v-tooltip>
+          </v-btn>
+          <v-btn color="orange-darken-2" class="flex-grow-1" height="56" @click="openCreateModal" elevation="2">
+            <v-icon size="28">mdi-form-select</v-icon>
+            <v-tooltip activator="parent" location="bottom">Manual Entry</v-tooltip>
+          </v-btn>
+        </div>
       </div>
     </div>
 
@@ -573,10 +626,20 @@ const handleManualEntry = () => {
       @delete-photo="handleDeletePhoto"
     />
 
-    <AddItemsModal
-      v-model:show="showAddItemsModal"
-      @save="handleSave"
-      @manual-entry="handleManualEntry"
+    <BarcodeScannerDialog
+      v-model:show="showBarcodeScanner"
+      @found-item="handleScanItem"
+      @found-location="handleScanLocation"
+    />
+
+    <AiScanDialog
+      v-model:show="showAiScanner"
+      @save="handleAiSave"
+    />
+
+    <CsvImportModal
+      v-model:show="showCsvImport"
+      @success="store.fetchItems(1)"
     />
 
     <PhotoGallery
@@ -587,12 +650,26 @@ const handleManualEntry = () => {
     />
 
     <!-- Bulk Update Dialog -->
-    <v-dialog v-model="showBulkUpdateDialog" max-width="500">
-      <v-card>
-        <v-card-title class="pa-4 bg-primary text-white">
-          Bulk Update {{ selectedIds.size }} Items
-        </v-card-title>
-        <v-card-text class="pa-4 pt-6">
+    <v-dialog v-model="showBulkUpdateDialog" max-width="500" persistent :fullscreen="mobile">
+      <v-card class="d-flex flex-column" :style="mobile ? 'height: 100dvh;' : 'max-height: 90vh;'">
+        <v-toolbar color="primary" :density="mobile ? 'comfortable' : 'default'">
+          <v-btn icon @click="showBulkUpdateDialog = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+          <v-toolbar-title>Bulk Update {{ selectedIds.size }} Items</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-btn 
+            variant="text" 
+            @click="handleBulkUpdate" 
+            :loading="store.bulkLoading"
+            prepend-icon="mdi-check"
+            class="px-4"
+          >
+            Update
+          </v-btn>
+        </v-toolbar>
+
+        <v-card-text class="pa-4 pt-6 flex-grow-1 overflow-y-auto">
           <v-row dense>
             <v-col cols="12">
               <v-select
@@ -641,18 +718,6 @@ const handleManualEntry = () => {
             Only selected fields will be updated. Others will remain unchanged.
           </v-alert>
         </v-card-text>
-        <v-card-actions class="pa-4">
-          <v-spacer />
-          <v-btn variant="text" @click="showBulkUpdateDialog = false">Cancel</v-btn>
-          <v-btn 
-            color="primary" 
-            variant="elevated" 
-            @click="handleBulkUpdate"
-            :loading="store.bulkLoading"
-          >
-            Update Items
-          </v-btn>
-        </v-card-actions>
       </v-card>
     </v-dialog>
   </MainLayout>
