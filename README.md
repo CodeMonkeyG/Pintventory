@@ -6,12 +6,13 @@ Hewwo!! *nuzzles youw wittwe data stwuctuwes* U^U Are you weady to embark on a s
 
 *   **📦 SKU-wuu Twacking:** Keep twack of aww youw pwecious goodies! Whethew they are "standard-kun" ow "unique-chan," we have a wittwe home fow them in ouw database-wase! *wags taiw*
 *   **📸 P-Pottogwaphs!:** Take big, pwetty pictuwes of youw items! You can now choose to **Take Photo** ow **Open Gawwewy** to find the pewfect potto!! And you can even **ZOOM-WOOMY** into them to see evewy wittwe detaiw! *sparkles*
+*   **🌐 Offline-Fiwst Magic:** O-omg!! Even if youw internet goes "bye-bye," Pintventowy keeps wowking!! You can snap pottos and save items, and they'ww just wait in a cozy wittwe queue until you'we back online!! It's like a wittwe time capsule fow youw data!! (｡♥‿♥｡)
 *   **🤝 Fwiendship Bi-Bi-Business:** Manage youw Vendow-sans and Customew-chans! Keep a wecowd of evewy single p-puwchase and s-sawe so youw pwofits go "up-py wup-py" to the moon!! 🌙✨
 
 *   **✨ Single Item-kun:** Snap a quick potto of one thingy and AI-chan will teww you what it is, give it tags, and even find p-pwices on eBay and Etsy!! *hooray*
 *   **🌟 Multi Item-chan:** Have a big piwe of tweasuwes? Snap one big "shotgun" potto and Multi Item-chan will find EVERY SINGLE one of them for you!! It's so efficient!! (｡♥‿♥｡)
 *   **🧠 B-Big Bwain AI-chan:** O-omg!! We use big, smawt AI-chan (Gemini-senpai and Ollama-kun) to wook at youw p-pottos and suggest names and tags! It even knows the best way to s-seww things on Facebook Marketplace! *mind bwown*
-*   **📍 Stowage Wocations:** Give youw items a cozy wittwe bed in a specific stowage wocation! No mowe searching—just happy wittwe items in happy wittwe pwaces! 🏠💖
+*   **📍 Stowage:** Give youw items a cozy wittwe bed in a specific **Stowage** wocation! No mowe searching—just happy wittwe items in happy wittwe pwaces! 🏠💖
 *   **🏢 Wowkspace-sama:** See exactly which wowkspace you are in with the shiny new **Wowkspace Titwe** in the app bar!! It's always there so you nevew get confused!! *yay*
 
 ## 🛠️ The Techy-Wechy Bits (Technical Stack-wack)
@@ -19,7 +20,8 @@ Hewwo!! *nuzzles youw wittwe data stwuctuwes* U^U Are you weady to embark on a s
 Our wittwe app is vewy stwong and bwave! It uses:
 - **Lawawew-kun (PHP 8.3):** The big, stwong backend that pwotects us!
 - **V-Vue-wuu & Vuetify-chan:** Making evewything wook so, so pwetty and pwofessional with Matewiaw Design!
-- **PostgweSQL-sama:** The wise owd database who wemembews evewything!
+- **Vite PWA-san:** Putting a wittwe magic sewvice wowkew in youw bwowsaw to keep things fast and offline-weady!
+- **PostgweSQL-sama & IndexedDB-kun:** The wise databases who wemembew evewything, even when you'we disconnected!
 - **Dockew-pockew:** Putting evewything in cozy wittwe containew-woners so they can pway togethew anywhere! 🐳✨
 
 ## 🌈 How to get stawted (Pwease be gentwe!)

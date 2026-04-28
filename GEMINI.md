@@ -4,52 +4,47 @@ Pintventory is a containerized inventory management system built with a Laravel 
 
 ## 🚀 Key Features
 
-- **Inventory Tracking:** Manage items with SKUs, descriptions, quantities, reorder points, and storage locations.
+- **Inventory Tracking:** Manage items with SKUs, descriptions, quantities, reorder points, and storage areas.
 - **Transaction Ledger:** Complete history of purchases (from vendors) and sales (to customers) with automatic quantity adjustments.
 - **Media Management:** Support for up to 12 photos per item with drag-and-drop reordering and mobile camera support.
 - **AI-Powered Workflows:**
     - **Single Item Scan:** Rapid identification and metadata extraction for a single object.
     - **Multi Item Scan:** High-throughput "shotgun" scanning of collections to identify multiple gems from one photo.
 - **Deep Market Analysis:** Automated price estimation and listing strategy for eBay, Facebook Marketplace, and Etsy.
+- **Offline-First PWA:** Full support for mobile installation, offline asset caching, and "Snap-and-Wait" data persistence when connection is lost.
 - **Google OAuth 2.0:** Secure authentication using Google OIDC.
 - **Responsive UI:** Modern, Material Design interface built with Vuetify 3 with support for multiple "Neutral" and "High-Contrast" themes.
-- **Role-Based Access:** Support for Admin, Staff, and Read-only roles.
 
 ## 🛠 Technical Architecture
 
 - **Backend:** Laravel 11+ (PHP 8.3)
-- **Frontend:** Vue.js 3 with Vuetify 3
-- **Database:** PostgreSQL
+- **Frontend:** Vue.js 3 with Vuetify 3 + Vite PWA
+- **Database:** PostgreSQL + Browser IndexedDB (Offline Queue)
 - **Orchestration:** Docker Compose (All services run in separate containers)
 - **AI Engines:** Gemini 2.0/2.5 Flash, Ollama (Llava/Bakllava), OpenAI GPT-4o
 - **Web Server:** NGINX
-- **Storage:** Local storage with S3-compatibility readiness
 
 ## 📈 Recent Improvements & Optimizations
 
-### Backend
-- **Multi-Item Scan Endpoint:** Added `shotgunScan` to AI providers and `AiManager` for batch object detection.
-- **Extended AI Timeouts:** Increased API and cURL timeouts to 60s to support deep multi-item analysis.
-- **Database Indexing:** Optimized frequently queried columns for sales, purchases, and inventory items.
-- **Query Scopes:** Centralized filtering and metric logic (e.g., `withRevenueMetrics`, `lowStock`) in Eloquent models.
-- **Rate Limiting:** Implemented `RateLimitAiRequests` middleware to protect expensive AI endpoints.
+### Mobile & Offline
+- **PWA Integration:** Added `vite-plugin-pwa` for service worker management and app manifest support.
+- **"Snap-and-Wait" Sync:** Implemented an IndexedDB-backed sync queue that allows users to save new items and photos while offline.
+- **Auto-Synchronization:** Items queued while offline are automatically uploaded sequentially when connectivity is restored.
+- **Offline UI Indicators:** Added a global connectivity monitor and snackbar notifications to alert users when they are disconnected.
 
 ### Frontend
-- **Consolidated "Add Items" UI:** Merged Single Scan, Multi Scan, and Manual entry into a single tabbed dialog with swipe support.
-- **Intentional Scanning:** Removed automatic camera triggers on scanner tabs to ensure a more controlled, user-initiated experience.
-- **Scanner UI Standardization:** Standardized the "Add Items" workflow with consistent vertical spacing, icon sizes, and clear "Take Photo" vs "Open Gallery" actions.
-- **Global Workspace Creation:** Moved workspace creation to a global dialog to fix lifecycle issues with nested menus.
-- **Persistent Workspace Visibility:** Added the current workspace title to the main app bar for clear context across all views.
-- **Advanced Photo Gallery:** Implemented comprehensive zoom (up to 500%), drag-to-pan, and double-click toggle functionality for detailed photo inspection.
-- **Marketplace Integration:** Real-time generation of platform-specific search links (eBay, FB, Etsy) within scan results.
-- **Theme Neutralization:** Shifted AI scanning UIs to a neutral theme palette that adapts to the user's active theme.
-- **Performance Caching:** Implemented store-level caching for vendors, customers, and item details to reduce redundant API calls.
-- **Memory Management:** Automated Blob URL revocation in the photo gallery to prevent browser memory leaks.
+- **Enhanced Scanner UX:** Added direct camera support via `capture` attributes and split "Take Photo" vs "Open Gallery" inputs for better mobile control.
+- **Inventory List Interactions:** Refined row-click behavior to open edit modals while preserving checkbox selection for bulk operations.
+- **Page-Aware Multi-Select:** Fixed "Select All" logic to correctly handle paginated results and ensure accurate batch updates.
+- **Modal UX Improvements:** Added smooth scrolling, "Back to Top" navigation, and section-specific jumping for large item detail views.
+- **Data Consistency:** Implemented forced cache invalidation in the Pinia store to ensure UI reflects inventory changes immediately after transactions and scans.
+- **Terminology Simplification:** Renamed "Storage Locations" to "Storage" across the entire UI for a cleaner interface.
+- **Vite Docker Stability:** Configured HMR watcher to ignore system directories (`/proc`, `/sys`), preventing random reloads in containerized environments.
 
 ## 📂 Core Data Model
 
 - `InventoryItem`: The central entity tracking SKU, title, quantity, and status.
-- `StorageLocation`: Hierarchical or named locations for stock.
+- `Storage`: Hierarchical or named locations for stock (formerly StorageLocation).
 - `Vendor` / `Customer`: Entities for tracking procurement and sales.
 - `Purchase` / `Sale`: Transactional records linking items to vendors/customers.
 - `Photo`: Media attachments for inventory items.

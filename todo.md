@@ -2,22 +2,23 @@
 
 ## 📂 1. Data Mobility & Onboarding (CURRENT PHASE)
 - [ ] **CSV/Excel Import Tool**
-    - [ ] Backend: Create import endpoint with validation.
+    - [x] Backend: Create import endpoint with validation.
     - [ ] Frontend: Build import wizard with field mapping (Map CSV columns to InventoryItem fields).
     - [ ] Support for bulk photo association via URLs or naming conventions.
-- [ ] **Bulk Actions**
-    - [ ] Frontend: Add checkboxes to Inventory list view.
-    - [ ] Frontend: Implement "Bulk Action" menu (Change Location, Delete, Add Tags, Archive).
-    - [ ] Backend: Create batch update/delete endpoints.
+- [x] **Bulk Actions**
+    - [x] Frontend: Add checkboxes to Inventory list view.
+    - [x] Frontend: Implement "Bulk Action" menu (Change Location, Delete, Add Tags, Archive).
+    - [x] Backend: Create batch update/delete endpoints.
 
 ## 🏷️ 2. Physical-to-Digital Bridge
 - [ ] **QR/Barcode Generation**
-    - [ ] Generate unique QR codes for `StorageLocation` and `InventoryItem`.
-    - [ ] "Print Label" functionality (Thermal printer compatible CSS/Layout).
+    - [x] Generate unique QR codes for `StorageLocation` and `InventoryItem`.
+    - [x] "Print Label" functionality (Thermal printer compatible CSS/Layout).
 - [ ] **Integrated Scanner**
-    - [ ] Unified scanner that detects UPC (Barcodes) and Pintventory QR codes.
-    - [ ] Logic to handle "Existing" barcodes (lookup by UPC/EAN).
-    - [ ] Scan-to-Action: Scan a location QR to "Move Items" or "View Contents".
+    - [x] Unified scanner that detects UPC (Barcodes) and Pintventory QR codes.
+    - [x] Logic to handle "Existing" barcodes (lookup by UPC/EAN).
+    - [x] Scan-to-Action: Scan a location QR to "Move Items" or "View Contents".
+    - [x] Improved Scanner UX: Dedicated "Take Photo" vs "Open Gallery" buttons.
 
 ## 📊 3. Financial Intelligence
 - [ ] **Insights Dashboard**
@@ -43,6 +44,7 @@
     - [ ] Integration with Shippo/PirateShip for label generation from Sales.
 
 ## 📱 6. Mobile & Offline Optimization
-- [ ] **Offline First (PWA)**
-    - [ ] Service Worker for offline access.
-    - [ ] Background sync for "Snap-and-Wait" uploads in low-signal areas.
+- [x] **Offline First (PWA)**
+    - [x] Service Worker for offline access (Vite PWA).
+    - [x] Background sync for "Snap-and-Wait" uploads (IndexedDB sync queue).
+    - [x] Offline UI/UX indicators.
