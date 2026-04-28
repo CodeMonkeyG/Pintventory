@@ -8,6 +8,9 @@ export default defineConfig({
     host: true,
     port: 5173,
     allowedHosts: ['pintventory.com'],
+    watch: {
+      ignored: ['**/proc/**', '**/sys/**'],
+    },
     proxy: {
       '/api': {
         target: 'http://nginx',
