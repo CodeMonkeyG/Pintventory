@@ -16,6 +16,7 @@ const inventoryStore = useInventoryStore();
 const isAnalyzing = ref(false);
 const isSaving = ref(false);
 const cameraInput = ref(null);
+const galleryInput = ref(null);
 const capturedPhoto = ref(null);
 const foundItems = ref([]);
 const selectedIndices = ref(new Set());
@@ -34,6 +35,12 @@ const getMarketUrl = (platform, query) => {
 const triggerCamera = () => {
     if (cameraInput.value) {
         cameraInput.value.click();
+    }
+};
+
+const triggerGallery = () => {
+    if (galleryInput.value) {
+        galleryInput.value.click();
     }
 };
 
@@ -150,7 +157,8 @@ onUnmounted(() => {
 
 <template>
   <div class="pa-4">
-    <input type="file" ref="cameraInput" @change="handlePhotoCapture" accept="image/*" hidden />
+    <input type="file" ref="cameraInput" @change="handlePhotoCapture" accept="image/*" capture="environment" hidden />
+    <input type="file" ref="galleryInput" @change="handlePhotoCapture" accept="image/*" hidden />
 
     <div v-if="!capturedPhoto && !isAnalyzing" class="text-center py-12">
         <v-icon size="80" color="primary" class="mb-6" opacity="0.3">mdi-ImageFilterCenterFocusStrongOutline</v-icon>
@@ -161,7 +169,7 @@ onUnmounted(() => {
             <v-btn color="primary" size="x-large" @click="triggerCamera" prepend-icon="mdi-camera" elevation="4">
                 Take Photo
             </v-btn>
-            <v-btn variant="tonal" color="primary" size="large" @click="triggerCamera" prepend-icon="mdi-image-multiple">
+            <v-btn variant="tonal" color="primary" size="large" @click="triggerGallery" prepend-icon="mdi-image-multiple">
                 Open Gallery
             </v-btn>
         </div>
