@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed, watch } from 'vue';
+import { onMounted, ref, computed, watch, inject } from 'vue';
 import { useInventoryStore } from '../stores/inventory';
 import { useLocationStore } from '../stores/locations';
 import MainLayout from '../layouts/MainLayout.vue';
@@ -12,7 +12,9 @@ import api from '../axios';
 import { debounce } from '../utils/helpers';
 import { useDisplay } from 'vuetify';
 import { useRouter, useRoute } from 'vue-router';
+import { queueOfflineItem, getPendingQueue, removeFromQueue } from '../utils/offlineStore';
 
+const isOnline = inject('isOnline');
 const store = useInventoryStore();
 const locationStore = useLocationStore();
 const router = useRouter();
@@ -101,10 +103,47 @@ const checkRouteForModal = async () => {
   }
 };
 
+const isSavingQueue = ref(false);
+
+const syncOfflineQueue = async () => {
+    if (isSavingQueue.value) return;
+    const queue = await getPendingQueue();
+    if (queue.length === 0) return;
+
+    isSavingQueue.value = true;
+    try {
+        for (const entry of queue) {
+            if (entry.type === 'CREATE_ITEM') {
+                const item = await store.createItem(entry.payload);
+                if (entry.photos && entry.photos.length > 0) {
+                    for (const photo of entry.photos) {
+                        await store.uploadPhoto(item.id, photo);
+                    }
+                }
+                await removeFromQueue(entry.id);
+            }
+        }
+        await store.fetchItems(store.pagination.current_page);
+    } catch (error) {
+        console.error('Failed to sync offline queue:', error);
+    } finally {
+        isSavingQueue.value = false;
+    }
+};
+
+watch(isOnline, (online) => {
+    if (online) {
+        syncOfflineQueue();
+    }
+});
+
 onMounted(async () => {
   await store.fetchItems();
   locationStore.fetchItems();
   checkRouteForModal();
+  if (isOnline.value) {
+      syncOfflineQueue();
+  }
 });
 
 // Watch route changes to open/close modal
@@ -185,8 +224,18 @@ const handleSave = async (itemData, newPhotos = []) => {
     let itemId;
     if (selectedItem.value) {
       itemId = selectedItem.value.id;
+      if (!isOnline.value) {
+          alert('You are offline. Editing existing items is not supported offline yet.');
+          return;
+      }
       await store.updateItem(itemId, itemData);
     } else {
+      if (!isOnline.value) {
+          await queueOfflineItem(itemData, newPhotos);
+          alert('Saved locally. Item will be uploaded when you are back online.');
+          showModal.value = false;
+          return;
+      }
       const newItem = await store.createItem(itemData);
       itemId = newItem.id;
     }
@@ -262,6 +311,12 @@ const handleScanLocation = (locationId) => {
 
 const handleAiSave = async (payload, photos) => {
   try {
+    if (!isOnline.value) {
+        await queueOfflineItem(payload, photos);
+        alert('Saved locally. AI identified item will be uploaded when you are back online.');
+        showAiScanner.value = false;
+        return;
+    }
     const item = await store.createItem(payload);
     if (photos && photos.length > 0) {
       for (const photo of photos) {

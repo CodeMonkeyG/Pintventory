@@ -1,8 +1,9 @@
 <script setup>
-import { ref, watch, onUnmounted } from 'vue';
+import { ref, watch, onUnmounted, inject } from 'vue';
 import api from '../axios';
 import { useDisplay } from 'vuetify';
 import { useInventoryStore } from '../stores/inventory';
+import { queueOfflineItem } from '../utils/offlineStore';
 
 const props = defineProps({
   active: Boolean
@@ -10,6 +11,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close']);
 
+const isOnline = inject('isOnline');
 const { mobile } = useDisplay();
 const inventoryStore = useInventoryStore();
 
@@ -127,12 +129,20 @@ const saveSelected = async () => {
                 tags: Array.isArray(item.tags) ? item.tags : (item.tags ? item.tags.split(',').map(t => t.trim()) : [])
             };
 
-            const newItem = await inventoryStore.createItem(payload);
-            await inventoryStore.uploadPhoto(newItem.id, capturedPhoto.value.file);
+            if (!isOnline.value) {
+                await queueOfflineItem(payload, [capturedPhoto.value.file]);
+            } else {
+                const newItem = await inventoryStore.createItem(payload);
+                await inventoryStore.uploadPhoto(newItem.id, capturedPhoto.value.file);
+            }
             savedCount++;
         }
         
-        alert(`Successfully saved ${savedCount} items to inventory.`);
+        if (!isOnline.value) {
+            alert(`Queued ${savedCount} items for upload once back online.`);
+        } else {
+            alert(`Successfully saved ${savedCount} items to inventory.`);
+        }
         emit('close');
         reset();
     } catch (error) {
