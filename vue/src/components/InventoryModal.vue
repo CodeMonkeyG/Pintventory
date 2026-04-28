@@ -329,6 +329,10 @@ const handleAiAutoFill = async () => {
             formData.value.source_links = data.source_links;
         }
 
+        if (formData.value.evaluation) {
+            scrollToSection('ai-evaluation-section');
+        }
+
         alert('Auto-fill complete!');
     } catch (error) {
         console.error(error);
@@ -371,7 +375,7 @@ const handleMarketAnalysis = async () => {
         });
 
         formData.value.market_analysis = response.data;
-        showFullMarketAnalysis.value = true;
+        scrollToSection('market-analysis-section');
         
         alert('Market analysis complete!');
     } catch (error) {
@@ -415,7 +419,7 @@ const handleFacebookAnalysis = async () => {
         });
 
         formData.value.facebook_analysis = response.data;
-        showFullFacebookAnalysis.value = true;
+        scrollToSection('facebook-analysis-section');
         
         alert('Facebook analysis complete!');
     } catch (error) {
@@ -459,7 +463,7 @@ const handleEtsyAnalysis = async () => {
         });
 
         formData.value.etsy_analysis = response.data;
-        showFullEtsyAnalysis.value = true;
+        scrollToSection('etsy-analysis-section');
         
         alert('Etsy analysis complete!');
     } catch (error) {
@@ -595,6 +599,18 @@ const closeModal = () => {
   emit('close');
   emit('update:show', false);
 };
+
+const scrollToTop = () => {
+  const el = document.getElementById('modal-scroll-container');
+  if (el) el.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+const scrollToSection = (id) => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+};
 </script>
 
 <template>
@@ -642,272 +658,10 @@ const closeModal = () => {
         height="2"
       ></v-progress-linear>
 
-      <v-card-text :class="mobile ? 'pa-4' : 'pa-6'" class="flex-grow-1 overflow-y-auto">
+      <v-card-text id="modal-scroll-container" :class="mobile ? 'pa-4' : 'pa-6'" class="flex-grow-1 overflow-y-auto">
         <v-window v-model="activeTab">
           <!-- Details & Photos Tab -->
           <v-window-item value="details">
-            <div class="mb-0">
-              <!-- Expandable AI Evaluation -->
-              <v-expand-transition>
-                <v-card
-                  v-if="formData.evaluation"
-                  variant="tonal"
-                  color="success"
-                  class="mt-0 mb-6"
-                >
-                  <v-card-text class="pa-3">
-                    <div class="d-flex align-center mb-1 cursor-pointer" @click="showFullEvaluation = !showFullEvaluation">
-                      <v-icon size="16" class="mr-2">mdi-information-outline</v-icon>
-                      <span class="text-caption font-weight-bold uppercase">AI Evaluation</span>
-                      <v-spacer />
-                      <v-icon :icon="showFullEvaluation ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="16" />
-                    </div>
-                    <div :class="showFullEvaluation ? '' : 'text-truncate-2'" class="text-body-2 white-space-pre-wrap">
-                      {{ formData.evaluation }}
-                    </div>
-
-                    <div v-if="!showFullEvaluation" class="text-center text-caption mt-1 font-italic opacity-70 cursor-pointer" @click="showFullEvaluation = !showFullEvaluation">
-                      Click to expand
-                    </div>
-                  </v-card-text>
-                </v-card>
-              </v-expand-transition>
-
-              <!-- Expandable Market Analysis -->
-              <v-expand-transition>
-                <v-card
-                  v-if="formData.market_analysis"
-                  variant="outlined"
-                  class="mt-3 mb-6 bg-surface"
-                  style="border-color: rgba(var(--v-border-color), 0.25) !important;"
-                >
-                  <v-card-text class="pa-3">
-                    <!-- Legacy eBay Analysis -->
-                    <template v-if="formData.market_analysis.listing_price_range || formData.market_analysis.sold_price_range">
-                      <div class="d-flex align-center mb-3 cursor-pointer" @click="showFullMarketAnalysis = !showFullMarketAnalysis">
-                        <v-icon size="18" class="mr-2" color="primary">mdi-chart-line</v-icon>
-                        <span class="text-caption font-weight-bold uppercase text-grey-darken-1">eBay Market Analysis</span>
-                        <v-spacer />
-                        <v-icon :icon="showFullMarketAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="16" color="grey" />
-                      </div>
-                      
-                      <div class="d-flex flex-wrap gap-2 mb-2 cursor-pointer" @click="showFullMarketAnalysis = !showFullMarketAnalysis">
-                        <v-chip v-if="formData.market_analysis.listing_price_range" size="x-small" variant="flat" color="secondary" class="text-caption">List: {{ formData.market_analysis.listing_price_range }}</v-chip>
-                        <v-chip v-if="formData.market_analysis.sold_price_range" size="x-small" variant="flat" color="success" class="text-caption">Sold: {{ formData.market_analysis.sold_price_range }}</v-chip>
-                        <v-chip v-if="formData.market_analysis.sell_through_rate" size="x-small" variant="flat" color="primary" class="text-caption">STR: {{ formData.market_analysis.sell_through_rate }}</v-chip>
-                        <v-btn 
-                          v-if="formData.market_analysis.market_url"
-                          :href="formData.market_analysis.market_url" 
-                          target="_blank" 
-                          variant="text" 
-                          size="x-small" 
-                          color="primary"
-                          prepend-icon="mdi-launch"
-                          @click.stop
-                          class="ml-auto"
-                        >
-                          View Live
-                        </v-btn>
-                      </div>
-
-                      <div v-if="showFullMarketAnalysis">
-                        <div v-if="formData.market_analysis.suggested_ebay_title" class="text-caption font-weight-bold mt-2">Suggested Title:</div>
-                        <div v-if="formData.market_analysis.suggested_ebay_title" class="text-body-2 mb-2">{{ formData.market_analysis.suggested_ebay_title }}</div>
-                        
-                        <div v-if="formData.market_analysis.flipping_advice" class="text-caption font-weight-bold mt-2">Flipping Advice:</div>
-                        <div v-if="formData.market_analysis.flipping_advice" class="text-body-2 mb-2 white-space-pre-wrap">{{ formData.market_analysis.flipping_advice }}</div>
-
-                        <div class="mt-4 p-3 bg-grey-darken-4 rounded-lg position-relative" v-if="formData.market_analysis.listing_copy">
-                          <div class="text-caption font-weight-bold mb-1 d-flex align-center">
-                            <v-icon size="14" class="mr-1">mdi-content-copy</v-icon>
-                            Listing Template
-                            <v-spacer />
-                            <v-btn icon="mdi-content-copy" variant="text" size="x-small" @click.stop="copyToClipboard(formData.market_analysis.listing_copy)" title="Copy to clipboard" />
-                          </div>
-                          <div class="text-body-2 white-space-pre-wrap font-italic text-grey-lighten-1">
-                            {{ formData.market_analysis.listing_copy }}
-                          </div>
-                        </div>
-                      </div>
-                    </template>
-
-                    <!-- New Multi-Market Analysis (eBay, FB, OfferUp, Etsy) -->
-                    <template v-else-if="formData.market_analysis.ebay || formData.market_analysis.facebook">
-                      <div class="d-flex align-center mb-3">
-                        <v-icon size="18" class="mr-2" color="grey-darken-1">mdi-chart-line</v-icon>
-                        <span class="text-caption font-weight-bold uppercase text-grey-darken-1">Multi-Market Evaluation</span>
-                        <v-spacer />
-                        <v-btn
-                          variant="text"
-                          size="x-small"
-                          color="primary"
-                          :append-icon="showFullMarketAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-                          @click="showFullMarketAnalysis = !showFullMarketAnalysis"
-                        >
-                          Details
-                        </v-btn>
-                      </div>
-
-                      <v-row dense>
-                        <v-col v-for="(data, platform) in formData.market_analysis" :key="platform" cols="6" sm="3">
-                          <v-card variant="outlined" class="pa-2 fill-height bg-surface" style="border-color: rgba(var(--v-border-color), 0.15) !important;">
-                            <div class="d-flex justify-space-between align-center mb-1">
-                                <span class="text-caption font-weight-bold text-grey text-uppercase">{{ platform }}</span>
-                                <v-btn
-                                    icon="mdi-open-in-new"
-                                    size="x-small"
-                                    variant="text"
-                                    color="primary"
-                                    :href="getMarketUrl(platform, data.query)"
-                                    target="_blank"
-                                    @click.stop
-                                    density="compact"
-                                ></v-btn>
-                            </div>
-                            <div class="text-body-2 font-weight-black">{{ data.range }}</div>
-                          </v-card>
-                        </v-col>
-                      </v-row>
-                    </template>
-                  </v-card-text>
-                </v-card>
-              </v-expand-transition>
-
-              <!-- Expandable Facebook Analysis -->
-              <v-expand-transition>
-                <v-card
-                  v-if="formData.facebook_analysis"
-                  variant="tonal"
-                  color="blue-darken-2"
-                  class="mt-3 mb-6"
-                >
-                  <v-card-text class="pa-3">
-                    <div class="d-flex align-center mb-1 cursor-pointer" @click="showFullFacebookAnalysis = !showFullFacebookAnalysis">
-                      <v-icon size="16" class="mr-2">mdi-facebook</v-icon>
-                      <span class="text-caption font-weight-bold uppercase">FB Marketplace Analysis</span>
-                      <v-spacer />
-                      <v-icon :icon="showFullFacebookAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="16" />
-                    </div>
-                    
-                    <div class="d-flex flex-wrap gap-2 mb-2 cursor-pointer" @click="showFullFacebookAnalysis = !showFullFacebookAnalysis">
-                      <v-chip size="x-small" color="blue-darken-3">Local: {{ formData.facebook_analysis.local_price_estimate }}</v-chip>
-                      <v-chip size="x-small" color="indigo">Target: {{ formData.facebook_analysis.target_audience }}</v-chip>
-                      <v-btn 
-                        v-if="formData.facebook_analysis.market_url"
-                        :href="formData.facebook_analysis.market_url" 
-                        target="_blank" 
-                        variant="text" 
-                        size="x-small" 
-                        color="white"
-                        prepend-icon="mdi-launch"
-                        @click.stop
-                        class="ml-auto"
-                      >
-                        Search Marketplace
-                      </v-btn>
-                    </div>
-
-                    <div v-if="showFullFacebookAnalysis">
-                      <div class="text-caption font-weight-bold mt-2">Suggested Groups:</div>
-                      <div class="d-flex flex-wrap gap-1 mb-2">
-                        <v-chip v-for="group in formData.facebook_analysis.suggested_groups" :key="group" size="x-small" variant="outlined">
-                          {{ group }}
-                        </v-chip>
-                      </div>
-                      
-                      <div class="text-caption font-weight-bold mt-2">Safety & Scams:</div>
-                      <div class="text-body-2 mb-2">{{ formData.facebook_analysis.safety_tips }}</div>
-
-                      <div class="text-caption font-weight-bold mt-2">Listing Strategy:</div>
-                      <div class="text-body-2 mb-2 white-space-pre-wrap">{{ formData.facebook_analysis.listing_strategy }}</div>
-
-                      <div class="mt-4 p-3 bg-grey-darken-4 rounded-lg position-relative" v-if="formData.facebook_analysis.listing_copy">
-                        <div class="text-caption font-weight-bold mb-1 d-flex align-center">
-                          <v-icon size="14" class="mr-1">mdi-content-copy</v-icon>
-                          FB Listing Copy
-                          <v-spacer />
-                          <v-btn icon="mdi-content-copy" variant="text" size="x-small" @click.stop="copyToClipboard(formData.facebook_analysis.listing_copy)" title="Copy to clipboard" />
-                        </div>
-                        <div class="text-body-2 white-space-pre-wrap font-italic text-grey-lighten-1">
-                          {{ formData.facebook_analysis.listing_copy }}
-                        </div>
-                      </div>
-                    </div>
-                    <div v-else class="text-center text-caption mt-1 font-italic opacity-70">
-                      Click to expand strategy
-                    </div>
-                  </v-card-text>
-                </v-card>
-              </v-expand-transition>
-
-              <!-- Expandable Etsy Analysis -->
-              <v-expand-transition>
-                <v-card
-                  v-if="formData.etsy_analysis"
-                  variant="tonal"
-                  color="orange-darken-3"
-                  class="mt-3 mb-6"
-                >
-                  <v-card-text class="pa-3">
-                    <div class="d-flex align-center mb-1 cursor-pointer" @click="showFullEtsyAnalysis = !showFullEtsyAnalysis">
-                      <v-icon size="16" class="mr-2">mdi-storefront-outline</v-icon>
-                      <span class="text-caption font-weight-bold uppercase">Etsy Market Analysis</span>
-                      <v-spacer />
-                      <v-icon :icon="showFullEtsyAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="16" />
-                    </div>
-                    
-                    <div class="d-flex flex-wrap gap-2 mb-2 cursor-pointer" @click="showFullEtsyAnalysis = !showFullEtsyAnalysis">
-                      <v-chip size="x-small" color="orange-darken-4">Etsy: {{ formData.etsy_analysis.etsy_price_estimate }}</v-chip>
-                      <v-chip size="x-small" color="deep-orange-darken-1">Target: {{ formData.etsy_analysis.target_persona }}</v-chip>
-                      <v-btn 
-                        v-if="formData.etsy_analysis.market_url"
-                        :href="formData.etsy_analysis.market_url" 
-                        target="_blank" 
-                        variant="text" 
-                        size="x-small" 
-                        color="white"
-                        prepend-icon="mdi-launch"
-                        @click.stop
-                        class="ml-auto"
-                      >
-                        Search Etsy
-                      </v-btn>
-                    </div>
-
-                    <div v-if="showFullEtsyAnalysis">
-                      <div class="text-caption font-weight-bold mt-2">13 Etsy Tags:</div>
-                      <div class="d-flex flex-wrap gap-1 mb-2">
-                        <v-chip v-for="tag in formData.etsy_analysis.seo_tags" :key="tag" size="x-small" variant="outlined">
-                          {{ tag }}
-                        </v-chip>
-                      </div>
-                      
-                      <div class="text-caption font-weight-bold mt-2">Shipping Strategy:</div>
-                      <div class="text-body-2 mb-2">{{ formData.etsy_analysis.shipping_advice }}</div>
-
-                      <div class="text-caption font-weight-bold mt-2">Curation & Aesthetic:</div>
-                      <div class="text-body-2 mb-2 white-space-pre-wrap">{{ formData.etsy_analysis.curation_strategy }}</div>
-
-                      <div class="mt-4 p-3 bg-grey-darken-4 rounded-lg position-relative" v-if="formData.etsy_analysis.listing_copy">
-                        <div class="text-caption font-weight-bold mb-1 d-flex align-center">
-                          <v-icon size="14" class="mr-1">mdi-content-copy</v-icon>
-                          Etsy Listing Copy
-                          <v-spacer />
-                          <v-btn icon="mdi-content-copy" variant="text" size="x-small" @click.stop="copyToClipboard(formData.etsy_analysis.listing_copy)" title="Copy to clipboard" />
-                        </div>
-                        <div class="text-body-2 white-space-pre-wrap font-italic text-grey-lighten-1">
-                          {{ formData.etsy_analysis.listing_copy }}
-                        </div>
-                      </div>
-                    </div>
-                    <div v-else class="text-center text-caption mt-1 font-italic opacity-70">
-                      Click to expand strategy
-                    </div>
-                  </v-card-text>
-                </v-card>
-              </v-expand-transition>
-            </div>
-
             <div class="mb-6">
               <div class="d-flex justify-space-between align-center mb-3">
                 <h3 class="text-subtitle-1 font-weight-bold">Photos</h3>
@@ -938,51 +692,51 @@ const closeModal = () => {
                     </template>
                     <v-list density="comfortable" style="min-width: 200px;">
                       <v-list-item
-                        @click="handleAiAutoFill"
+                        @click="formData.evaluation ? scrollToSection('ai-evaluation-section') : handleAiAutoFill()"
                         :disabled="isAnalyzing"
                         density="comfortable"
                       >
                         <template v-slot:prepend>
                           <v-progress-circular v-if="isAnalyzing" indeterminate size="20" width="2" color="success" class="mr-3" />
-                          <v-icon v-else color="success">mdi-auto-fix</v-icon>
+                          <v-icon v-else color="success">{{ formData.evaluation ? 'mdi-eye-outline' : 'mdi-auto-fix' }}</v-icon>
                         </template>
-                        <v-list-item-title>Quick AI Analysis & Auto-Fill</v-list-item-title>
+                        <v-list-item-title>{{ formData.evaluation ? 'View AI Evaluation' : 'Quick AI Analysis & Auto-Fill' }}</v-list-item-title>
                       </v-list-item>
 
                       <v-list-item
-                        @click="handleMarketAnalysis"
+                        @click="formData.market_analysis ? scrollToSection('market-analysis-section') : handleMarketAnalysis()"
                         :disabled="isMarketAnalyzing"
                         density="comfortable"
                       >
                         <template v-slot:prepend>
                           <v-progress-circular v-if="isMarketAnalyzing" indeterminate size="20" width="2" color="amber-darken-3" class="mr-3" />
-                          <v-icon v-else color="amber-darken-3">mdi-shopping-outline</v-icon>
+                          <v-icon v-else color="amber-darken-3">{{ formData.market_analysis ? 'mdi-eye-outline' : 'mdi-shopping-outline' }}</v-icon>
                         </template>
-                        <v-list-item-title>eBay Market Check</v-list-item-title>
+                        <v-list-item-title>{{ formData.market_analysis ? 'View Market Analysis' : 'eBay Market Check' }}</v-list-item-title>
                       </v-list-item>
 
                       <v-list-item
-                        @click="handleFacebookAnalysis"
+                        @click="formData.facebook_analysis ? scrollToSection('facebook-analysis-section') : handleFacebookAnalysis()"
                         :disabled="isFacebookAnalyzing"
                         density="comfortable"
                       >
                         <template v-slot:prepend>
                           <v-progress-circular v-if="isFacebookAnalyzing" indeterminate size="20" width="2" color="blue-darken-2" class="mr-3" />
-                          <v-icon v-else color="blue-darken-2">mdi-facebook</v-icon>
+                          <v-icon v-else color="blue-darken-2">{{ formData.facebook_analysis ? 'mdi-eye-outline' : 'mdi-facebook' }}</v-icon>
                         </template>
-                        <v-list-item-title>FB Market Check</v-list-item-title>
+                        <v-list-item-title>{{ formData.facebook_analysis ? 'View FB Analysis' : 'FB Market Check' }}</v-list-item-title>
                       </v-list-item>
 
                       <v-list-item
-                        @click="handleEtsyAnalysis"
+                        @click="formData.etsy_analysis ? scrollToSection('etsy-analysis-section') : handleEtsyAnalysis()"
                         :disabled="isEtsyAnalyzing"
                         density="comfortable"
                       >
                         <template v-slot:prepend>
                           <v-progress-circular v-if="isEtsyAnalyzing" indeterminate size="20" width="2" color="orange-darken-3" class="mr-3" />
-                          <v-icon v-else color="orange-darken-3">mdi-storefront-outline</v-icon>
+                          <v-icon v-else color="orange-darken-3">{{ formData.etsy_analysis ? 'mdi-eye-outline' : 'mdi-storefront-outline' }}</v-icon>
                         </template>
-                        <v-list-item-title>Etsy Market Check</v-list-item-title>
+                        <v-list-item-title>{{ formData.etsy_analysis ? 'View Etsy Analysis' : 'Etsy Market Check' }}</v-list-item-title>
                       </v-list-item>
                     </v-list>
                   </v-menu>
@@ -1168,13 +922,13 @@ const closeModal = () => {
                 <div class="d-flex align-center gap-2">
                   <v-select
                     v-model="formData.storage_location_id"
-                    label="Storage Location"
+                    label="Storage"
                     :items="locationStore.items"
                     item-title="name"
                     item-value="id"
                     variant="outlined"
                     density="compact"
-                    prepend-inner-icon="mdi-map-marker"
+                    prepend-inner-icon="mdi-package-variant"
                     clearable
                     class="flex-grow-1"
                   />
@@ -1183,7 +937,7 @@ const closeModal = () => {
                     variant="text"
                     size="small"
                     to="/storage-locations"
-                    title="Manage Locations"
+                    title="Manage Storage"
                     class="mb-5"
                   />
                 </div>
@@ -1259,6 +1013,274 @@ const closeModal = () => {
                 </v-row>
               </v-col>
             </v-row>
+
+            <v-divider class="my-6"></v-divider>
+
+            <div class="analysis-sections">
+              <!-- Expandable AI Evaluation -->
+              <v-expand-transition>
+                <v-card
+                  id="ai-evaluation-section"
+                  v-if="formData.evaluation"
+                  variant="outlined"
+                  class="mt-3 mb-6 bg-surface"
+                  style="border-color: rgba(var(--v-border-color), 0.25) !important;"
+                >
+                  <v-card-text class="pa-3">
+                    <div class="d-flex align-center mb-1 cursor-pointer" @click="showFullEvaluation = !showFullEvaluation">
+                      <v-icon size="18" class="mr-2" color="success">mdi-information-outline</v-icon>
+                      <span class="text-caption font-weight-bold uppercase text-grey-darken-1">AI Evaluation</span>
+                      <v-spacer />
+                      <v-icon :icon="showFullEvaluation ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="16" color="grey" />
+                    </div>
+                    <div :class="showFullEvaluation ? '' : 'text-truncate-2'" class="text-body-2 white-space-pre-wrap">
+                      {{ formData.evaluation }}
+                    </div>
+
+                    <div v-if="!showFullEvaluation" class="text-center text-caption mt-1 font-italic opacity-70 cursor-pointer" @click="showFullEvaluation = !showFullEvaluation">
+                      Click to expand
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-expand-transition>
+
+              <!-- Expandable Market Analysis -->
+              <v-expand-transition>
+                <v-card
+                  id="market-analysis-section"
+                  v-if="formData.market_analysis"
+                  variant="outlined"
+                  class="mt-3 mb-6 bg-surface"
+                  style="border-color: rgba(var(--v-border-color), 0.25) !important;"
+                >
+                  <v-card-text class="pa-3">
+                    <!-- Legacy eBay Analysis -->
+                    <template v-if="formData.market_analysis.listing_price_range || formData.market_analysis.sold_price_range">
+                      <div class="d-flex align-center mb-3 cursor-pointer" @click="showFullMarketAnalysis = !showFullMarketAnalysis">
+                        <v-icon size="18" class="mr-2" color="primary">mdi-chart-line</v-icon>
+                        <span class="text-caption font-weight-bold uppercase text-grey-darken-1">eBay Market Analysis</span>
+                        <v-spacer />
+                        <v-icon :icon="showFullMarketAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="16" color="grey" />
+                      </div>
+                      
+                      <div class="d-flex flex-wrap gap-2 mb-2 cursor-pointer" @click="showFullMarketAnalysis = !showFullMarketAnalysis">
+                        <v-chip v-if="formData.market_analysis.listing_price_range" size="x-small" variant="flat" color="secondary" class="text-caption">List: {{ formData.market_analysis.listing_price_range }}</v-chip>
+                        <v-chip v-if="formData.market_analysis.sold_price_range" size="x-small" variant="flat" color="success" class="text-caption">Sold: {{ formData.market_analysis.sold_price_range }}</v-chip>
+                        <v-chip v-if="formData.market_analysis.sell_through_rate" size="x-small" variant="flat" color="primary" class="text-caption">STR: {{ formData.market_analysis.sell_through_rate }}</v-chip>
+                        <v-btn 
+                          v-if="formData.market_analysis.market_url"
+                          :href="formData.market_analysis.market_url" 
+                          target="_blank" 
+                          variant="text" 
+                          size="x-small" 
+                          color="primary"
+                          prepend-icon="mdi-launch"
+                          @click.stop
+                          class="ml-auto"
+                        >
+                          View Live
+                        </v-btn>
+                      </div>
+
+                      <div v-if="showFullMarketAnalysis">
+                        <div v-if="formData.market_analysis.suggested_ebay_title" class="text-caption font-weight-bold mt-2">Suggested Title:</div>
+                        <div v-if="formData.market_analysis.suggested_ebay_title" class="text-body-2 mb-2">{{ formData.market_analysis.suggested_ebay_title }}</div>
+                        
+                        <div v-if="formData.market_analysis.flipping_advice" class="text-caption font-weight-bold mt-2">Flipping Advice:</div>
+                        <div v-if="formData.market_analysis.flipping_advice" class="text-body-2 mb-2 white-space-pre-wrap">{{ formData.market_analysis.flipping_advice }}</div>
+
+                        <div class="mt-4 p-3 bg-grey-darken-4 rounded-lg position-relative" v-if="formData.market_analysis.listing_copy">
+                          <div class="text-caption font-weight-bold mb-1 d-flex align-center">
+                            <v-icon size="14" class="mr-1">mdi-content-copy</v-icon>
+                            Listing Template
+                            <v-spacer />
+                            <v-btn icon="mdi-content-copy" variant="text" size="x-small" @click.stop="copyToClipboard(formData.market_analysis.listing_copy)" title="Copy to clipboard" />
+                          </div>
+                          <div class="text-body-2 white-space-pre-wrap font-italic text-grey-lighten-1">
+                            {{ formData.market_analysis.listing_copy }}
+                          </div>
+                        </div>
+                      </div>
+                    </template>
+
+                    <!-- New Multi-Market Analysis (eBay, FB, OfferUp, Etsy) -->
+                    <template v-else-if="formData.market_analysis.ebay || formData.market_analysis.facebook">
+                      <div class="d-flex align-center mb-3">
+                        <v-icon size="18" class="mr-2" color="grey-darken-1">mdi-chart-line</v-icon>
+                        <span class="text-caption font-weight-bold uppercase text-grey-darken-1">Multi-Market Evaluation</span>
+                        <v-spacer />
+                        <v-btn
+                          variant="text"
+                          size="x-small"
+                          color="primary"
+                          :append-icon="showFullMarketAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                          @click="showFullMarketAnalysis = !showFullMarketAnalysis"
+                        >
+                          Details
+                        </v-btn>
+                      </div>
+
+                      <v-row dense>
+                        <v-col v-for="(data, platform) in formData.market_analysis" :key="platform" cols="6" sm="3">
+                          <v-card variant="outlined" class="pa-2 fill-height bg-surface" style="border-color: rgba(var(--v-border-color), 0.15) !important;">
+                            <div class="d-flex justify-space-between align-center mb-1">
+                                <span class="text-caption font-weight-bold text-grey text-uppercase">{{ platform }}</span>
+                                <v-btn
+                                    icon="mdi-open-in-new"
+                                    size="x-small"
+                                    variant="text"
+                                    color="primary"
+                                    :href="getMarketUrl(platform, data.query)"
+                                    target="_blank"
+                                    @click.stop
+                                    density="compact"
+                                ></v-btn>
+                            </div>
+                            <div class="text-body-2 font-weight-black">{{ data.range }}</div>
+                          </v-card>
+                        </v-col>
+                      </v-row>
+                    </template>
+                  </v-card-text>
+                </v-card>
+              </v-expand-transition>
+
+              <!-- Expandable Facebook Analysis -->
+              <v-expand-transition>
+                <v-card
+                  id="facebook-analysis-section"
+                  v-if="formData.facebook_analysis"
+                  variant="outlined"
+                  class="mt-3 mb-6 bg-surface"
+                  style="border-color: rgba(var(--v-border-color), 0.25) !important;"
+                >
+                  <v-card-text class="pa-3">
+                    <div class="d-flex align-center mb-1 cursor-pointer" @click="showFullFacebookAnalysis = !showFullFacebookAnalysis">
+                      <v-icon size="18" class="mr-2" color="blue-darken-2">mdi-facebook</v-icon>
+                      <span class="text-caption font-weight-bold uppercase text-grey-darken-1">FB Marketplace Analysis</span>
+                      <v-spacer />
+                      <v-icon :icon="showFullFacebookAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="16" color="grey" />
+                    </div>
+                    
+                    <div class="d-flex flex-wrap gap-2 mb-2 cursor-pointer" @click="showFullFacebookAnalysis = !showFullFacebookAnalysis">
+                      <v-chip size="x-small" color="blue-darken-3" variant="flat">Local: {{ formData.facebook_analysis.local_price_estimate }}</v-chip>
+                      <v-chip size="x-small" color="indigo" variant="flat">Target: {{ formData.facebook_analysis.target_audience }}</v-chip>
+                      <v-btn 
+                        v-if="formData.facebook_analysis.market_url"
+                        :href="formData.facebook_analysis.market_url" 
+                        target="_blank" 
+                        variant="text" 
+                        size="x-small" 
+                        color="primary"
+                        prepend-icon="mdi-launch"
+                        @click.stop
+                        class="ml-auto"
+                      >
+                        Search Marketplace
+                      </v-btn>
+                    </div>
+
+                    <div v-if="showFullFacebookAnalysis">
+                      <div class="text-caption font-weight-bold mt-2">Suggested Groups:</div>
+                      <div class="d-flex flex-wrap gap-1 mb-2">
+                        <v-chip v-for="group in formData.facebook_analysis.suggested_groups" :key="group" size="x-small" variant="outlined">
+                          {{ group }}
+                        </v-chip>
+                      </div>
+                      
+                      <div class="text-caption font-weight-bold mt-2">Safety & Scams:</div>
+                      <div class="text-body-2 mb-2">{{ formData.facebook_analysis.safety_tips }}</div>
+
+                      <div class="text-caption font-weight-bold mt-2">Listing Strategy:</div>
+                      <div class="text-body-2 mb-2 white-space-pre-wrap">{{ formData.facebook_analysis.listing_strategy }}</div>
+
+                      <div class="mt-4 p-3 bg-grey-darken-4 rounded-lg position-relative" v-if="formData.facebook_analysis.listing_copy">
+                        <div class="text-caption font-weight-bold mb-1 d-flex align-center">
+                          <v-icon size="14" class="mr-1">mdi-content-copy</v-icon>
+                          FB Listing Copy
+                          <v-spacer />
+                          <v-btn icon="mdi-content-copy" variant="text" size="x-small" @click.stop="copyToClipboard(formData.facebook_analysis.listing_copy)" title="Copy to clipboard" />
+                        </div>
+                        <div class="text-body-2 white-space-pre-wrap font-italic text-grey-lighten-1">
+                          {{ formData.facebook_analysis.listing_copy }}
+                        </div>
+                      </div>
+                    </div>
+                    <div v-else class="text-center text-caption mt-1 font-italic opacity-70 cursor-pointer" @click="showFullFacebookAnalysis = !showFullFacebookAnalysis">
+                      Click to expand strategy
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-expand-transition>
+
+              <!-- Expandable Etsy Analysis -->
+              <v-expand-transition>
+                <v-card
+                  id="etsy-analysis-section"
+                  v-if="formData.etsy_analysis"
+                  variant="outlined"
+                  class="mt-3 mb-6 bg-surface"
+                  style="border-color: rgba(var(--v-border-color), 0.25) !important;"
+                >
+                  <v-card-text class="pa-3">
+                    <div class="d-flex align-center mb-1 cursor-pointer" @click="showFullEtsyAnalysis = !showFullEtsyAnalysis">
+                      <v-icon size="18" class="mr-2" color="orange-darken-3">mdi-storefront-outline</v-icon>
+                      <span class="text-caption font-weight-bold uppercase text-grey-darken-1">Etsy Market Analysis</span>
+                      <v-spacer />
+                      <v-icon :icon="showFullEtsyAnalysis ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="16" color="grey" />
+                    </div>
+                    
+                    <div class="d-flex flex-wrap gap-2 mb-2 cursor-pointer" @click="showFullEtsyAnalysis = !showFullEtsyAnalysis">
+                      <v-chip size="x-small" color="orange-darken-4" variant="flat">Etsy: {{ formData.etsy_analysis.etsy_price_estimate }}</v-chip>
+                      <v-chip size="x-small" color="deep-orange-darken-1" variant="flat">Target: {{ formData.etsy_analysis.target_persona }}</v-chip>
+                      <v-btn 
+                        v-if="formData.etsy_analysis.market_url"
+                        :href="formData.etsy_analysis.market_url" 
+                        target="_blank" 
+                        variant="text" 
+                        size="x-small" 
+                        color="primary"
+                        prepend-icon="mdi-launch"
+                        @click.stop
+                        class="ml-auto"
+                      >
+                        Search Etsy
+                      </v-btn>
+                    </div>
+
+                    <div v-if="showFullEtsyAnalysis">
+                      <div class="text-caption font-weight-bold mt-2">13 Etsy Tags:</div>
+                      <div class="d-flex flex-wrap gap-1 mb-2">
+                        <v-chip v-for="tag in formData.etsy_analysis.seo_tags" :key="tag" size="x-small" variant="outlined">
+                          {{ tag }}
+                        </v-chip>
+                      </div>
+                      
+                      <div class="text-caption font-weight-bold mt-2">Shipping Strategy:</div>
+                      <div class="text-body-2 mb-2">{{ formData.etsy_analysis.shipping_advice }}</div>
+
+                      <div class="text-caption font-weight-bold mt-2">Curation & Aesthetic:</div>
+                      <div class="text-body-2 mb-2 white-space-pre-wrap">{{ formData.etsy_analysis.curation_strategy }}</div>
+
+                      <div class="mt-4 p-3 bg-grey-darken-4 rounded-lg position-relative" v-if="formData.etsy_analysis.listing_copy">
+                        <div class="text-caption font-weight-bold mb-1 d-flex align-center">
+                          <v-icon size="14" class="mr-1">mdi-content-copy</v-icon>
+                          Etsy Listing Copy
+                          <v-spacer />
+                          <v-btn icon="mdi-content-copy" variant="text" size="x-small" @click.stop="copyToClipboard(formData.etsy_analysis.listing_copy)" title="Copy to clipboard" />
+                        </div>
+                        <div class="text-body-2 white-space-pre-wrap font-italic text-grey-lighten-1">
+                          {{ formData.etsy_analysis.listing_copy }}
+                        </div>
+                      </div>
+                    </div>
+                    <div v-else class="text-center text-caption mt-1 font-italic opacity-70 cursor-pointer" @click="showFullEtsyAnalysis = !showFullEtsyAnalysis">
+                      Click to expand strategy
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-expand-transition>
+            </div>
           </v-window-item>
 
           <!-- Purchases Tab -->
@@ -1438,6 +1460,20 @@ const closeModal = () => {
           </v-window-item>
         </v-window>
       </v-card-text>
+
+      <v-divider v-if="activeTab === 'details'"></v-divider>
+      <v-card-actions v-if="activeTab === 'details'" class="bg-surface pa-2 px-4 d-flex justify-center">
+        <v-btn
+          variant="text"
+          size="small"
+          color="grey-darken-1"
+          prepend-icon="mdi-arrow-up"
+          @click="scrollToTop"
+          class="text-none"
+        >
+          Back to Top
+        </v-btn>
+      </v-card-actions>
     </v-card>
   </v-dialog>
 

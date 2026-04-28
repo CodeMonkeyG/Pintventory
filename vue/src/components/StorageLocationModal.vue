@@ -52,7 +52,7 @@ const save = () => {
 const printLabel = () => {
     const printable = document.getElementById('qr-printable-loc');
     const printWindow = window.open('', '_blank');
-    printWindow.document.write('<html><head><title>Print Location Label</title>');
+    printWindow.document.write('<html><head><title>Print Storage Label</title>');
     printWindow.document.write('<style>body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; } @page { margin: 0; size: auto; }</style>');
     printWindow.document.write('</head><body>');
     printWindow.document.write(printable.innerHTML);
@@ -79,7 +79,7 @@ const printLabel = () => {
         <v-btn icon @click="$emit('close')">
           <v-icon>mdi-close</v-icon>
         </v-btn>
-        <v-toolbar-title>{{ isEdit ? 'Edit Location' : 'Add Location' }}</v-toolbar-title>
+        <v-toolbar-title>{{ isEdit ? 'Edit Storage' : 'Add Storage' }}</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn 
           v-if="isEdit" 
@@ -127,7 +127,7 @@ const printLabel = () => {
   <v-dialog v-model="showQrModal" max-width="350">
     <v-card>
       <v-card-title class="d-flex align-center">
-          Location Label
+          Storage Label
           <v-spacer />
           <v-btn icon="mdi-close" variant="text" size="small" @click="showQrModal = false"></v-btn>
       </v-card-title>
@@ -142,7 +142,7 @@ const printLabel = () => {
               />
           </div>
           <div class="text-caption text-grey mt-4 text-center">
-              Scan this label to see all items currently stored in this location.
+              Scan this label to see all items currently in this storage.
           </div>
       </v-card-text>
       <v-card-actions class="pa-4">

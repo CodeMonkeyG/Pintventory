@@ -70,7 +70,13 @@ const router = createRouter({
       path: '/storage-locations',
       name: 'storage-locations',
       component: () => import('../views/StorageLocationsView.vue'),
-      meta: { title: 'Storage Locations' }
+      meta: { title: 'Storage' }
+    },
+    {
+      path: '/locations',
+      name: 'locations',
+      component: () => import('../views/LocationsSearchView.vue'),
+      meta: { title: 'Locations' }
     }
   ]
 })

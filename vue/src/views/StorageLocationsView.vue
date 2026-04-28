@@ -50,10 +50,10 @@ const handleDelete = async (id) => {
 <template>
   <MainLayout>
     <div :class="mobile ? 'd-flex flex-column gap-4' : 'd-flex justify-space-between align-center'" class="mb-6">
-      <h1 :class="mobile ? 'text-h4' : 'text-h3'">Storage Locations</h1>
+      <h1 :class="mobile ? 'text-h4' : 'text-h3'">Storage</h1>
       <v-btn color="primary" @click="openCreateModal" :block="mobile" size="large" elevation="2">
         <v-icon prepend-icon>mdi-plus</v-icon>
-        Add Location
+        Add Storage
       </v-btn>
     </div>
 
@@ -61,7 +61,7 @@ const handleDelete = async (id) => {
       <v-card-text>
         <v-text-field
           v-model="store.filters.search"
-          placeholder="Search locations..."
+          placeholder="Search storage..."
           prepend-inner-icon="mdi-magnify"
           hide-details
           variant="outlined"
@@ -75,8 +75,8 @@ const handleDelete = async (id) => {
     </div>
 
     <div v-else-if="store.filteredItems.length === 0" class="text-center py-12 text-grey">
-      <v-icon size="64" class="mb-4">mdi-map-marker-outline</v-icon>
-      <div class="text-h6">No locations found.</div>
+      <v-icon size="64" class="mb-4">mdi-package-variant</v-icon>
+      <div class="text-h6">No storage found.</div>
     </div>
 
     <template v-else>
