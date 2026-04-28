@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import { useDisplay } from 'vuetify';
 import WorkspaceSelector from '../components/WorkspaceSelector.vue';
+import OfflineIndicator from '../components/OfflineIndicator.vue';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -42,6 +43,7 @@ const createWorkspace = async () => {
 
 <template>
   <v-app>
+    <OfflineIndicator />
     <!-- Navigation Drawer for Mobile -->
     <v-navigation-drawer v-model="drawer" temporary v-if="mobile">
       <v-list>

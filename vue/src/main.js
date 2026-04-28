@@ -1,4 +1,4 @@
-import { createApp } from 'vue'
+import { createApp, ref } from 'vue'
 import { createPinia } from 'pinia'
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
@@ -11,6 +11,12 @@ import router from './router'
 import api from './axios'
 
 const app = createApp(App)
+
+// Tracking online status globally
+const isOnline = ref(window.navigator.onLine);
+window.addEventListener('online', () => isOnline.value = true);
+window.addEventListener('offline', () => isOnline.value = false);
+app.provide('isOnline', isOnline);
 
 // Create Vuetify instance
 const vuetify = createVuetify({
