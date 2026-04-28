@@ -70,14 +70,15 @@ export const useInventoryStore = defineStore('inventory', {
         },
 
         /**
-         * Fetch detailed item information with caching
+         * Fetch detailed item information with optional forced refresh
          * 
          * @param {string} id - The inventory item ID
+         * @param {boolean} [force=false] - Whether to bypass cache
          * @returns {Promise<Object>} The item details object
          */
-        async fetchItemDetail(id) {
-            // Return cached detail if available
-            if (this.itemDetails[id]) {
+        async fetchItemDetail(id, force = false) {
+            // Return cached detail if available and not forcing refresh
+            if (!force && this.itemDetails[id]) {
                 return this.itemDetails[id];
             }
 
