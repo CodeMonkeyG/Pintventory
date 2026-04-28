@@ -34,12 +34,12 @@ const bulkUpdateData = ref({
 });
 
 const isAllSelected = computed(() => {
-    return store.items.length > 0 && selectedIds.value.size === store.items.length;
+    return store.items.length > 0 && store.items.every(item => selectedIds.value.has(item.id));
 });
 
 const toggleSelectAll = () => {
     if (isAllSelected.value) {
-        selectedIds.value.clear();
+        store.items.forEach(item => selectedIds.value.delete(item.id));
     } else {
         store.items.forEach(item => selectedIds.value.add(item.id));
     }
@@ -165,6 +165,7 @@ const handleDelete = async (id) => {
   if (!confirm('Are you sure you want to delete this item?')) return;
   try {
     await store.deleteItem(id);
+    selectedIds.value.delete(id);
   } catch (error) {
     alert('Failed to delete item: ' + (error.response?.data?.message || error.message));
   }
@@ -174,7 +175,7 @@ const handleSave = async (itemData, newPhotos = []) => {
   // Transaction save (itemData is null)
   if (!itemData) {
       if (selectedItem.value) {
-          await openEditModal(selectedItem.value);
+          selectedItem.value = await store.fetchItemDetail(selectedItem.value.id, true);
       }
       await store.fetchItems(store.pagination.current_page);
       return;
@@ -266,6 +267,7 @@ const handleAiSave = async (payload, photos) => {
       for (const photo of photos) {
         await store.uploadPhoto(item.id, photo);
       }
+      await store.fetchItems(store.pagination.current_page);
     }
     showAiScanner.value = false;
   } catch (error) {
@@ -379,8 +381,8 @@ const handleAiSave = async (payload, photos) => {
           <v-col cols="12" sm="6" md="2">
             <v-select
               v-model="locationFilter"
-              label="Location"
-              :items="[{ name: 'All Locations', id: '' }, ...locationStore.items]"
+              label="Storage"
+              :items="[{ name: 'All Storage', id: '' }, ...locationStore.items]"
               item-title="name"
               item-value="id"
               hide-details
@@ -431,7 +433,7 @@ const handleAiSave = async (payload, photos) => {
             variant="outlined" 
             :color="selectedIds.has(item.id) ? 'primary' : ''"
             :class="{ 'border-opacity-100': selectedIds.has(item.id) }"
-            @click="toggleSelection(item.id)"
+            @click="openEditModal(item)"
           >
             <div class="d-flex pa-3">
               <v-checkbox-btn
@@ -511,7 +513,7 @@ const handleAiSave = async (payload, photos) => {
                 <v-icon size="14" class="ml-1">{{ getSortIcon('sku') }}</v-icon>
               </th>
               <th class="text-left sortable-header" @click="toggleSort('storage_location_name')">
-                Location
+                Storage
                 <v-icon size="14" class="ml-1">{{ getSortIcon('storage_location_name') }}</v-icon>
               </th>
               <th class="text-left sortable-header" @click="toggleSort('status')">
@@ -534,7 +536,7 @@ const handleAiSave = async (payload, photos) => {
               v-for="item in store.items" 
               :key="item.id" 
               style="cursor: pointer" 
-              @click="toggleSelection(item.id)"
+              @click="openEditModal(item)"
               :class="{ 'bg-primary-lighten-5': selectedIds.has(item.id) }"
             >
               <td>
@@ -700,7 +702,7 @@ const handleAiSave = async (payload, photos) => {
             <v-col cols="12">
               <v-select
                 v-model="bulkUpdateData.storage_location_id"
-                label="Storage Location"
+                label="Storage"
                 :items="[{ name: 'Keep Existing', id: null }, ...locationStore.items]"
                 item-title="name"
                 item-value="id"
