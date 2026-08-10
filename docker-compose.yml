@@ -1,9 +1,10 @@
 services:
   nginx:
+    container_name: pintventory-nginx
     image: nginx:alpine
     ports:
-      - "80:80"
-      - "443:443"
+      - "8082:80"
+      - "8442:443"
     volumes:
       - ./docker/nginx/conf.d:/etc/nginx/conf.d
       - ./laravel:/var/www/html
@@ -13,6 +14,7 @@ services:
       - vue
 
   laravel:
+    container_name: pintventory-laravel
     build:
       context: .
       dockerfile: docker/laravel/Dockerfile
@@ -24,17 +26,19 @@ services:
       - postgres
 
   vue:
+    container_name: pintventory-vue
     build:
       context: .
       dockerfile: docker/vue/Dockerfile
     volumes:
       - ./vue:/app
     ports:
-      - "5173:5173"
+      - "5174:5173"
     environment:
       - CHOKIDAR_USEPOLLING=true
 
   postgres:
+    container_name: pintventory-postgres
     image: postgres:15-alpine
     environment:
       POSTGRES_DB: pintventory
@@ -43,7 +47,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
 
 volumes:
   postgres_data:
