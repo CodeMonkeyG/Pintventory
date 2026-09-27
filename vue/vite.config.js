@@ -71,7 +71,7 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
-    allowedHosts: ['pintventory.com'],
+    allowedHosts: true,
     watch: {
       ignored: ['**/proc/**', '**/sys/**'],
     },
